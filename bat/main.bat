@@ -7,5 +7,5 @@ cd /d "%~dp0.."
 REM 啟動虛擬環境並執行 Python 程式
 call venv\Scripts\activate.bat
 
-python gui\us05\us05.py
-
+rem python gui\us05\us05.py
+python gui\us01\us01.py

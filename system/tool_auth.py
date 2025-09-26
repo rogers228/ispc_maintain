@@ -120,6 +120,31 @@ class AuthManager:
             print("Refresh failed:", e)
             return False
 
+    def logout(self):
+        """登出：清理 session 與本地紀錄"""
+        try:
+            # 嘗試通知 Supabase 登出（若 API 支援）
+            try:
+                self.db.auth.sign_out()
+            except Exception as e:
+                print("Supabase sign_out 警告:", e)
+
+            # 清掉內存的 session
+            self.session = None
+            self.refresh_token = None
+
+            # 更新 local JSON → 移除登入相關資訊
+            data = self.load_local_data()
+            for key in ["jwt", "refresh_token", "expires_at"]:
+                data.pop(key, None)
+            self.save_local_data(data)
+
+            print("Logout success ✅")
+            return True
+
+        except Exception as e:
+            print("Logout failed ❌:", e)
+            return False
 
 def test1():
     auth = AuthManager()
@@ -128,5 +153,24 @@ def test1():
     password = data.get('password')
     auth.login(email, password)
 
+def test2():
+    auth = AuthManager()
+    data = auth.load_local_data()
+
+    # 沒有 email/refresh_token，無法檢查
+    if not data.get("email") or not data.get("refresh_token"):
+        print("尚未登入，請先執行 login")
+        return
+
+    # 檢查 access_token 是否有效
+    if auth.is_token_valid():
+        print("Token 仍有效 ✅")
+    else:
+        print("Token 已失效，嘗試刷新 ⏳")
+        if auth.refresh_session():
+            print("Refresh 成功 ✅，新的 access_token 已更新")
+        else:
+            print("Refresh 失敗 ❌，請重新登入")
+
 if __name__ == '__main__':
-    test1()
+    test2()

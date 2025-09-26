@@ -45,6 +45,7 @@ class Ui_MainWindow(object):
         font.setPointSize(12)
         self.password.setFont(font)
         self.password.setText("")
+        self.password.setEchoMode(QtWidgets.QLineEdit.PasswordEchoOnEdit)
         self.password.setObjectName("password")
         self.label_4 = QtWidgets.QLabel(self.centralwidget)
         self.label_4.setGeometry(QtCore.QRect(20, 50, 81, 24))
