@@ -141,16 +141,6 @@ class MainWindow(QMainWindow):
         self.label_user.setText(f"使用者: {user_data.get('full_name', '')}")
         self.label_status.setText("登入狀態: 已登入")
 
-    # def action_signout(self):
-    #     print("執行 → 使用者登出程序")
-    #     if self.auth.logout():
-    #         QMessageBox.information(self, "登出", "您已成功登出")
-    #         # 更新狀態列
-    #         self.label_user.setText("使用者: 未設定")
-    #         self.label_status.setText("登入狀態: 已登出")
-    #     else:
-    #         QMessageBox.warning(self, "錯誤", "登出失敗，請稍後再試")
-
     def action_signout(self):
         reply = QMessageBox.question(self, "登出", "您確定要登出嗎？",   QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:

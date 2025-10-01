@@ -52,6 +52,7 @@ class Options:
     def update_options(self, new_options):
         # print('update_options...')
         # 無權限修改者 雖然可以執行成功，但是無法修改
+        # 權限採用jwt驗證
         data = self.auth.load_local_data()
         jwt = data.get("jwt")
         if not jwt:
@@ -87,4 +88,4 @@ def test2(): # update options
     print("更新後 options:", updated)
 
 if __name__ == "__main__":
-    test2()
+    test1()

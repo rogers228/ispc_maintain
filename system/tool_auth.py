@@ -3,6 +3,7 @@ if True:
     import json
     import time
     from supabase import create_client, Client
+    import requests
 
     # 專案 root 下的 private.json
     def find_project_root(start_path=None, project_name="ispc_maintain"):
@@ -68,7 +69,7 @@ class AuthManager:
                     "email": email
                 })
 
-                print("login success")
+                print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), "login success")
                 print("access_token:", access_token[:30], "...")
                 return True
             else:
@@ -96,28 +97,38 @@ class AuthManager:
         return now < self.session.expires_at
 
     def refresh_session(self):
-        """使用 refresh_token 取得新的 access_token"""
-        if not self.refresh_token:
-            print("No refresh token available.")
+        data = self.load_local_data()
+        refresh_token = data.get("refresh_token")
+        if not refresh_token:
+            print("No refresh_token found in local data")
             return False
-        try:
-            session = self.db.auth.refresh_session(self.refresh_token)
-            if session and session.access_token:
-                self.session = session
-                self.refresh_token = session.refresh_token
 
-                # 更新 local JSON
+        print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), "refresh_session: loaded refresh_token from file (len):", len(refresh_token))
+        try:
+            url = f"{spwr_api_url}/auth/v1/token?grant_type=refresh_token"
+            headers = {
+                "apikey": spwr_api_anon_key,
+                "Content-Type": "application/json",
+            }
+            payload = {"refresh_token": refresh_token}
+
+            print("Attempting refresh (requests) with refresh_token len:", len(refresh_token))
+            res = requests.post(url, headers=headers, json=payload)
+
+            if res.status_code == 200:
+                new_data = res.json()
+                print("Refresh success ✅ response keys:", list(new_data.keys()))
                 self.save_local_data({
-                    "jwt": session.access_token,
-                    "refresh_token": session.refresh_token,
-                    "expires_at": session.expires_at
+                    "jwt": new_data["access_token"],
+                    "refresh_token": new_data["refresh_token"],
+                    "expires_at": int(time.time()) + new_data["expires_in"]
                 })
                 return True
             else:
-                print("Refresh failed: no access_token returned")
+                print("Refresh HTTP error:", res.status_code, res.text)
                 return False
         except Exception as e:
-            print("Refresh failed:", e)
+            print("Exception in refresh_session:", e)
             return False
 
     def logout(self):
