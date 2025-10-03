@@ -52,6 +52,7 @@ class MainWindow(QMainWindow):
             "使用者": {
                 "使用者登入": self.action_login,
                 "登出": self.action_signout,
+                "結束": self.action_exit,
             },
             "產品資料": {
                 "產品建立作業": self.action_create_product,
@@ -89,6 +90,19 @@ class MainWindow(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh_auth_status)
         self.timer.start(3600 * 1000)  # 1 小時 = 3600 秒
+
+    def closeEvent(self, event):
+        reply = QMessageBox.question(self, "結束", "您確定要結束退出嗎？",   QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            event.accept()  # 允許關閉
+        else:
+            event.ignore()  # 阻止關閉
+
+        # 如果有子窗體開啟，一併關閉子窗體
+        child_windows = [self.us05]
+        for window in child_windows:
+            if window and isinstance(window, QWidget) and window.isVisible():
+                window.close()
 
     def dict_to_tree(self, data_dict, parent):
         """遞迴將 dict 加到 QTreeView"""
@@ -151,6 +165,11 @@ class MainWindow(QMainWindow):
                 self.label_status.setText("登入狀態: 已登出")
             else:
                 QMessageBox.warning(self, "錯誤", "登出失敗，請稍後再試")
+
+    def action_exit(self):
+        reply = QMessageBox.question(self, "結束", "您確定要結束退出嗎？",   QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            sys.exit() #正式結束程式  需要導入sys
 
     def action_create_product(self):
         print("執行 → 產品建立作業程序")
