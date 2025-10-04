@@ -1,11 +1,7 @@
 @echo off
-REM 啟用虛擬環境並執行
 
-REM 切換到 root
+REM 切換到上層  為root  路徑才會正確
 cd /d "%~dp0.."
 
-REM 啟動虛擬環境並執行 Python 程式
-call venv\Scripts\activate.bat
-
 rem python gui\us05\us05.py
-python gui\us01\us01.py
+C:\python_green\python-3.12.9\python.exe gui\us01\us01.py

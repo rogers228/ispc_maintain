@@ -3,7 +3,6 @@ if True:
     import os
     import time
     import json
-    from supabase import create_client, Client
 
     print("Python executable:", sys.executable) # 目前執行的python路徑 用來判斷是否是虛擬環境python 或 本機python
 
@@ -90,6 +89,9 @@ class MainWindow(QMainWindow):
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh_auth_status)
         self.timer.start(3600 * 1000)  # 1 小時 = 3600 秒
+
+        # 子表單
+        self.us05 = None
 
     def closeEvent(self, event):
         reply = QMessageBox.question(self, "結束", "您確定要結束退出嗎？",   QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
