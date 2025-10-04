@@ -5,9 +5,8 @@
 # 建立python執行環境
 
 1. 請至 <https://www.python.org/downloads/windows/> 下載鑲入式python
-2. 建立資料夾 C:\python_green
-3. 將下載的壓縮檔 python-3.12.9-embed-amd64_202510_1.7z 右鍵 > 解壓縮全部
-4. 指定路徑 C:\python_green 它會自動建立資料夾
+2. 將下載的壓縮檔 python-3.12.9-embed-amd64_202510_1.7z 右鍵 > 解壓縮全部
+3. 指定路徑 C:\python_green 它會自動建立資料夾
 
 # 建立主程式
 
