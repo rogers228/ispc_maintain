@@ -1,7 +1,6 @@
 # 系統需求
-7-zip
-GitHub Desktop
-Sublime Text
+1. 7-zip
+2. GitHub Desktop
 
 ## 建立python執行環境
 
