@@ -3,7 +3,6 @@ if True:
     import json
     import time
     import requests
-    # from supabase import create_client, Client
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
         if start_path is None:

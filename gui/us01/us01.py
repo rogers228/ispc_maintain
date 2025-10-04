@@ -25,6 +25,7 @@ if True:
     sys.path.append(os.path.join(ROOT_DIR, "system"))
     from share_qt5 import *
     from tool_auth import AuthManager
+    from tool_gui import hide_cmd_window
 
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us01'))
     from form_us01 import Ui_MainWindow
@@ -189,9 +190,12 @@ class MainWindow(QMainWindow):
         print("執行 → 權限設定作業程序")
 
 def main():
+    if True: # 非開發 隱藏命令視窗  判斷尚未完成
+        hide_cmd_window()
+
     app = QApplication(sys.argv)
     argv1 = sys.argv[1] if len(sys.argv) > 1 else "no argv" # 預留參數接口
-    print('argv1:', argv1)
+    # print('argv1:', argv1)
 
     window = MainWindow()
     window.show()
