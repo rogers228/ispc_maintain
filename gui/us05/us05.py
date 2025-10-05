@@ -3,7 +3,7 @@ if True:
     import os
     import json
 
-    print("Python executable:", sys.executable) # 目前執行的python路徑 用來判斷是否是虛擬環境python 或 本機python
+    # print("Python executable:", sys.executable) # 目前執行的python路徑 用來判斷是否是虛擬環境python 或 本機python
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
         """從指定路徑往上找，直到找到名稱為 project_name 的資料夾"""
@@ -20,8 +20,6 @@ if True:
             current = parent
 
     ROOT_DIR = find_project_root() # 專案 root
-    PRIVATE_JSON = os.path.join(ROOT_DIR, "system", "private.json") # private.json 完整路徑
-
     sys.path.append(os.path.join(ROOT_DIR, "system"))
     from share_qt5 import *
     from tool_auth import AuthManager
@@ -41,21 +39,10 @@ class MainWindow(QMainWindow):
         self.resize(450, 250)  # 設定視窗大小
 
         self.auth = AuthManager()
-        self.user_data = self.load_local_data() # 載入本地設定，如果有就帶入初始值
+        self.user_data = self.auth.load_local_data() # 載入本地設定，如果有就帶入初始值
         self.populate_fields()
 
         self.ui.login.clicked.connect(self.handle_login) # 連接 Login 按鈕
-
-    def load_local_data(self):
-        """讀取本地 private.json"""
-        if os.path.exists(PRIVATE_JSON):
-            try:
-                with open(PRIVATE_JSON, "r", encoding="utf-8") as f:
-                    return json.load(f)
-            except Exception as e:
-                QMessageBox.warning(self, "Warning", f"讀取本地設定失敗:\n{e}")
-                return {}
-        return {}
 
     def populate_fields(self):
         """將本地資料帶入欄位"""
@@ -64,6 +51,8 @@ class MainWindow(QMainWindow):
         self.ui.full_name.setText(self.user_data.get("full_name", ""))
 
     def handle_login(self):
+        self.ui.login.setEnabled(False)
+
         email = self.ui.email.text()
         password = self.ui.password.text()
         full_name = self.ui.full_name.text()
@@ -85,6 +74,7 @@ class MainWindow(QMainWindow):
             self.close()  # 關閉登入視窗
         else:
             QMessageBox.warning(self, "錯誤", "登入失敗，請檢查帳號密碼")
+            self.ui.login.setEnabled(True)
 
 def main():
     app = QApplication(sys.argv)

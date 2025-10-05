@@ -2,6 +2,9 @@
 REM chcp 65001 顯示中文
 chcp 65001 >nul
 
+REM 切換到上層  為root  路徑才會正確
+cd /d "%~dp0.."
+
 REM 以執行環境 更新 pip
 C:\python_green\python-3.12.9\python.exe -m pip install --upgrade pip
 
