@@ -3,6 +3,7 @@ if True:
     import json
     import time
     import requests
+    import click
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
         if start_path is None:
@@ -23,6 +24,7 @@ if True:
 
 class Options:
     FIXED_ID = "ba298953-40c9-423b-90cc-b1cdb6e60e61"
+    OPTIONS_PATH = os.path.join(ROOT_DIR, 'admin', 'temp_options.json')
     def __init__(self):
         self.table = "rec_option"
         self.auth = AuthManager()
@@ -70,6 +72,11 @@ class Options:
             print("Update failed:", resp.status_code, resp.text)
             return None
 
+    def pull_options(self):
+        data = self.get_options()
+        with open(Options.OPTIONS_PATH, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+
 # 測試用
 def test1(): # 讀取
     print("讀取 options:")
@@ -85,6 +92,11 @@ def test2(): # update options
     }
     updated = opt.update_options(new_data)
     print("更新後 options:", updated)
+
+def test3():
+    opt = Options()
+    opt.pull_options()
+    print('ok')
 
 if __name__ == "__main__":
     test1()

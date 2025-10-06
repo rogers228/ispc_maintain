@@ -3,3 +3,7 @@ venv/
 *.py[cod]
 
 system/private*
+ISPC.lnk
+
+# admin
+temp_options.json
