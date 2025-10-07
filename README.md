@@ -1,6 +1,5 @@
 # 系統需求
-1. 7-zip
-2. GitHub Desktop
+7-zip 解壓縮
 
 # 建立python執行環境
 
