@@ -3,10 +3,14 @@ REM chcp 65001 顯示中文
 chcp 65001 >nul
 
 REM 切換到上層  為root  路徑才會正確
-cd /d "%~dp0.."
+cd /d "%~dp0"
+
+rem 讀取 config
+for /f "delims=" %%a in (config.txt) do set %%a
+echo PYTHON_EXE: %PYTHON_EXE%
 
 REM 以執行環境 更新 pip
-C:\python_green\python-3.12.9\python.exe -m pip install --upgrade pip
+%PYTHON_EXE% -m pip install --upgrade pip
 
 echo.
 echo ________________________________________

@@ -2,14 +2,21 @@
 REM chcp 65001 顯示中文
 chcp 65001 >nul
 
-REM 設定python解釋器執行環境
-set pyapp=C:\python_green\python-3.12.9\python.exe
+REM 工作目錄切換到批次檔本身所在的目錄
+cd /d "%~dp0"
+
+rem 讀取 config
+for /f "delims=" %%a in (config.txt) do set %%a
+echo PYTHON_EXE: %PYTHON_EXE%
 
 REM 以執行環境 更新 pip
-%pyapp% -m pip install --upgrade pip
+%PYTHON_EXE% -m pip install --upgrade pip
 
 REM 以執行環境 安裝 所需套件
-%pyapp% -m pip install -r requirements.txt
+%PYTHON_EXE% -m pip install -r requirements.txt
+
+REM 切換到上層  為root  路徑才會正確
+cd /d "%~dp0.."
 
 REM 執行啟動程序
 %pyapp% system\tool_launch.py
@@ -17,8 +24,6 @@ REM 執行啟動程序
 echo ________________________________________
 echo.
 echo 啟動及更新完畢！請按任意鍵離開。
-echo.
-echo 請由桌面ISPC捷徑開啟進入，謝謝。
 echo.
 echo ________________________________________
 pause >nul

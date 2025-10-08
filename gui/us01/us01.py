@@ -190,7 +190,7 @@ class MainWindow(QMainWindow):
         print("執行 → 權限設定作業程序")
 
 def main():
-    production_env_hide_cmd() # 啟動
+    production_env_hide_cmd() # 開啟主視窗時 判斷是否隱藏命令視窗
 
     app = QApplication(sys.argv)
     argv1 = sys.argv[1] if len(sys.argv) > 1 else "no argv" # 預留參數接口

@@ -1,5 +1,6 @@
 # 系統需求
-7-zip 解壓縮
+1. 7-zip 解壓縮
+2. 網路環境
 
 # 建立python執行環境
 
@@ -9,13 +10,8 @@
 
 # 建立主程式
 
-使用 GitHub Desktop 建立gitHub專案：
-
-1. 開啟 GitHub Desktop 並登入。
-2. file > clone new repository > 選擇 url 頁籤。
-3. 輸入 <https://github.com/rogers228/ispc_maintain.git> 按下 clone。
-4. 選擇 ispc_maintain 專案後按右鍵 show in explorer，以檔案總管開啟。
-5. 首次啟動，點兩下執行 launch.bat，將在桌面建立 ISPC捷徑。
+1. 以檔案總管進入 C:\python_green\python-3.12.
+2. 找到 install_ispc_maintain.bat 點兩下執行，他將建立主程式
 
 # 開啟
 1. 使用桌面 ISPC捷徑 開啟。

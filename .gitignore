@@ -2,8 +2,15 @@ venv/
 **/__pycache__/
 *.py[cod]
 
-system/private*
-ISPC.lnk
 
 # admin
 temp_options.json
+
+# private.json 是在建立時自動產生
+system/private.json
+
+# config.txt 是在建立時自動產生
+bat/config.txt
+
+# ISPC.lnk 是在建立時自動產生
+ISPC.lnk
