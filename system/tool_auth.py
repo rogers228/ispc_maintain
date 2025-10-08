@@ -5,7 +5,6 @@ if True:
     import requests
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
-        import sys
         if start_path is None:
             start_path = os.path.dirname(os.path.abspath(sys.argv[0]))
         current = start_path
