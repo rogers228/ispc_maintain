@@ -1,4 +1,6 @@
 @echo off
+rem 首次啟動程序
+
 REM chcp 65001 顯示中文
 chcp 65001 >nul
 
@@ -19,11 +21,11 @@ REM 切換到上層  為root  路徑才會正確
 cd /d "%~dp0.."
 
 REM 執行啟動程序
-%pyapp% system\tool_launch.py
+%PYTHON_EXE% system\tool_launch.py
 
 echo ________________________________________
 echo.
-echo 啟動及更新完畢！請按任意鍵離開。
+echo  安裝完畢！請按任意鍵離開。
 echo.
 echo ________________________________________
 pause >nul

@@ -23,13 +23,11 @@ if True:
     PRIVATE_JSON = os.path.join(ROOT_DIR, "system", "private.json")
 
     sys.path.append(os.path.join(ROOT_DIR, "system"))
-    from share_qt5 import *
-    from tool_auth import AuthManager
-    auth = AuthManager()
     from tool_gui import hide_cmd_window
 
 def create_file():
     # 建立必要檔案
+    print('建立必要檔案...')
     if not os.path.exists(PRIVATE_JSON):
         default = {}
         for key in ['email', 'password', 'full_name', 'ROOT_DIR']:
@@ -42,6 +40,7 @@ def create_file():
 
 def create_shortcut():
     # 建立捷徑
+    print('建立捷徑...')
     desktop = os.path.join(os.path.expanduser("~"), "Desktop")
     shortcut_paths = [os.path.join(desktop, "ISPC.lnk"), os.path.join(ROOT_DIR, "ISPC.lnk")]
     for shortcut_path in shortcut_paths:
@@ -60,11 +59,10 @@ def create_shortcut():
             print('create shortcut finished')
 
 def init(): # 首次啟動程序
-    print('launch program...')
-    create_file() # 建立必要檔案
-    auth.save_local_data({'ROOT_DIR': ROOT_DIR}) # 更新 ROOT_DIR
-    create_shortcut()
-    print('launch finished')
+    print('主程式首次啟動 launch program...')
+    create_file()     # 建立必要檔案
+    create_shortcut() # 建立捷徑
+    print('✅ 主程式啟動完成 launch finished')
 
 def production_env_hide_cmd():
     # 若為生產環境 將隱藏命令視窗
