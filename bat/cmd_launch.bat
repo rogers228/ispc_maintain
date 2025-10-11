@@ -4,7 +4,7 @@ rem 首次啟動程序
 REM chcp 65001 顯示中文
 chcp 65001 >nul
 
-REM 工作目錄切換到批次檔本身所在的目錄
+rem 工作目錄移動到本檔案位置
 cd /d "%~dp0"
 
 rem 讀取 config

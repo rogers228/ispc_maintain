@@ -2,10 +2,12 @@
 
 ## rec_option
 
-|名稱    |類型   |說明  |
-|id      |uuid  |     |
-|options |jsonb |     |
-
+|名稱      |類型        |說明               |
+|id        | uuid      |                   |
+|options   | jsonb     | 轉為json前端讀取用     |
+|original  | text      | 原始檔編輯用       |
+|original_hash | varchar | 原始檔hash值 |
+|last_time | timestamp | 最後時間           | 
 
 ## rec_pd
 

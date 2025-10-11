@@ -53,16 +53,13 @@ class MainWindow(QMainWindow):
                 "使用者登入": self.action_login,
                 "登出": self.action_signout,
                 "結束": self.action_exit,
+                "設定": self.action_settings,
             },
             "產品資料": {
                 "產品建立作業": self.action_create_product,
                 "產品維護作業": self.action_edit_product,
                 "使用者查詢": self.action_query_user,
                  },
-            "系統": {
-                "設定": self.action_system_settings,
-                "權限設定作業": self.action_permission_settings,
-            },
         }
 
         self.dict_to_tree(data, self.model.invisibleRootItem()) # 遞迴轉換 dict → QTreeView
@@ -183,11 +180,8 @@ class MainWindow(QMainWindow):
     def action_query_user(self):
         print("執行 → 使用者查詢程序")
 
-    def action_system_settings(self):
+    def action_settings(self):
         print("執行 → 系統設定程序")
-
-    def action_permission_settings(self):
-        print("執行 → 權限設定作業程序")
 
 def main():
     production_env_hide_cmd() # 開啟主視窗時 判斷是否隱藏命令視窗

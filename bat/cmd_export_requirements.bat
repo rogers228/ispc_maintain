@@ -2,7 +2,7 @@
 REM chcp 65001 顯示中文
 chcp 65001 >nul
 
-REM 切換到上層  為root  路徑才會正確
+rem 工作目錄移動到本檔案位置
 cd /d "%~dp0"
 
 rem 讀取 config

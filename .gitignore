@@ -4,7 +4,7 @@ venv/
 
 
 # admin
-temp_options.json
+temp_options.py
 
 # private.json 是在建立時自動產生
 system/private.json
