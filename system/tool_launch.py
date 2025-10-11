@@ -4,6 +4,7 @@ if True:
     import sys, os
     import json
     import win32com.client
+    from git import Repo, GitCommandError
 
     print("Python executable:", sys.executable, '\n') # 目前執行的python路徑 用來判斷是否是虛擬環境python 或 本機python
 
@@ -64,6 +65,24 @@ def init(): # 首次啟動程序
     create_shortcut() # 建立捷徑
     print('✅ 主程式啟動完成 launch finished')
 
+def update_repo():
+    # 更新程序
+    if os.path.exists(os.path.join(ROOT_DIR, ".git")):
+        try:
+            repo = Repo(ROOT_DIR)
+            origin = repo.remotes.origin
+            origin.fetch()
+            local_commit = repo.head.commit.hexsha
+            remote_commit = origin.refs[repo.active_branch.name].commit.hexsha
+            if local_commit == remote_commit:
+                print("✅ 專案已是最新版本。")
+            else:
+                print("⬇️  發現新版本，執行更新中...")
+                origin.pull()
+                print("✅ 更新完成！")
+        except GitCommandError as e:
+            print("❌ 更新過程發生錯誤：", e)
+
 def production_env_hide_cmd():
     # 若為生產環境 將隱藏命令視窗
     is_dev = True
@@ -71,4 +90,4 @@ def production_env_hide_cmd():
         hide_cmd_window()
 
 if __name__ == '__main__':
-    init()
+    init() # 此檔案會被執行  init() 為預設執行程序

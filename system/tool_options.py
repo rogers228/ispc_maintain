@@ -244,5 +244,5 @@ def test6(): # 檢查是否需要更新
         print('不需要更新')
 
 if __name__ == "__main__":
-    test6()
-    # main()
+    # test6()
+    main()

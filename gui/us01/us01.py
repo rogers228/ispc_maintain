@@ -25,7 +25,7 @@ if True:
     sys.path.append(os.path.join(ROOT_DIR, "system"))
     from share_qt5 import *
     from tool_auth import AuthManager
-    from tool_launch import production_env_hide_cmd
+    from tool_launch import production_env_hide_cmd, update_repo
 
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us01'))
     from form_us01 import Ui_MainWindow
@@ -33,6 +33,8 @@ if True:
     # 引用其他作業
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us05'))
     from us05 import MainWindow as MainWindow_us05
+    sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us09'))
+    from us09 import MainWindow as MainWindow_us09
 
 class MainWindow(QMainWindow):
 
@@ -52,8 +54,10 @@ class MainWindow(QMainWindow):
             "使用者": {
                 "使用者登入": self.action_login,
                 "登出": self.action_signout,
-                "結束": self.action_exit,
                 "設定": self.action_settings,
+                "－－－－－－－－－－": None,
+                "結束": self.action_exit,
+
             },
             "產品資料": {
                 "產品建立作業": self.action_create_product,
@@ -90,6 +94,7 @@ class MainWindow(QMainWindow):
 
         # 子表單
         self.us05 = None
+        self.us09 = None
 
     def closeEvent(self, event):
         reply = QMessageBox.question(self, "結束", "您確定要結束退出嗎？",   QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
@@ -99,7 +104,7 @@ class MainWindow(QMainWindow):
             event.ignore()  # 阻止關閉
 
         # 如果有子窗體開啟，一併關閉子窗體
-        child_windows = [self.us05]
+        child_windows = [self.us05, self.us09]
         for window in child_windows:
             if window and isinstance(window, QWidget) and window.isVisible():
                 window.close()
@@ -107,6 +112,7 @@ class MainWindow(QMainWindow):
     def dict_to_tree(self, data_dict, parent):
         """遞迴將 dict 加到 QTreeView"""
         icon_form = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'form4.png'))
+        icon_exit = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'exit.png'))
 
         for key, value in data_dict.items():
             item = QStandardItem(key)
@@ -114,7 +120,11 @@ class MainWindow(QMainWindow):
             # 如果 value 是可呼叫物件 (function)，加 icon
             if callable(value):
                 item.setData(value, Qt.UserRole)  # 存函式指標
-                item.setIcon(icon_form)  # 使用系統預設 icon
+                if key == '結束':
+                    item.setIcon(icon_exit)
+                else:
+                    item.setIcon(icon_form)  # 使用系統預設 icon
+
             else:
                 # 非可呼叫：文字顏色設為灰色
                 item.setForeground(QBrush(QColor("gray")))
@@ -181,9 +191,12 @@ class MainWindow(QMainWindow):
         print("執行 → 使用者查詢程序")
 
     def action_settings(self):
-        print("執行 → 系統設定程序")
+        # print("執行 → 系統設定程序")
+        self.us09 = MainWindow_us09() # 材質設定
+        self.us09.show()
 
 def main():
+    update_repo() # 自動更新程序
     production_env_hide_cmd() # 開啟主視窗時 判斷是否隱藏命令視窗
 
     app = QApplication(sys.argv)

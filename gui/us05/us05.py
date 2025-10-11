@@ -1,9 +1,6 @@
 if True:
     import sys
     import os
-    import json
-
-    # print("Python executable:", sys.executable) # 目前執行的python路徑 用來判斷是否是虛擬環境python 或 本機python
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
         """從指定路徑往上找，直到找到名稱為 project_name 的資料夾"""
@@ -35,8 +32,8 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         self.ui = Ui_MainWindow();
         self.ui.setupUi(self) # 載入ui
-        self.setWindowTitle(f'Login')
-        self.resize(450, 250)  # 設定視窗大小
+        self.setWindowTitle('使用者登入')
+        self.resize(550, 230)  # 設定視窗大小
 
         self.auth = AuthManager()
         self.user_data = self.auth.load_local_data() # 載入本地設定，如果有就帶入初始值
@@ -53,9 +50,24 @@ class MainWindow(QMainWindow):
     def handle_login(self):
         self.ui.login.setEnabled(False)
 
-        email = self.ui.email.text()
-        password = self.ui.password.text()
-        full_name = self.ui.full_name.text()
+        email = self.ui.email.text().strip()
+        password = self.ui.password.text().strip()
+        full_name = self.ui.full_name.text().strip()
+
+        if not email:
+            QMessageBox.warning(self, "輸入錯誤", "email 不可為空白。")
+            self.ui.login.setEnabled(True)
+            return
+
+        if not password:
+            QMessageBox.warning(self, "輸入錯誤", "password 不可為空白。")
+            self.ui.login.setEnabled(True)
+            return
+
+        if not full_name:
+            QMessageBox.warning(self, "輸入錯誤", "full_name 不可為空白。")
+            self.ui.login.setEnabled(True)
+            return
 
         # 先儲存資訊
         self.auth.save_local_data({

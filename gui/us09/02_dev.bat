@@ -13,4 +13,4 @@ rem 切換到本檔案位置
 cd /d "%~dp0"
 
 rem 使用命令視窗，方便除錯 可帶引數執行
-%PYTHON_EXE% us01.py test
+%PYTHON_EXE% us09.py test

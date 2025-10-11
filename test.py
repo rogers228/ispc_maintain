@@ -25,5 +25,9 @@ test line2
     except FileNotFoundError:
         print("找不到 Sublime Text，請確認 `subl` 指令已加入環境變數。")
 
+
+
+
+
 if __name__ == '__main__':
     test1()
