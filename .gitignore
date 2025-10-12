@@ -14,3 +14,6 @@ bat/config.txt
 
 # ISPC.lnk 是在建立時自動產生
 ISPC.lnk
+
+# tempstorage/ 是暫存於本地的工作區
+tempstorage/*.py
