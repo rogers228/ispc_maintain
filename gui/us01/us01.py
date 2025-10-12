@@ -4,7 +4,7 @@ if True:
     import time
     import json
 
-    print("Python executable:", sys.executable) # 目前執行的python路徑 用來判斷是否是虛擬環境python 或 本機python
+    # print("Python executable:", sys.executable) # 目前執行的python路徑 用來判斷是否是虛擬環境python 或 本機python
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
         """從指定路徑往上找，直到找到名稱為 project_name 的資料夾"""
@@ -25,7 +25,8 @@ if True:
     sys.path.append(os.path.join(ROOT_DIR, "system"))
     from share_qt5 import *
     from tool_auth import AuthManager
-    from tool_launch import production_env_hide_cmd, update_repo
+    from tool_launch import startup
+    from config import ISPC_MAINTAIN_VERSION
 
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us01'))
     from form_us01 import Ui_MainWindow
@@ -42,7 +43,7 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         self.ui = Ui_MainWindow();
         self.ui.setupUi(self) # 載入ui
-        self.setWindowTitle(f'ispc maintain')
+        self.setWindowTitle(f'ispc maintain ({ISPC_MAINTAIN_VERSION})')
         self.resize(600, 450)  # 設定視窗大小
 
         # 建立 Model
@@ -196,13 +197,10 @@ class MainWindow(QMainWindow):
         self.us09.show()
 
 def main():
-    update_repo() # 自動更新程序
-    production_env_hide_cmd() # 開啟主視窗時 判斷是否隱藏命令視窗
-
+    startup() # 正常啟動
     app = QApplication(sys.argv)
     argv1 = sys.argv[1] if len(sys.argv) > 1 else "no argv" # 預留參數接口
     # print('argv1:', argv1)
-
     window = MainWindow()
     window.show()
     sys.exit(app.exec_())

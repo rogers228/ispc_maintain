@@ -7,7 +7,7 @@ cd /d "%~dp0"
 
 rem 讀取 config
 for /f "delims=" %%a in (config.txt) do set %%a
-echo PYTHON_EXE: %PYTHON_EXE%
+rem echo PYTHON_EXE: %PYTHON_EXE%
 
 REM 切換標題 以利尋找隱藏
 title ISPC_MAINTAIN

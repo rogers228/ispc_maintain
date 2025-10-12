@@ -5,6 +5,7 @@ if True:
     import json
     import win32com.client
     from git import Repo, GitCommandError
+    import multiprocessing
 
     print("Python executable:", sys.executable, '\n') # 目前執行的python路徑 用來判斷是否是虛擬環境python 或 本機python
 
@@ -25,13 +26,14 @@ if True:
 
     sys.path.append(os.path.join(ROOT_DIR, "system"))
     from tool_gui import hide_cmd_window
+    from tool_auth import AuthManager
 
 def create_file():
     # 建立必要檔案
     print('建立必要檔案...')
     if not os.path.exists(PRIVATE_JSON):
         default = {}
-        for key in ['email', 'password', 'full_name', 'ROOT_DIR']:
+        for key in ['email', 'password', 'full_name', 'editor', 'show_cmd_window']:
             default.setdefault(key, None)
 
         os.makedirs(os.path.dirname(PRIVATE_JSON), exist_ok=True)
@@ -59,14 +61,8 @@ def create_shortcut():
             shortcut.save()
             print('create shortcut finished')
 
-def init(): # 首次啟動程序
-    print('主程式首次啟動 launch program...')
-    create_file()     # 建立必要檔案
-    create_shortcut() # 建立捷徑
-    print('✅ 主程式啟動完成 launch finished')
-
 def update_repo():
-    # 更新程序
+    # 更新主程序
     if os.path.exists(os.path.join(ROOT_DIR, ".git")):
         try:
             repo = Repo(ROOT_DIR)
@@ -75,9 +71,9 @@ def update_repo():
             local_commit = repo.head.commit.hexsha
             remote_commit = origin.refs[repo.active_branch.name].commit.hexsha
             if local_commit == remote_commit:
-                print("✅ 專案已是最新版本。")
+                print("✅ 已是最新版本。")
             else:
-                print("⬇️  發現新版本，執行更新中...")
+                print("🔍 發現新版本，執行更新中...")
                 origin.pull()
                 print("✅ 更新完成！")
         except GitCommandError as e:
@@ -85,9 +81,24 @@ def update_repo():
 
 def production_env_hide_cmd():
     # 若為生產環境 將隱藏命令視窗
-    is_dev = True
-    if not is_dev: # 若非開發環境則隱藏命令視窗
-        hide_cmd_window()
+    auth = AuthManager()
+    data = auth.load_local_data()
+    is_show_cmd_window = data.get("show_cmd_window", False)
+    if not is_show_cmd_window: # 隱藏命令視窗
+        hide_cmd_window(delay=4)
+
+def init(): # 首次啟動程序
+    print('主程式首次啟動 launch program...')
+    create_file()     # 建立必要檔案
+    create_shortcut() # 建立捷徑
+    print('✅ 主程式啟動完成 launch finished')
+
+def startup(): # 正常啟動
+    print('🏃🏻‍➡️ 正常啟動 run program...')
+    update_repo()    # 更新主程序
+    p = multiprocessing.Process(target=production_env_hide_cmd)
+    p.start() # 啟動獨立進程異步執行 將隱藏命令視窗
+
 
 if __name__ == '__main__':
-    init() # 此檔案會被執行  init() 為預設執行程序
+    init() # 此檔案會呼叫啟動  執行  init() 為預設執行程序

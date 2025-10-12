@@ -31,7 +31,7 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow();
         self.ui.setupUi(self) # 載入ui
         self.setWindowTitle('設定')
-        self.resize(800, 230)  # 設定視窗大小
+        self.resize(800, 250)  # 設定視窗大小
 
         self.auth = AuthManager()
         self.user_data = self.auth.load_local_data() # 載入本地設定，如果有就帶入初始值
@@ -43,6 +43,9 @@ class MainWindow(QMainWindow):
     def populate_fields(self):
         """將本地資料帶入欄位"""
         self.ui.editor.setText(self.user_data.get("editor", ""))
+
+        is_checked = self.user_data.get("show_cmd_window", False)
+        self.ui.show_cmd_window.setChecked(is_checked)
 
     def handle_browse_editor(self):
         file_path, _ = QFileDialog.getOpenFileName(self, "選擇編輯器",
@@ -57,6 +60,7 @@ class MainWindow(QMainWindow):
         self.ui.save.setEnabled(False)
 
         editor = self.ui.editor.text().strip()
+        show_cmd_window = self.ui.show_cmd_window.isChecked()
 
         if not editor:
             QMessageBox.warning(self, "輸入錯誤", "編輯器 不可為空白。")
@@ -66,7 +70,9 @@ class MainWindow(QMainWindow):
         # 儲存
         self.auth.save_local_data({
             "editor": editor,
+            "show_cmd_window": show_cmd_window, # boolean
         })
+        QMessageBox.information(self, "成功", "設定已儲存！")
         self.close()  # 關閉視窗
 
 def main():

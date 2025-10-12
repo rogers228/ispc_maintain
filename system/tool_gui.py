@@ -1,7 +1,10 @@
 # 視窗操作
 import win32gui, win32con
+import time
 
-def hide_cmd_window(target_title='ISPC_MAINTAIN'):
+def hide_cmd_window(target_title='ISPC_MAINTAIN', delay=0):
+
+    time.sleep(delay)
     # 隱藏命令視窗
     hwnd = win32gui.FindWindow(None, target_title)
     if hwnd == 0:
