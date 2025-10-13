@@ -54,8 +54,8 @@ class MainWindow(QMainWindow):
         data = {
             "使用者": {
                 "使用者登入": self.action_login,
-                "登出": self.action_signout,
                 "設定": self.action_settings,
+                "登出": self.action_signout,
                 "－－－－－－－－－－": None,
                 "結束": self.action_exit,
 
