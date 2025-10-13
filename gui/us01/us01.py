@@ -52,9 +52,10 @@ class MainWindow(QMainWindow):
 
         # 導入 dict
         data = {
-            "使用者": {
+            "系統": {
                 "使用者登入": self.action_login,
                 "設定": self.action_settings,
+                "重新啟動": self.restart,
                 "登出": self.action_signout,
                 "－－－－－－－－－－": None,
                 "結束": self.action_exit,
@@ -181,6 +182,10 @@ class MainWindow(QMainWindow):
         reply = QMessageBox.question(self, "結束", "您確定要結束退出嗎？",   QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             sys.exit() #正式結束程式  需要導入sys
+
+    def restart(self):
+        # 重新啟動
+        os.execl(sys.executable, sys.executable, *sys.argv)
 
     def action_create_product(self):
         print("執行 → 產品建立作業程序")
