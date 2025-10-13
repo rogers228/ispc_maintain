@@ -44,7 +44,7 @@ class MainWindow(QMainWindow):
         """將本地資料帶入欄位"""
         self.ui.editor.setText(self.user_data.get("editor", ""))
 
-        is_checked = self.user_data.get("show_cmd_window", False)
+        is_checked = bool(self.user_data.get("show_cmd_window")) # 強制 bool 僅 True || Fasle 避免 None
         self.ui.show_cmd_window.setChecked(is_checked)
 
     def handle_browse_editor(self):
