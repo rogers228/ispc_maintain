@@ -157,7 +157,7 @@ class MainWindow(QMainWindow):
 
     # === 以下是功能函式 ===
     def action_login(self):
-        print("執行 → 使用者登入程序")
+        # print("執行 → 使用者登入程序")
         self.us05 = MainWindow_us05() # 材質設定
         self.us05.login_success.connect(self.on_login_success)  # 綁定事件
         self.us05.show()

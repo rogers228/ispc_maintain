@@ -1,4 +1,4 @@
-# 首次啟動程序
+# 啟動相關程序
 
 if True:
     import sys, os

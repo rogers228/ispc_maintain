@@ -20,7 +20,7 @@ if True:
     sys.path.append(os.path.join(ROOT_DIR, "system"))
     from share_qt5 import *
     from tool_auth import AuthManager
-
+    from tool_gui import hide_cmd_window, show_cmd_window
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us09'))
     from form_us09 import Ui_MainWindow
 
@@ -39,6 +39,7 @@ class MainWindow(QMainWindow):
 
         self.ui.save.clicked.connect(self.handle_save) # 連接 Login 按鈕
         self.ui.browse_editor.clicked.connect(self.handle_browse_editor)
+        self.ui.show_cmd_window.toggled.connect(self.handle_cmd_window_toggle)
 
     def populate_fields(self):
         """將本地資料帶入欄位"""
@@ -55,6 +56,12 @@ class MainWindow(QMainWindow):
 
         if file_path:
             self.ui.editor.setText(file_path)
+
+    def handle_cmd_window_toggle(self, checked):
+        if checked:
+            show_cmd_window() # 顯示控制台視窗
+        else:
+            hide_cmd_window() # 隱藏控制台視窗
 
     def handle_save(self):
         self.ui.save.setEnabled(False)
