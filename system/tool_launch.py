@@ -76,6 +76,12 @@ def update_repo():
                 print("🔍 發現新版本，執行更新中...")
                 origin.pull()
                 print("✅ 更新完成！")
+
+                # 重新啟動
+                print("🔄 正在重新啟動程式以載入新版本...")
+                # 以 os 作業系統執行重啟 sys.executable，並將 sys.executable 作為 argv[0]，其餘參數為 *sys.argv
+                os.execl(sys.executable, sys.executable, *sys.argv)
+
         except GitCommandError as e:
             print("❌ 更新過程發生錯誤：", e)
 
