@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>493</width>
-    <height>539</height>
+    <width>517</width>
+    <height>500</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -33,13 +33,113 @@
      <set>QAbstractItemView::NoEditTriggers</set>
     </property>
    </widget>
+   <widget class="QPushButton" name="pd_edit">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>350</x>
+      <y>20</y>
+      <width>101</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="toolTip">
+     <string>以編輯器開啟</string>
+    </property>
+    <property name="text">
+     <string>編輯</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pd_check">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>350</x>
+      <y>90</y>
+      <width>101</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="toolTip">
+     <string>檢查資料</string>
+    </property>
+    <property name="text">
+     <string>檢查</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pd_upload">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>350</x>
+      <y>160</y>
+      <width>101</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="toolTip">
+     <string>上傳預覽版</string>
+    </property>
+    <property name="text">
+     <string>上傳</string>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="pd_release">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>350</x>
+      <y>230</y>
+      <width>101</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="toolTip">
+     <string>正式發佈</string>
+    </property>
+    <property name="text">
+     <string>發佈</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>493</width>
+     <width>517</width>
      <height>21</height>
     </rect>
    </property>

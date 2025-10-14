@@ -33,9 +33,15 @@ class Options:
 
     def get_original(self):
         """取得固定 id 的 original"""
+        data = self.auth.load_local_data()
+        jwt = data.get("jwt")
+        if not jwt:
+            return None
+
         url = f"{spwr_api_url}/rest/v1/{self.table}?id=eq.{Options.FIXED_ID}&select=original"
         headers = {
             "apikey": spwr_api_anon_key,
+            "Authorization": f"Bearer {jwt}",
             "Content-Type": "application/json"
         }
         resp = requests.get(url, headers=headers)
@@ -61,19 +67,23 @@ class Options:
             print(f"❌ 執行檔案時發生錯誤: {e}")
             return None
 
-    def update_options(self):
-        # print('update_options...')
-        # 無權限修改者 雖然可以執行成功，但是無法修改
-        # 權限採用jwt驗證
+    def get_jwt(self):
         data = self.auth.load_local_data()
-        # 沒有 email/refresh_token，無法檢查
         if not data.get("email") or not data.get("refresh_token"):
             print("尚未登入，請先執行 login")
             return None
 
         if not self.auth.is_token_valid():
-            print("Token 已失效")
+            print("Token 已失")
             return None
+
+        jwt = data.get("jwt")
+        return jwt
+
+    def update_options(self):
+        # print('update_options...')
+        # 無權限修改者 雖然可以執行成功，但是無法修改
+        # 權限採用jwt驗證
 
         original = self.get_local_original()
         if original is None:
@@ -109,9 +119,13 @@ class Options:
             "options": options_json, # 這裡傳送的是 JSON 字串
             "last_time": get_local_time(),
             }
-        print(payload)
+        # print(payload)
 
+        data = self.auth.load_local_data()
         jwt = data.get("jwt")
+        if not jwt:
+            return None
+
         url = f"{spwr_api_url}/rest/v1/rec_option?id=eq.{Options.FIXED_ID}"
         headers = {
             "apikey": spwr_api_anon_key,
@@ -128,9 +142,16 @@ class Options:
 
     def get_options(self):
         """取得固定 id 的 options"""
+
+        data = self.auth.load_local_data()
+        jwt = data.get("jwt")
+        if not jwt:
+            return None
+
         url = f"{spwr_api_url}/rest/v1/{self.table}?id=eq.{Options.FIXED_ID}&select=options"
         headers = {
             "apikey": spwr_api_anon_key,
+            "Authorization": f"Bearer {jwt}",
             "Content-Type": "application/json"
         }
         resp = requests.get(url, headers=headers)
@@ -155,9 +176,15 @@ class Options:
 
     def get_remote_hash(self):
         # 取得 雲端 hash
+        data = self.auth.load_local_data()
+        jwt = data.get("jwt")
+        if not jwt:
+            return None
+
         url = f"{spwr_api_url}/rest/v1/{self.table}?id=eq.{Options.FIXED_ID}&select=original_hash"
         headers = {
             "apikey": spwr_api_anon_key,
+            "Authorization": f"Bearer {jwt}",
             "Content-Type": "application/json"
         }
         try:
@@ -245,4 +272,4 @@ def test6(): # 檢查是否需要更新
 
 if __name__ == "__main__":
     # test6()
-    main()
+    main() # 會被呼叫 預設使用 main

@@ -12,19 +12,19 @@
 
 ## rec_pd
 
-| 名稱          |類型       |說明  |
-| --            | --        |--                 |
-| id            | uuid      | pk                |
+| 名稱          |類型        | 說明                                      |
+| --            | --        |--                                         |
+| id            | uuid      | pk                                        |
 | pdno          | varchar   | 自訂的產品編號，編輯者識別用 不做連結用途    |
-| name          | varchar   | 產品名稱，編輯者識別用 |
-| use_type      | int2      | 使用用途 0未設定 1預覽版 2正式版 |
+| name          | varchar   | 產品名稱，編輯者識別用                      |
+| use_type      | int2      | 使用用途 0未設定 1預覽版 2正式版            |
 | data_original | text      | 產品資料 輸入 (僅工作預覽版會有original)    |
-| data_json     | jsonb     | 產品資料 轉換   |
+| data_json     | jsonb     | 產品資料 轉換                              |
 | data_hash     | varchar   | 用來檢查dirty (僅工作預覽版有data_hash)     |
 | last_time     | timestamp | 最後時間 用來記錄最後更新的時間，所有版都有   |
-| edit_user     | varchar   | 最後上傳者，發布者                 |
-| version       | varchar   | 版本，自動產生，固定格式 274.20251002 用來識別，只要有更新即往上升版  |
-| source_id     | uuid      | 來源id  工作預覽版無來源，正式版的來源為預覽版， |
+| edit_user     | varchar   | 最後上傳者，發布者                          |
+| version       | varchar   | 版本，自動產生，固定格式 274.20251002 用來識別，只要有更新即往上升版    |
+| source_id     | uuid      | 來源id  工作預覽版無來源，   正式版的來源為預覽版， target紀錄在options |
 
 ## use_type
 

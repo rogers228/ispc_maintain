@@ -142,6 +142,7 @@ class AuthManager:
 
     def logout(self):
         """登出：清理 session 與本地紀錄"""
+        print('logout...')
         try:
             # Supabase 沒有明確的 logout API，這裡直接清掉本地資訊即可
             self.session_data = None
@@ -150,7 +151,7 @@ class AuthManager:
             # 更新 local JSON → 移除登入相關資訊
             data = self.load_local_data()
             for key in ["jwt", "refresh_token", "expires_at"]:
-                data.pop(key, None)
+                data[key] = None
             self.save_local_data(data)
 
             print("Logout success ✅ (local only)")

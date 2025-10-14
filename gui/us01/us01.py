@@ -27,6 +27,7 @@ if True:
     from tool_auth import AuthManager
     from tool_launch import startup
     from config import ISPC_MAINTAIN_VERSION
+    import tool_options
 
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us01'))
     from form_us01 import Ui_MainWindow
@@ -51,7 +52,7 @@ class MainWindow(QMainWindow):
         self.model.setHorizontalHeaderLabels(["選擇作業"]) # root
 
         # 導入 dict
-        data = {
+        tree = {
             "系統": {
                 "使用者登入": self.action_login,
                 "設定": self.action_settings,
@@ -59,21 +60,28 @@ class MainWindow(QMainWindow):
                 "登出": self.action_signout,
                 "－－－－－－－－－－": None,
                 "結束": self.action_exit,
-
-            },
-            "產品資料": {
-                "產品建立作業": self.action_create_product,
-                "產品維護作業": self.action_edit_product,
-                "使用者查詢": self.action_query_user,
-                 },
+            }
         }
 
-        self.dict_to_tree(data, self.model.invisibleRootItem()) # 遞迴轉換 dict → QTreeView
+        # 測試動態讀取參數 添加至 tree
+        # self.opt = tool_options.Options()
+        # options = self.opt.get_options()
+        # if options:
+        #     print(options)
+        tree['產品資料'] = {
+            'A': self.action_test,
+            'B': self.action_test,
+        }
+
+        self.dict_to_tree(tree, self.model.invisibleRootItem()) # 遞迴轉換 dict → QTreeView
+        self.ui.treeView.activated.connect(self.handle_tree_activated) # 連接 activated 信號到處理函式 (當項目被點擊或啟動時觸發)
 
         self.ui.treeView.setModel(self.model) # 綁定model 到 TreeView
         self.ui.treeView.expandAll() # 展開全部
         self.ui.treeView.setHeaderHidden(True) # 隱藏root
-        self.ui.treeView.doubleClicked.connect(self.on_tree_double_clicked) # 綁定雙擊事件
+        self.ui.treeView.selectionModel().currentChanged.connect(self.handle_tree_selection_changed) # 選取事件
+
+        self.ui.pd_edit.clicked.connect(self.handle_pd_edit)
 
         # === 狀態列整合 AuthManager ===
         self.auth = AuthManager()
@@ -112,7 +120,10 @@ class MainWindow(QMainWindow):
                 window.close()
 
     def dict_to_tree(self, data_dict, parent):
-        """遞迴將 dict 加到 QTreeView"""
+        # 遞迴將 dict 加到 QTreeView
+        if parent == self.model.invisibleRootItem(): # 僅在頂層調用時執行
+            parent.removeRows(0, parent.rowCount()) # 清除資料後再執行遞迴
+
         icon_form = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'form4.png'))
         icon_exit = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'exit.png'))
 
@@ -135,14 +146,6 @@ class MainWindow(QMainWindow):
             if isinstance(value, dict) and value:
                 self.dict_to_tree(value, item)
 
-    def on_tree_double_clicked(self, index):
-        """處理 TreeView 雙擊事件"""
-        item = self.model.itemFromIndex(index)
-        func = item.data(Qt.UserRole)
-        if callable(func):  # 如果 value 是函式
-            func()  # 執行對應的功能
-
-    # === 刷新程序 ===
     def refresh_auth_status(self):
         """檢查是否過期，必要時刷新，並更新狀態列"""
         print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), 'refresh_auth_status...')
@@ -187,19 +190,62 @@ class MainWindow(QMainWindow):
         # 重新啟動
         os.execl(sys.executable, sys.executable, *sys.argv)
 
-    def action_create_product(self):
-        print("執行 → 產品建立作業程序")
-
-    def action_edit_product(self):
-        print("執行 → 產品維護作業程序")
-
-    def action_query_user(self):
-        print("執行 → 使用者查詢程序")
-
     def action_settings(self):
         # print("執行 → 系統設定程序")
         self.us09 = MainWindow_us09() # 材質設定
         self.us09.show()
+
+    def handle_tree_selection_changed(self, current_index, previous_index):
+        index = current_index
+        if not index.isValid():
+            return # 未選取任何項目。
+        # selected_text = index.data(Qt.DisplayRole)
+        parent_index = index.parent()
+        if parent_index.isValid() and parent_index != self.model.invisibleRootItem().index():
+            parent_text = parent_index.data(Qt.DisplayRole)
+            if parent_text == '產品資料':
+                self.ui.pd_edit.setEnabled(True)
+                self.ui.pd_check.setEnabled(True)
+                self.ui.pd_upload.setEnabled(True)
+                self.ui.pd_release.setEnabled(True)
+            else:
+                self.ui.pd_edit.setEnabled(False)
+                self.ui.pd_check.setEnabled(False)
+                self.ui.pd_upload.setEnabled(False)
+                self.ui.pd_release.setEnabled(False)
+
+    def handle_tree_activated(self, index):
+        item = self.model.itemFromIndex(index)
+        if item is None:
+            return
+
+        # 獲取儲存的函式 (UserRole 儲存著要執行的 self.action_xxx 函式)
+        action_func = item.data(Qt.UserRole)
+        item_text = item.text()
+
+        # 執行函式並傳遞 item_text
+        if callable(action_func):
+            try:
+                action_func(item_text) # 傳遞 item_text 作為參數
+            except TypeError:
+                action_func() # 處理沒有設計參數的舊函式 (例如 self.action_login)，以確保向下兼容
+            except Exception as e:
+                print(f"執行功能 '{item_text}' 時發生錯誤: {e}")
+
+    def handle_pd_edit(self):
+        index = self.ui.treeView.selectionModel().currentIndex()
+        if not index.isValid():
+            return # 未選取任何項目。
+        selected_text = index.data(Qt.DisplayRole)
+        parent_index = index.parent()
+        if parent_index.isValid() and parent_index != self.model.invisibleRootItem().index(): # 檢查是否為頂層項目，避免獲取到 root 欄位名稱
+            parent_text = parent_index.data(Qt.DisplayRole)
+            if parent_text == '產品資料':
+                print(f"選取的項目: {selected_text}")
+
+
+    def action_test(self, item_text):
+        print(f"執行測試動作，點擊的項目文字是: {item_text}")
 
 def main():
     startup() # 正常啟動
