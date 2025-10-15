@@ -67,6 +67,16 @@ class Options:
             print(f"❌ 執行檔案時發生錯誤: {e}")
             return None
 
+    def get_local_options(self):
+        original = self.get_local_original()
+        if original is None:
+            print("更新已中止：無法讀取本地 original 檔案。")
+            return {}
+        local_vars = {} # 建立一個局部命名空間，用於儲存執行結果
+        exec(original, {}, local_vars)
+        options = local_vars.get('options', {})
+        return options
+
     def get_jwt(self):
         data = self.auth.load_local_data()
         if not data.get("email") or not data.get("refresh_token"):
@@ -222,7 +232,8 @@ def pull_original():
     print('pull temp_options.py success.')
 
 def push_options():
-    opt.update_options()
+    options = opt.update_options()
+    print(options)
     print('push temp_options.py success.')
 
 FUNCTION_MAP = {
@@ -259,12 +270,17 @@ def test4(): # 儲存
     updated = opt.update_options()
     print("更新後 options:", updated)
 
-def test5(): # 讀取 options
+def test5(): # 讀取雲端 options
     options = opt.get_options()
     print(options)
     print(type(options))
 
-def test6(): # 檢查是否需要更新
+def test6(): # 讀取本地 options
+    options = opt.get_local_options()
+    print(options)
+    print(type(options))
+
+def test7(): # 檢查是否需要更新
     if opt.is_dirty():
         print('options 已經修改尚未更新')
     else:
