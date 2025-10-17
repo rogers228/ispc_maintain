@@ -178,6 +178,23 @@ class Options:
             print("Get failed:", resp.status_code, resp.text)
         return None
 
+    def get_options_auto(self):
+        # 自動判斷抓取 options 的來源
+        # 開發時需手動添加 options_from_local: ture 至 private.josn
+        # 避免頻繁 fetch
+        # 產品發布時 private.josn因設定為.gitignore 且預設值不會有此 options_from_local key
+        # 故產品發布時必定會抓取 web
+
+        data = self.auth.load_local_data()
+        is_options_from_local = data.get('options_from_local', False) # 是否從本地獲取 options
+        if is_options_from_local:
+            print('Load options form local')
+            options = self.get_local_options()
+        else:
+            print('Load options form web')
+            options = self.get_options()
+        return options
+
     def pull_original(self):
         # 拉取 original 至本地
         data = self.get_original()
@@ -280,12 +297,17 @@ def test6(): # 讀取本地 options
     print(options)
     print(type(options))
 
-def test7(): # 檢查是否需要更新
+def test7(): # 讀取 option 依據設定 自動判斷抓取來源
+    options = opt.get_options_auto()
+    print(options)
+    print(type(options))
+
+def test8(): # 檢查是否需要更新
     if opt.is_dirty():
         print('options 已經修改尚未更新')
     else:
         print('不需要更新')
 
 if __name__ == "__main__":
-    # test6()
+    # test7()
     main() # 會被呼叫 預設使用 main
