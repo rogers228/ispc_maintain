@@ -188,10 +188,10 @@ class Options:
         data = self.auth.load_local_data()
         is_options_from_local = data.get('options_from_local', False) # 是否從本地獲取 options
         if is_options_from_local:
-            print('Load options form local')
+            print('讀取本地資料 Load options form local')
             options = self.get_local_options()
         else:
-            print('Load options form web')
+            print('讀取雲端資料 Load options form web')
             options = self.get_options()
         return options
 

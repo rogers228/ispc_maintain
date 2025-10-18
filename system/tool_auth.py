@@ -150,8 +150,9 @@ class AuthManager:
 
             # 更新 local JSON → 移除登入相關資訊
             data = self.load_local_data()
-            for key in ["jwt", "refresh_token", "expires_at"]:
-                data[key] = None
+            data['jwt'] = None
+            data['refresh_token'] = None
+            data['expires_at'] = 0 # int  is_token_valid()才會正確
             self.save_local_data(data)
 
             print("Logout success ✅ (local only)")
