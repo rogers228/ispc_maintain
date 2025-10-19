@@ -7,7 +7,7 @@ if True:
     from git import Repo, GitCommandError
     import multiprocessing
 
-    print("Python executable:", sys.executable, '\n') # 目前執行的python路徑 用來判斷是否是虛擬環境python 或 本機python
+    # print("🚀 Python executable:", sys.executable) # 目前執行的python路徑 用來判斷是否是虛擬環境python 或 本機python
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
         if start_path is None:

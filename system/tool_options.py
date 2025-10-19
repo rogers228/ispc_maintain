@@ -23,6 +23,7 @@ if True:
     from tool_auth import AuthManager
     from tool_time import get_local_time
     from tool_str import get_str_hash
+    from tool_exec import exec_python
 
 class Options:
     FIXED_ID = "ba298953-40c9-423b-90cc-b1cdb6e60e61"
@@ -72,8 +73,11 @@ class Options:
         if original is None:
             print("更新已中止：無法讀取本地 original 檔案。")
             return {}
-        local_vars = {} # 建立一個局部命名空間，用於儲存執行結果
-        exec(original, {}, local_vars)
+
+        local_vars = exec_python(original) # 建立一個局部命名空間
+        if local_vars is None:
+             return {} # 執行失敗，錯誤訊息已在 _execute_original_content 中列印
+
         options = local_vars.get('options', {})
         return options
 
@@ -101,24 +105,16 @@ class Options:
             return
 
         original_hash = get_str_hash(original)
-        local_vars = {} # 建立一個局部命名空間，用於儲存執行結果
+        local_vars = exec_python(original) # 建立一個局部命名空間
+        if local_vars is None:
+            return  # 執行失敗，錯誤訊息已在 _execute_original_content 中列印
+        options = local_vars.get('options', {})
         try:
-            # 執行檔案中的所有程式碼，結果儲存在 local_vars
-            # 注意：exec() 存在安全風險，請確保檔案內容是可信任的
-            exec(original, {}, local_vars)
-            options = local_vars.get('options', {})
             options_json = json.dumps(options, indent=4, ensure_ascii=False)
-
-        except SyntaxError as e:
-            # 捕捉 exec(original temp_options.py）本身的 Python 語法錯誤
-            print(f"❌ 配置檔語法錯誤 (SyntaxError): 請檢查 temp_options.py 的 Python 語法。詳情: {e}")
-            return
-
         except TypeError as e:
             # 捕捉 json.dumps 字典中包含不可 JSON 序列化的類型
             print(f"❌ 配置內容 JSON 序列化失敗 (TypeError): 配置包含無法轉換的 Python 類型。詳情: {e}")
             return
-
         except Exception as e:
             print(f"❌ 執行檔案時發生錯誤: {e}")
             return
@@ -188,10 +184,10 @@ class Options:
         data = self.auth.load_local_data()
         is_options_from_local = data.get('options_from_local', False) # 是否從本地獲取 options
         if is_options_from_local:
-            print('讀取本地資料 Load options form local')
+            print('✅📂 讀取本地資料 Load options form local')
             options = self.get_local_options()
         else:
-            print('讀取雲端資料 Load options form web')
+            print('✅🌎️ 讀取雲端資料 Load options form web')
             options = self.get_options()
         return options
 
@@ -309,5 +305,5 @@ def test8(): # 檢查是否需要更新
         print('不需要更新')
 
 if __name__ == "__main__":
-    # test7()
+    # test5()
     main() # 會被呼叫 預設使用 main

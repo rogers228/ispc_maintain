@@ -15,8 +15,8 @@
 | 名稱          |類型        | 說明                                      |
 | --            | --        |--                                         |
 | id            | uuid      | pk                                        |
-| pdno          | varchar   | 自訂的產品編號，編輯者識別用 不做連結用途    |
-| name          | varchar   | 產品名稱，編輯者識別用                      |
+| pdno          | varchar   | 自訂的產品編號，系統管理者識別用 不做連結用途 |
+| name          | varchar   | 產品名稱，系統管理者識別用                  |
 | use_type      | int2      | 使用用途 0未設定 1預覽版 2正式版            |
 | data_original | text      | 產品資料 輸入 (僅工作預覽版會有original)    |
 | data_json     | jsonb     | 產品資料 轉換                              |

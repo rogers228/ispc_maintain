@@ -112,7 +112,7 @@ class AuthManager:
             print("No refresh_token found in local data")
             return False
 
-        print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), "refresh_session: loaded refresh_token from file (len):", len(refresh_token))
+        print("🙍 ", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), "refresh_session: loaded refresh_token from file (len):", len(refresh_token))
         try:
             url = f"{spwr_api_url}/auth/v1/token?grant_type=refresh_token"
             headers = {

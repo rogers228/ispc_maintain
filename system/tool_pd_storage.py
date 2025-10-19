@@ -3,7 +3,7 @@ if True:
     import json
     import time
     import requests
-    import click
+    import subprocess
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
         if start_path is None:
@@ -22,23 +22,28 @@ if True:
     from config import spwr_api_url, spwr_api_anon_key
     from tool_auth import AuthManager
     from tool_time import get_local_time
-    from tool_str import get_str_hash
+    from tool_str import get_str_hash, version_upgrade
+    from tool_exec import exec_python
 
 class ProductStorage:
+    STORAGE_PATH = os.path.join(ROOT_DIR, 'tempstorage')
 
     def __init__(self):
         self.table = "rec_pd"
         self.auth = AuthManager()
+        data = self.auth.load_local_data()
+        self.editor = data.get("editor", '')
 
     def _prepare_payload(self, data: dict):
         # 處理 data_hash, last_time, edit_user 等欄位，並返回最終的 payload
         auth_data = self.auth.load_local_data()
         payload = data.copy()
         data_original = payload.get('data_original', '') # 獲取 data_original 用於計算 hash
-
+        version = payload.get('version', None)
         payload['data_hash'] = get_str_hash(data_original) if data_original else ''
         payload['last_time'] = get_local_time()
         payload['edit_user'] = auth_data.get("full_name", 'Unknown User')
+        payload['version'] = version_upgrade(version)
         # 確保 'source_id' 欄位是 None 而不是空字串，如果它沒有值 (PostgreSQL 對 UUID 欄位比較嚴格)
         if payload.get('source_id') == '':
             payload['source_id'] = None
@@ -155,6 +160,74 @@ class ProductStorage:
             except json.JSONDecodeError:
                 print("原始錯誤文本:", resp.text)
             return None
+
+    def get_one(self, uid):
+        records = self.select_multiple([uid])
+        if records:
+            print(f"✅ get_one 成功!")
+            # print(records[0]) # 第一筆
+            return records[0]
+        else:
+            print("❌ get_one 步驟失敗。")
+            return None
+
+    def pull_data_original(self, uid):
+        # 拉取一筆資料的 data_original 建立至本地
+        data = self.get_one(uid)
+        if data is None:
+            return None
+        data_original = data.get('data_original', '')
+        with open(os.path.join(ProductStorage.STORAGE_PATH, f"{uid}.py"), "w", encoding="utf-8") as f:
+            f.write(data_original)
+        return True
+        print(f'✅ 成功建立 {uid}.py')
+
+    def edit(self, uid=None): # 編輯 以編輯器開啟
+        if not self.editor or not os.path.exists(self.editor): #editor 不存在
+            print(f'❌ editor 尚未設定編輯器!')
+            return None
+
+        file = os.path.join(ProductStorage.STORAGE_PATH, f"{uid}.py")
+        result = None # 是否正確建立
+        if not os.path.exists(file): # 若不存在
+            result = self.pull_data_original(uid) # 建立
+            if result is None:
+                print(f'❌ 無法建立 {uid}.py')
+                return None
+
+        print(f'✏️ 編輯 {uid}.py')
+        subprocess.Popen([self.editor, file], shell=True) # 以編輯器開啟
+
+    def upload(self, uid):
+        print(f'🔼 上傳 {uid}.py')
+
+        file = os.path.join(ProductStorage.STORAGE_PATH, f"{uid}.py")
+        with open(file, 'r', encoding='utf-8') as file:
+            data_original = file.read() # 讀取整個檔案內容
+
+        local_vars = exec_python(data_original) # 建立一個局部命名空間
+        if local_vars is None:
+             return {} # 執行失敗，錯誤訊息已在 _execute_original_content 中列印
+        specification = local_vars.get('specification', {})
+        # print(specification)
+
+        try:
+            data_json = json.dumps(specification, indent=4, ensure_ascii=False)
+        except TypeError as e:
+            # 捕捉 json.dumps 字典中包含不可 JSON 序列化的類型
+            print(f"❌ 配置內容 JSON 序列化失敗 (TypeError): 配置包含無法轉換的 Python 類型。詳情: {e}")
+            return
+        except Exception as e:
+            print(f"❌ 執行檔案時發生錯誤: {e}")
+            return
+
+        payload = self._prepare_payload({
+            'data_original': data_original,
+            'data_json': data_json,
+            })
+        print(payload)
+
+
 def test1():
     # 新增一筆
     ps = ProductStorage()
@@ -184,6 +257,7 @@ def test2():
     ps.update_one(uid, data)
 
 def test3():
+    # 查詢多筆
     ps = ProductStorage()
     lis = ['dbdcedbe-7bde-4b2c-8cfb-b21e8ccde68d', '2022f111-ddfa-4338-8023-8a72f8bea2cb']
     selected_records = ps.select_multiple(lis)
@@ -194,5 +268,16 @@ def test3():
     else:
         print("❌ SELECT MULTIPLE 步驟失敗。")
 
+def test4():
+    # 建立 uid.py
+    ps = ProductStorage()
+    uid = 'dbdcedbe-7bde-4b2c-8cfb-b21e8ccde68d'
+    ps.pull_data_original(uid)
+
+def test5():
+    ps = ProductStorage()
+    uid = 'dbdcedbe-7bde-4b2c-8cfb-b21e8ccde68d'
+    ps.upload(uid)
+
 if __name__ == '__main__':
-    test3()
+    test5()

@@ -4,7 +4,7 @@ if True:
     import time
     import json
 
-    # print("Python executable:", sys.executable) # 目前執行的python路徑 用來判斷是否是虛擬環境python 或 本機python
+    # print("🚀 Python executable:", sys.executable) # 目前執行的python路徑 用來判斷是否是虛擬環境python 或 本機python
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
         """從指定路徑往上找，直到找到名稱為 project_name 的資料夾"""
@@ -23,11 +23,12 @@ if True:
     ROOT_DIR = find_project_root() # 專案 root
 
     sys.path.append(os.path.join(ROOT_DIR, "system"))
+    from config import ISPC_MAINTAIN_VERSION
     from share_qt5 import *
     from tool_auth import AuthManager
     from tool_launch import startup
-    from config import ISPC_MAINTAIN_VERSION
     from tool_options import Options
+    from tool_pd_storage import ProductStorage
 
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us01'))
     from form_us01 import Ui_MainWindow
@@ -53,6 +54,8 @@ class MainWindow(QMainWindow):
 
         self.auth = AuthManager()
         self.opt = Options()
+        self.ps = ProductStorage()
+
         self.us05 = None    # 子表單 登入
         self.us09 = None    # 子表單 設定
         self.tree_data = {} # 選單資料 dict
@@ -80,6 +83,8 @@ class MainWindow(QMainWindow):
 
         # button
         self.ui.pd_edit.clicked.connect(self.handle_pd_edit)
+        self.ui.pd_check.clicked.connect(self.handle_pd_check)
+        self.ui.pd_upload.clicked.connect(self.handle_pd_upload)
 
         # 啟動計時器：每 1 小時執行一次刷新程序
         self.timer = QTimer(self)
@@ -189,7 +194,7 @@ class MainWindow(QMainWindow):
 
     def refresh_auth_status(self):
         """檢查是否過期，必要時刷新，並更新狀態列"""
-        print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), 'refresh_auth_status...')
+        print("🙍 ", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), 'refresh_auth_status...')
 
         if self.auth.is_token_valid():
             self.label_status.setText("登入狀態: 已登入")
@@ -273,21 +278,40 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 print(f"執行功能 '{item_text}' 時發生錯誤: {e}")
 
-    def handle_pd_edit(self):
+    def _get_selected_product_uid(self):
+        # 獲取 產品資料 下的 uid
         index = self.ui.treeView.selectionModel().currentIndex()
         if not index.isValid():
-            return # 未選取任何項目。
-        selected_text = index.data(Qt.DisplayRole)
-        selected_uid = index.data(ITEM_UID_ROLE)
+            return None # 1. 無效的選取
 
         parent_index = index.parent()
-        if parent_index.isValid() and parent_index != self.model.invisibleRootItem().index(): # 檢查是否為頂層項目，避免獲取到 root 欄位名稱
-            parent_text = parent_index.data(Qt.DisplayRole)
-            if parent_text == '產品資料':
-                print(f"\n--- 編輯按鈕點擊 ---")
-                print(f"選取的項目: {selected_text}")
-                print(f"項目的 UID: {selected_uid}") # 這裡就能獲取 UID 了！
-                print("--------------------")
+        if not parent_index.isValid() or parent_index == self.model.invisibleRootItem().index():
+            return None # 2. 不是子節點
+
+        parent_text = parent_index.data(Qt.DisplayRole)
+        if parent_text != '產品資料':
+            return None # 3. 父節點不是產品資料
+
+        item_uid = index.data(ITEM_UID_ROLE)
+        if item_uid is None:
+            return None # 4. 選取項是 '產品資料' 父節點本身，或沒有 UID
+
+        return item_uid
+
+    def handle_pd_edit(self):
+        # 編輯 以編輯器開啟
+        selected_uid = self._get_selected_product_uid()
+        if selected_uid:
+            self.ps.edit(selected_uid) # 以編輯器開啟
+
+    def handle_pd_check(self):
+        print('handle_pd_check')
+
+    def handle_pd_upload(self):
+        # 上傳
+        selected_uid = self._get_selected_product_uid()
+        if selected_uid:
+            self.ps.upload(selected_uid) # 上傳
 
 
     def action_test(self, item_text, item_uid):
@@ -297,6 +321,7 @@ class MainWindow(QMainWindow):
         print("========================")
 
 def main():
+    print("🚀 Python executable:", sys.executable) # 目前執行的python路徑 用來判斷是否是虛擬環境python 或 本機python
     startup() # 正常啟動
     app = QApplication(sys.argv)
     argv1 = sys.argv[1] if len(sys.argv) > 1 else "no argv" # 預留參數接口
