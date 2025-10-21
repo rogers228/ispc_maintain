@@ -164,7 +164,7 @@ class ProductStorage:
     def get_one(self, uid):
         records = self.select_multiple([uid])
         if records:
-            print(f"✅ get_one 成功!")
+            # print(f"✅ get_one 成功!")
             # print(records[0]) # 第一筆
             return records[0]
         else:
@@ -173,30 +173,40 @@ class ProductStorage:
 
     def pull_data_original(self, uid):
         # 拉取一筆資料的 data_original 建立至本地
+        result = {'is_error': False, 'message': ''}
         data = self.get_one(uid)
         if data is None:
-            return None
+            message = '❌ 下載失敗!'
+            print(message)
+            return {'is_error': True, 'message': message}
+
         data_original = data.get('data_original', '')
-        with open(os.path.join(ProductStorage.STORAGE_PATH, f"{uid}.py"), "w", encoding="utf-8") as f:
+        file = os.path.join(ProductStorage.STORAGE_PATH, f"{uid}.py")
+        with open(file, "w", encoding="utf-8") as f:
             f.write(data_original)
-        return True
-        print(f'✅ 成功建立 {uid}.py')
+
+        message = '✅ 已成功建立 {uid}.py 檔案，請按編輯。'
+        print(message)
+        return {'is_error': False, 'message': message}
 
     def edit(self, uid=None): # 編輯 以編輯器開啟
+        result = {'is_error': False, 'message': ''}
         if not self.editor or not os.path.exists(self.editor): #editor 不存在
-            print(f'❌ editor 尚未設定編輯器!')
-            return None
+            message = '❌ editor 尚未設定編輯器!'
+            print(message)
+            return {'is_error': True, 'message': message}
 
         file = os.path.join(ProductStorage.STORAGE_PATH, f"{uid}.py")
         result = None # 是否正確建立
         if not os.path.exists(file): # 若不存在
-            result = self.pull_data_original(uid) # 建立
-            if result is None:
-                print(f'❌ 無法建立 {uid}.py')
-                return None
+            message = '❌ 尚未建立檔案，請先下載!'
+            print(message)
+            return {'is_error': True, 'message': message}
 
-        print(f'✏️ 編輯 {uid}.py')
+        message = f'✏️ 編輯 {uid}.py'
+        print(message)
         subprocess.Popen([self.editor, file], shell=True) # 以編輯器開啟
+        return {'is_error': False, 'message': message}
 
     def upload(self, uid):
         print(f'🔼 上傳 {uid}.py')

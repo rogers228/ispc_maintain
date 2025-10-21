@@ -82,6 +82,7 @@ class MainWindow(QMainWindow):
         self.ui.treeView.selectionModel().currentChanged.connect(self.handle_tree_selection_changed) # 選取事件
 
         # button
+        self.ui.pd_download.clicked.connect(self.handle_pd_download)
         self.ui.pd_edit.clicked.connect(self.handle_pd_edit)
         self.ui.pd_check.clicked.connect(self.handle_pd_check)
         self.ui.pd_upload.clicked.connect(self.handle_pd_upload)
@@ -252,6 +253,7 @@ class MainWindow(QMainWindow):
                 parent_text = parent_index.data(Qt.DisplayRole)
                 if parent_text == '產品資料':
                     is_enable = True
+        self.ui.pd_download.setEnabled(is_enable)
         self.ui.pd_edit.setEnabled(is_enable)
         self.ui.pd_check.setEnabled(is_enable)
         self.ui.pd_upload.setEnabled(is_enable)
@@ -298,11 +300,23 @@ class MainWindow(QMainWindow):
 
         return item_uid
 
+    def handle_pd_download(self):
+        # 下載
+        reply = QMessageBox.question(self, "下載", "您確定要從雲端下載資料嗎？，這動作將會覆蓋本地資料",   QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            selected_uid = self._get_selected_product_uid()
+            if selected_uid:
+                result = self.ps.pull_data_original(selected_uid) # 下載
+                if not result['is_error']:
+                    QMessageBox.warning(self, "下載成功", result['message'])
+
     def handle_pd_edit(self):
         # 編輯 以編輯器開啟
         selected_uid = self._get_selected_product_uid()
         if selected_uid:
-            self.ps.edit(selected_uid) # 以編輯器開啟
+            result = self.ps.edit(selected_uid) # 以編輯器開啟
+            if result['is_error']:
+                QMessageBox.warning(self, "錯誤", result['message'])
 
     def handle_pd_check(self):
         print('handle_pd_check')
