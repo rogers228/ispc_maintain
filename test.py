@@ -51,16 +51,19 @@ def replace_system_section(new_data: dict):
 
 def test1():
     new_data = {
-        'test': 'template',
-        'version': '9-20251020',
+        'id': 'test',
+        'data_hash': 'test',
+        'last_time': 'test',
+        'edit_user': 'test',
+        'version': '10-20251021',
     }
     result = replace_system_section(new_data)
 
     # 根據返回值列印結果
     if result is True:
-        print("主程式呼叫: 配置更新成功。")
+        print("主程式呼叫: 更新成功。")
     else:
-        print("主程式呼叫: 配置更新失敗或未操作。")
+        print("主程式呼叫: 更新失敗或未操作。")
 
 if __name__ == '__main__':
     test1()
