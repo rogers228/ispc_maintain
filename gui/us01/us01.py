@@ -323,9 +323,11 @@ class MainWindow(QMainWindow):
 
     def handle_pd_upload(self):
         # 上傳
-        selected_uid = self._get_selected_product_uid()
-        if selected_uid:
-            self.ps.upload(selected_uid) # 上傳
+        reply = QMessageBox.question(self, "上傳", "您確定要從本地上傳資料嗎？，這動作將會覆蓋雲端資料",   QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            selected_uid = self._get_selected_product_uid()
+            if selected_uid:
+                self.ps.upload(selected_uid) # 上傳
 
 
     def action_test(self, item_text, item_uid):
