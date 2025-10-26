@@ -366,7 +366,7 @@ class MainWindow(QMainWindow):
         if is_upload: # 確定要上傳
             result = self.ps.upload(selected_uid) # 上傳
             if result is not None:
-                QMessageBox.information(self, "上傳成功", f'uid: {selected_uid} 上傳成功。')
+                QMessageBox.information(self, "上傳", f'{self.product_sheet[selected_uid]}\n\n上傳成功。\n')
 
     def action_test(self, item_text, item_uid):
         print("\n=== 執行 action_test ===")

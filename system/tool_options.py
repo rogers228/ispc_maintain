@@ -99,6 +99,10 @@ class Options:
         # 無權限修改者 雖然可以執行成功，但是無法修改
         # 權限採用jwt驗證
 
+        if not self.auth.is_token_valid():
+            print("❌，請先登入")
+            return None
+
         original = self.get_local_original()
         if original is None:
             print("更新已中止：無法讀取本地 original 檔案。")
@@ -141,6 +145,7 @@ class Options:
         }
         resp = requests.patch(url, headers=headers, json=payload)
         if resp.status_code in (200, 204):
+            print('push temp_options.py success.')
             return resp.json()
         else:
             print("Update failed:", resp.status_code, resp.text)
@@ -193,9 +198,13 @@ class Options:
 
     def pull_original(self):
         # 拉取 original 至本地
-        data = self.get_original()
-        with open(Options.OPTIONS_PATH, "w", encoding="utf-8") as f:
-            f.write(data)
+        if self.auth.is_token_valid():
+            data = self.get_original()
+            with open(Options.OPTIONS_PATH, "w", encoding="utf-8") as f:
+                f.write(data)
+            print('pull temp_options.py success.')
+        else:
+            print("❌，請先登入")
 
     def get_remote_hash(self):
         # 取得 雲端 hash
@@ -242,12 +251,9 @@ opt = Options()
 
 def pull_original():
     opt.pull_original()
-    print('pull temp_options.py success.')
 
 def push_options():
-    options = opt.update_options()
-    print(options)
-    print('push temp_options.py success.')
+    opt.update_options()
 
 FUNCTION_MAP = {
     'pull': pull_original,
@@ -305,5 +311,5 @@ def test8(): # 檢查是否需要更新
         print('不需要更新')
 
 if __name__ == "__main__":
-    # test5()
+    # test2()
     main() # 會被呼叫 預設使用 main
