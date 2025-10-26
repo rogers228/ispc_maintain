@@ -29,6 +29,7 @@ if True:
     from tool_launch import startup
     from tool_options import Options
     from tool_pd_storage import ProductStorage
+    from tool_pd_jogging import ProductCheck
 
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us01'))
     from form_us01 import Ui_MainWindow
@@ -50,7 +51,7 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow();
         self.ui.setupUi(self) # 載入ui
         self.setWindowTitle(f'ispc maintain ({ISPC_MAINTAIN_VERSION})')
-        self.resize(712, 450)  # 設定視窗大小
+        self.resize(712, 460)  # 設定視窗大小
 
         self.auth = AuthManager()
         self.opt = Options()
@@ -59,6 +60,8 @@ class MainWindow(QMainWindow):
         self.us05 = None    # 子表單 登入
         self.us09 = None    # 子表單 設定
         self.tree_data = {} # 選單資料 dict
+        self.product_sheet = {} # 產品小抄 {uid: name}
+
 
         # 狀態列
         data = self.auth.load_local_data()
@@ -81,11 +84,20 @@ class MainWindow(QMainWindow):
         self.ui.treeView.expandAll() # 展開全部
         self.ui.treeView.selectionModel().currentChanged.connect(self.handle_tree_selection_changed) # 選取事件
 
-        # button
-        self.ui.pd_download.clicked.connect(self.handle_pd_download)
-        self.ui.pd_edit.clicked.connect(self.handle_pd_edit)
-        self.ui.pd_check.clicked.connect(self.handle_pd_check)
-        self.ui.pd_upload.clicked.connect(self.handle_pd_upload)
+        if True: # button
+            icon_edit = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'edit.png'))
+            icon_check = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'run.png'))
+            icon_upload = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'upload.png'))
+            icon_download = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'download.png'))
+            self.ui.pd_edit.clicked.connect(self.handle_pd_edit)
+            self.ui.pd_check.clicked.connect(self.handle_pd_check)
+            self.ui.pd_upload.clicked.connect(self.handle_pd_upload)
+            self.ui.pd_download.clicked.connect(self.handle_pd_download)
+
+            self.ui.pd_edit.setIcon(icon_edit)
+            self.ui.pd_check.setIcon(icon_check)
+            self.ui.pd_upload.setIcon(icon_upload)
+            self.ui.pd_download.setIcon(icon_download)
 
         # 啟動計時器：每 1 小時執行一次刷新程序
         self.timer = QTimer(self)
@@ -129,7 +141,7 @@ class MainWindow(QMainWindow):
         data = self.auth.load_local_data()
         user = data.get("email")
         options = self.opt.get_options_auto() # 讀取 option 依據設定 自動判斷抓取來源
-
+        # print(options)
         # 依登入 uses, options, 轉換為僅顯示有權限的產品資料至選單
         permissions = options['permissions'][user] # # 抓取權限 可在 temp_options.py 測試
         # print('permissions:', permissions)
@@ -141,6 +153,7 @@ class MainWindow(QMainWindow):
             # print(attt.get('name'))
             # print(attt.get('uid'))
             dic_p[attt.get('name')] = {'action': self.action_test, 'uid': attt.get('uid')}
+            self.product_sheet[attt.get('uid')] = attt.get('name') # 產品小抄 {uid: name}
 
         self.tree_data['產品資料']  = dic_p
 
@@ -308,7 +321,7 @@ class MainWindow(QMainWindow):
             if selected_uid:
                 result = self.ps.pull_data_original(selected_uid) # 下載
                 if not result['is_error']:
-                    QMessageBox.warning(self, "下載成功", result['message'])
+                    QMessageBox.information(self, "下載成功", result['message'])
 
     def handle_pd_edit(self):
         # 編輯 以編輯器開啟
@@ -320,15 +333,40 @@ class MainWindow(QMainWindow):
 
     def handle_pd_check(self):
         print('handle_pd_check')
+        selected_uid = self._get_selected_product_uid()
+        # print('selected_uid:', selected_uid)
+        if selected_uid:
+            pc = ProductCheck(selected_uid)
+            result = pc.get_detaile() # 檢查
+            # print(result)
+            if result['is_verify'] is True:
+                QMessageBox.information(self, "檢查", f'{self.product_sheet[selected_uid]}\n\n恭喜你，沒有發現錯誤。\n')
+            else:
+                QMessageBox.warning(self, "檢查", result['message'])
+                return
 
     def handle_pd_upload(self):
-        # 上傳
-        reply = QMessageBox.question(self, "上傳", "您確定要從本地上傳資料嗎？，這動作將會覆蓋雲端資料",   QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-        if reply == QMessageBox.Yes:
-            selected_uid = self._get_selected_product_uid()
-            if selected_uid:
-                self.ps.upload(selected_uid) # 上傳
+        # 上傳前 先檢查
+        is_upload = False
+        selected_uid = self._get_selected_product_uid()
+        if selected_uid:
+            reply = QMessageBox.question(self, "上傳", f"{self.product_sheet[selected_uid]}\n\n您確定要從本地上傳資料嗎？，這動作將會覆蓋雲端資料\n", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                pc = ProductCheck(selected_uid)
+                result = pc.get_detaile() # 檢查
+                if result['is_verify'] is True: # 檢查正確
+                    is_upload = True # 可以上傳
 
+                else:
+                    # 檢查有問題，再次詢問
+                    reply = QMessageBox.warning(self, "上傳", f"{self.product_sheet[selected_uid]}\n\n檢查有問題!，您確定要從本地上傳資料嗎？\n", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                    if reply == QMessageBox.Yes:
+                        is_upload = True
+
+        if is_upload: # 確定要上傳
+            result = self.ps.upload(selected_uid) # 上傳
+            if result is not None:
+                QMessageBox.information(self, "上傳成功", f'uid: {selected_uid} 上傳成功。')
 
     def action_test(self, item_text, item_uid):
         print("\n=== 執行 action_test ===")

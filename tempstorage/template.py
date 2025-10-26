@@ -27,7 +27,7 @@ specification = {
             'name_tw': '軸向柱塞單元',
             'name_zh': '轴向柱塞单元',
             'postfix_symbol': '',
-            # 'default_value': 'PA10V',
+            'default_value': 'PA10V',
             # 'model_item_length': 5,
             # 'model_items_order': ['PA10V'],
             # 'model_items': {
@@ -36,6 +36,23 @@ specification = {
             #         'item_name_tw': '斜盤設計，變量泵',
             #         'item_name_zh': '斜盘设计，变量泵',
             #         'supply': 's',
+            #     },
+            # }
+        },
+        '02md':{
+            'name_en': 'Mounting',
+            'name_tw': '裝配方式',
+            'name_zh': '装配方式',
+            'postfix_symbol': '',
+            'default_value' : 'O',
+            # 'model_item_length': 1,
+            # 'model_items_order': ['O'],
+            # 'model_items':{
+            #     'O': {
+            #          'item_name_en': 'Pump, open circuit',
+            #          'item_name_tw': '泵，開式回路',
+            #          'item_name_zh': '泵，开式回路',
+            #          'supply': 's',
             #     },
             # }
         },

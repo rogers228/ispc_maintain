@@ -31,14 +31,14 @@ dic_prodect = {
             'postfix_symbol': '',
             'default_value': 'PA10V',
             'model_item_length': 5,
-            'model_items_order': ['PA10V'],
+            'model_items_order': ['PA10V2'],
             'model_items': {
                 'PA10V' :{
                     'item_name_en': 'Swashplate design, variable',
                     'item_name_tw': '斜盤設計，變量泵',
                     'item_name_zh': '斜盘设计，变量泵',
                     'supply': 's',
-                },         
+                },
             }
             },
         '02md':{
@@ -57,7 +57,7 @@ dic_prodect = {
                      'supply': 's',
                 },
             }
-            },   
+            },
         '03dp': {
             'name_en': 'Size',
             'name_tw': '排量規格',
@@ -116,7 +116,7 @@ dic_prodect = {
                      'supply': 'n',
                 },
             }
-            },   
+            },
         '04ct': {
             'name_en': 'Control device',
             'name_tw': '控制方式',
@@ -299,7 +299,7 @@ dic_prodect = {
                      'supply': 's',
                 },
               }
-            },  
+            },
         '07se': {
             'name_en': 'Seals',
             'name_tw': '油封',
@@ -475,7 +475,7 @@ dic_prodect = {
                     'item_name_zh': 'ISO 3019-1 (SAE) 4孔型',
                     'supply': 's',
                 },
-              }  
+              }
             },
         '10dn': {
             'name_en': 'Service line port',
@@ -510,7 +510,7 @@ dic_prodect = {
                     'item_name_zh': '公制螺纹油口在后方(不用于通轴驱动)',
                     'supply': 's',
                 },
-              }  
+              }
             },
         '11th': {
             'name_en': 'Through drive',
@@ -575,7 +575,7 @@ dic_prodect = {
                     'item_name_zh': 'SAE J744 法兰 φ127 (C) 花键轴联轴器 直径1 1/2" 17T 12/24DP',
                     'supply': 'n',
                 },
-              }  
+              }
             },
         '12sd': {
             'name_en': 'Design No.',
@@ -592,7 +592,7 @@ dic_prodect = {
                     'item_name_zh': '无特殊设计',
                     'supply': 's',
                 },
-              }  
+              }
             },
     }
 }

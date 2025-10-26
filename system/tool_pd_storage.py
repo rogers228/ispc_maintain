@@ -35,7 +35,7 @@ class ProductStorage:
         self.editor = data.get("editor", '')
 
     def _prepare_payload(self, data: dict):
-        # 處理 data_hash, last_time, edit_user 等欄位，並返回最終的 payload
+        # 處理 data_hash, last_time, edit_user, version 等欄位，並返回最終的 payload
         auth_data = self.auth.load_local_data()
         payload = data.copy()
         data_original = payload.get('data_original', '') # 獲取 data_original 用於計算 hash
@@ -145,7 +145,7 @@ class ProductStorage:
         if resp.status_code == 200:
             updated_data = resp.json()
             print("✅ UPDATE 成功!")
-            print("回傳更新資料:", updated_data)
+            # print("回傳更新資料:", updated_data)
             return updated_data[0] # PostgREST for PATCH returns a list of objects
         elif resp.status_code == 204:
             print("✅ UPDATE 成功 (無回傳內容 - 204 No Content)。")
@@ -185,7 +185,7 @@ class ProductStorage:
         with open(file, "w", encoding="utf-8") as f:
             f.write(data_original)
 
-        message = '✅ 已成功建立 {uid}.py 檔案，請按編輯。'
+        message = f'✅ 已成功建立 {uid}.py 檔案，請按編輯。'
         print(message)
         return {'is_error': False, 'message': message}
 
@@ -215,28 +215,38 @@ class ProductStorage:
         with open(file, 'r', encoding='utf-8') as file:
             data_original = file.read() # 讀取整個檔案內容
 
-        local_vars = exec_python(data_original) # 建立一個局部命名空間
-        if local_vars is None:
-             return {} # 執行失敗，錯誤訊息已在 _execute_original_content 中列印
+
+        local_vars = {}
+        try:
+            exec(data_original, {}, local_vars) # 建立一個局部命名空間
+
+        except SyntaxError as e: # 專門處理語法錯誤，這是配置檔案最常見的錯誤
+            print(f"❌ 語法錯誤: {e}")
+            return None
+
+        except Exception as e: # 處理其他運行時錯誤 (例如 NameError, TypeError 等)
+            print(f"⚠️ 警告：運行時錯誤: {e}")
+            return None
+
         specification = local_vars.get('specification', {})
-        # print(specification)
 
         try:
             data_json = json.dumps(specification, indent=4, ensure_ascii=False)
         except TypeError as e:
             # 捕捉 json.dumps 字典中包含不可 JSON 序列化的類型
             print(f"❌ 配置內容 JSON 序列化失敗 (TypeError): 配置包含無法轉換的 Python 類型。詳情: {e}")
-            return
+            return None
         except Exception as e:
             print(f"❌ 執行檔案時發生錯誤: {e}")
-            return
+            return None
 
-        payload = self._prepare_payload({
+        data = {
             'data_original': data_original,
             'data_json': data_json,
-            })
-        print(payload)
-
+        }
+        # print(json.dumps(data, indent=4, ensure_ascii=False))
+        result = self.update_one(uid, data)
+        return result
 
 def test1():
     # 新增一筆
@@ -287,7 +297,8 @@ def test4():
 def test5():
     ps = ProductStorage()
     uid = 'dbdcedbe-7bde-4b2c-8cfb-b21e8ccde68d'
-    ps.upload(uid)
+    result = ps.upload(uid)
+    print(result)
 
 if __name__ == '__main__':
     test5()

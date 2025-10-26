@@ -1,6 +1,6 @@
 if True:
     import sys, os
-    # import json
+    import json
     # import time
 
     from cerberus import Validator
@@ -32,7 +32,8 @@ class ProductCheck:
         self.is_verify = None # 是否驗證通過
 
         self._load_specification() # 動態讀取 specification
-        self._check() # 檢查
+        self._check_first() # 檢查 首層
+        self._check_models_a() # 檢查 models
 
     def _load_specification(self): # 動態讀取 specification
         file_path = os.path.join(ProductCheck.STORAGE_PATH, f"{self.uid}.py")
@@ -74,22 +75,9 @@ class ProductCheck:
             self.message = f"錯誤: 'specification' 變數類型錯誤 (UID: {uid})。預期 dict，實際為 {type(specification).__name__}。"
             return
 
-    def _check(self): # 檢查
+    def _check_first(self): # 檢查第一層
+
         self.is_verify = False # 是否驗證通過
-
-        lis_models = self.specification['models_order'] # 所有選型
-
-        schema_models = {}
-        for model in lis_models[:1]:
-
-            schema_a = {
-                'name_en': {'type': 'string', 'required': True},
-                'name_tw': {'type': 'string', 'required': True},
-                'name_zh': {'type': 'string', 'required': True},
-                'postfix_symbol': {'type': 'string', 'required': True, 'allowed': ['', '-']},
-            }
-            schema_models.setdefault(model, {'type': 'dict', 'required': True, 'schema': schema_a})
-        # print(schema_models)
         schema = {
             'uid': {'type': 'string', 'required': True}, # required 必填
             'name': {'type': 'string', 'required': True},
@@ -97,24 +85,114 @@ class ProductCheck:
             'name_tw': {'type': 'string', 'required': True},
             'name_zh': {'type': 'string'},
             'supply_default_value': {'type': 'string', 'required': True, 'default': 's', 'allowed': ['s', 'n']},
-            'models_order': {'type': 'list', 'required': True,
-                'schema': {'type': 'string'}
-            },
+            'models_order': {'type': 'list', 'required': True},
             'option_item_count': {'type': 'integer', 'required': True, 'min': 1},
-            'main_model': {'type': 'string', 'required': True, 'allowed': lis_models},
+            'main_model': {'type': 'string', 'required': True, 'allowed': self.specification['models_order']},
             'select_way': {'type': 'integer', 'required': True, 'allowed': [1, 2]},
-            'models': {'type': 'dict', 'required': True, 'schema': schema_models},
+            'models': {'type': 'dict', 'required': True},
         }
 
         vr = Validator(schema)
-        if not vr.validate(self.specification):
-            print("檢查失敗：", vr.errors)
+        target = self.specification
+        if not vr.validate(target):
+            print(f"❌ 第一層檢查失敗： {vr.errors}")
             self.is_verify = False
-            self.message = vr.errors
+            self.message = f"❌ 第一層檢查失敗： {vr.errors}"
         else:
-            print("檢查通過")
+            # print("首層 檢查通過")
             self.is_verify = True
             self.message = ''
+
+    def _check_item_c(self, model, item): # 檢查 第 c 層 item
+        # print(f'_check_item_c {model} model_items: {item}')
+
+        schema_c = { # 第 c 層  item 底下
+            'item_name_en': {'type': 'string', 'required': True},
+            'item_name_tw': {'type': 'string', 'required': True},
+            'item_name_zh': {'type': 'string', 'required': True},
+            'supply': {'type': 'string', 'required': True, 'allowed': ['', 's', 'n']}, # 供貨狀態
+        }
+        vr = Validator(schema_c)
+        target = self.specification['models'][model]['model_items'][item]
+        # print(target)
+        if not vr.validate(target):
+            print(f"❌ model: {model} item: {item} 檢查失敗： {vr.errors}")
+            self.is_verify = False
+            self.message = f"❌ model: {model} 檢查失敗： {vr.errors}"
+            return
+        else:
+            # print("models 檢查通過")
+            self.is_verify = True
+            self.message = ''
+
+    def _check_model_b(self, model): # 檢查 第 b 層 model
+        # print(f'_check_model_b: {model}')
+
+        lis_mo = list(self.specification['models'][model]['model_items'].keys())
+        # print(lis_mo)
+
+        schema_items = {}
+        for item in self.specification['models'][model]['model_items_order']:
+            schema_items.setdefault(item, {'type': 'dict', 'required': True})
+        # print(schema_items)
+
+        schema_b = { # 第 b 層  model 底下
+            'name_en': {'type': 'string', 'required': True},
+            'name_tw': {'type': 'string', 'required': True},
+            'name_zh': {'type': 'string', 'required': True},
+            'postfix_symbol': {'type': 'string', 'required': True, 'allowed': ['', '-']},
+            'default_value': {'type': 'string', 'required': True},
+            'model_item_length': {'type': 'integer', 'required': True}, # 尚未檢查數值
+            'model_items': {'type': 'dict', 'required': True, 'schema': schema_items},
+            'model_items_order': {'type': 'list', 'required': True, 'schema':{
+                    'type': 'string', 'allowed': lis_mo,
+                }
+            }
+        }
+        vr = Validator(schema_b)
+        target = self.specification['models'][model]
+        if not vr.validate(target):
+            print(f"❌ model: {model} b層檢查失敗： {vr.errors}")
+            self.is_verify = False
+            self.message = f"❌ model: {model} b層檢查失敗： {vr.errors}"
+            return
+        else:
+            # print("models 檢查通過")
+            self.is_verify = True
+            self.message = ''
+
+        # 尚未完成
+        for item in self.specification['models'][model]['model_items']:
+            # print(f'check {model} model_items: {item}')
+            if self.is_verify is False:
+                break
+            self._check_item_c(model, item) # 檢查 第 c 層 item
+
+    def _check_models_a(self): # 檢查 第 a 層 models
+        # print(f'_check_models_a')
+
+        # 第 a 層 models
+        schema_models = {}
+        for m in self.specification['models_order'][:3]: # 開發中 應刪除
+        # for m in self.specification['models_order']:
+            schema_models.setdefault(m, {'type': 'dict', 'required': True})
+        # print(json.dumps(schema_models, indent=4, ensure_ascii=False))
+        vr = Validator(schema_models)
+        target = self.specification['models']
+        if not vr.validate(target):
+            print(f"❌ models a層檢查失敗： {vr.errors}")
+            self.is_verify = False
+            self.message = f"❌ models a層檢查失敗： {vr.errors}"
+            return
+        else:
+            # print("models 檢查通過")
+            self.is_verify = True
+            self.message = ''
+
+        for model in self.specification['models']:
+            if self.is_verify is False:
+                break
+            self._check_model_b(model) # 檢查 第 b 層 model
 
     def get_detaile(self):
         return {
@@ -127,11 +205,13 @@ class ProductCheck:
 def test1():
     uid = 'dbdcedbe-7bde-4b2c-8cfb-b21e8ccde68d'
     pc = ProductCheck(uid)
-    spec = pc.get_detaile()
-    if not spec:
-        print(message)
+    result = pc.get_detaile()
+    # print(result)
+    if result['is_verify'] is True:
+        print('驗證成功')
     else:
-        print(spec)
+        print(result['message'])
+
 
 if __name__ == '__main__':
     test1()
