@@ -131,10 +131,13 @@ class ProductCheck:
         lis_mo = list(self.specification['models'][model]['model_items'].keys())
         # print(lis_mo)
 
+        model_item_length = self.specification['models'][model]['model_item_length'] # model字元數
+        # print('model_item_length:', model_item_length)
+
         schema_items = {}
         for item in self.specification['models'][model]['model_items_order']:
             schema_items.setdefault(item, {'type': 'dict', 'required': True})
-        # print(schema_items)
+        # print(json.dumps(schema_items, indent=4, ensure_ascii=False))
 
         schema_b = { # 第 b 層  model 底下
             'name_en': {'type': 'string', 'required': True},
@@ -142,13 +145,19 @@ class ProductCheck:
             'name_zh': {'type': 'string', 'required': True},
             'postfix_symbol': {'type': 'string', 'required': True, 'allowed': ['', '-']},
             'default_value': {'type': 'string', 'required': True},
-            'model_item_length': {'type': 'integer', 'required': True}, # 尚未檢查數值
-            'model_items': {'type': 'dict', 'required': True, 'schema': schema_items},
+            'model_item_length': {'type': 'integer', 'required': True},
+            'model_items': {'type': 'dict', 'required': True, 'schema': schema_items, 'keysrules': { # keys規則
+                'type': 'string', 'minlength': model_item_length, 'maxlength': model_item_length
+                }
+            },
             'model_items_order': {'type': 'list', 'required': True, 'schema':{
                     'type': 'string', 'allowed': lis_mo,
                 }
             }
         }
+
+        # print(json.dumps(schema_b, indent=4, ensure_ascii=False))
+
         vr = Validator(schema_b)
         target = self.specification['models'][model]
         if not vr.validate(target):
