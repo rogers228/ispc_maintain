@@ -333,6 +333,10 @@ class MainWindow(QMainWindow):
 
     def handle_pd_check(self):
         # print('handle_pd_check')
+
+        self.ui.pd_check.setEnabled(False) # 目前無效，因為主線程gui凍結
+        # time.sleep(3)
+
         selected_uid = self._get_selected_product_uid()
         # print('selected_uid:', selected_uid)
         if selected_uid:
@@ -343,7 +347,8 @@ class MainWindow(QMainWindow):
                 QMessageBox.information(self, "檢查", f'{self.product_sheet[selected_uid]}\n\n恭喜你，沒有發現錯誤。\n')
             else:
                 QMessageBox.warning(self, "檢查", result['message'])
-                return
+
+        self.ui.pd_check.setEnabled(True)
 
     def handle_pd_upload(self):
         # 上傳前 先檢查

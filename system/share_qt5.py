@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import (
     Qt, QPoint, QSize, QObject, QModelIndex, pyqtSignal,
     QStandardPaths, QSettings,
-    QTimer,
+    QThread, QTimer,
     )
 
 from PyQt5.QtGui import (
