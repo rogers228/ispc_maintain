@@ -23,7 +23,7 @@ if True:
     from tool_auth import AuthManager
     from tool_time import get_local_time
     from tool_str import get_str_hash, version_upgrade
-    from tool_exec import exec_python
+    from tool_pd_jogging import ProductCheck
 
 class ProductStorage:
     STORAGE_PATH = os.path.join(ROOT_DIR, 'tempstorage')
@@ -39,7 +39,7 @@ class ProductStorage:
         auth_data = self.auth.load_local_data()
         payload = data.copy()
         data_original = payload.get('data_original', '') # 獲取 data_original 用於計算 hash
-        version = payload.get('version', None)
+        version = payload.get('version', None) # 目前無效 必為 None
         payload['data_hash'] = get_str_hash(data_original) if data_original else ''
         payload['last_time'] = get_local_time()
         payload['edit_user'] = auth_data.get("full_name", 'Unknown User')
@@ -210,43 +210,30 @@ class ProductStorage:
 
     def upload(self, uid):
         print(f'🔼 上傳 {uid}.py')
+        pc = ProductCheck(uid)     # 檢查文件...
+        storage = pc.get_detaile() # 取得結果
 
-        file = os.path.join(ProductStorage.STORAGE_PATH, f"{uid}.py")
-        with open(file, 'r', encoding='utf-8') as file:
-            data_original = file.read() # 讀取整個檔案內容
+        # 驗證失敗
+        if storage['is_verify'] is False: # 驗證失敗
+            print(storage['message'])     # 錯誤訊息
+            return {
+                'is_verify': False,
+                'message': storage['message'],
+                'result': None,
+            }
 
-
-        local_vars = {}
-        try:
-            exec(data_original, {}, local_vars) # 建立一個局部命名空間
-
-        except SyntaxError as e: # 專門處理語法錯誤，這是配置檔案最常見的錯誤
-            print(f"❌ 語法錯誤: {e}")
-            return None
-
-        except Exception as e: # 處理其他運行時錯誤 (例如 NameError, TypeError 等)
-            print(f"⚠️ 警告：運行時錯誤: {e}")
-            return None
-
-        specification = local_vars.get('specification', {})
-
-        try:
-            data_json = json.dumps(specification, indent=4, ensure_ascii=False)
-        except TypeError as e:
-            # 捕捉 json.dumps 字典中包含不可 JSON 序列化的類型
-            print(f"❌ 配置內容 JSON 序列化失敗 (TypeError): 配置包含無法轉換的 Python 類型。詳情: {e}")
-            return None
-        except Exception as e:
-            print(f"❌ 執行檔案時發生錯誤: {e}")
-            return None
-
+        # 驗證成功
         data = {
-            'data_original': data_original,
-            'data_json': data_json,
+            'data_original': storage['data_original'],
+            'data_json': storage['data_json'],
         }
         # print(json.dumps(data, indent=4, ensure_ascii=False))
         result = self.update_one(uid, data)
-        return result
+        return {
+                'is_verify': True,
+                'message': '',
+                'result': result,
+            }
 
 def test1():
     # 新增一筆

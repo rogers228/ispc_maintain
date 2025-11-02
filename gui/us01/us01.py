@@ -332,7 +332,7 @@ class MainWindow(QMainWindow):
                 QMessageBox.warning(self, "錯誤", result['message'])
 
     def handle_pd_check(self):
-        print('handle_pd_check')
+        # print('handle_pd_check')
         selected_uid = self._get_selected_product_uid()
         # print('selected_uid:', selected_uid)
         if selected_uid:
@@ -347,26 +347,17 @@ class MainWindow(QMainWindow):
 
     def handle_pd_upload(self):
         # 上傳前 先檢查
-        is_upload = False
+
         selected_uid = self._get_selected_product_uid()
         if selected_uid:
             reply = QMessageBox.question(self, "上傳", f"{self.product_sheet[selected_uid]}\n\n您確定要從本地上傳資料嗎？，這動作將會覆蓋雲端資料\n", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
-                pc = ProductCheck(selected_uid)
-                result = pc.get_detaile() # 檢查
-                if result['is_verify'] is True: # 檢查正確
-                    is_upload = True # 可以上傳
+                result = self.ps.upload(selected_uid) # 執行上傳程序  會先檢查 驗證失敗將停止
+                if result['is_verify'] is True:
+                    QMessageBox.information(self, "上傳", f'{self.product_sheet[selected_uid]}\n\n上傳成功。\n')
 
                 else:
-                    # 檢查有問題，再次詢問
-                    reply = QMessageBox.warning(self, "上傳", f"{self.product_sheet[selected_uid]}\n\n檢查有問題!，您確定要從本地上傳資料嗎？\n", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-                    if reply == QMessageBox.Yes:
-                        is_upload = True
-
-        if is_upload: # 確定要上傳
-            result = self.ps.upload(selected_uid) # 上傳
-            if result is not None:
-                QMessageBox.information(self, "上傳", f'{self.product_sheet[selected_uid]}\n\n上傳成功。\n')
+                    QMessageBox.warning(self, "上傳", f"{self.product_sheet[selected_uid]}\n\n驗證失敗!")
 
     def action_test(self, item_text, item_uid):
         print("\n=== 執行 action_test ===")

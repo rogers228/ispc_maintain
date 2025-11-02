@@ -1,0 +1,332 @@
+if True:
+    import sys, os
+    import re
+    import csv
+    import json
+    import pandas as pd
+    from io import StringIO
+
+    def find_project_root(start_path=None, project_name="ispc_maintain"):
+        if start_path is None:
+            start_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+        current = start_path
+        while True:
+            if os.path.basename(current) == project_name:
+                return current
+            parent = os.path.dirname(current)
+            if parent == current:
+                raise FileNotFoundError(f"找不到專案 root (資料夾名稱 {project_name})")
+            current = parent
+
+    ROOT_DIR = find_project_root()
+    sys.path.append(os.path.join(ROOT_DIR, "system"))
+
+
+class LineParser:
+    # 解析多行文字，轉換為 records list[dict]
+    # 每行是以空白符作為分隔
+    # 內容的直自動轉換類型，# text_fields 強制指定為 text 的欄位
+    def __init__(self, lines, columns, text_fields = None):
+        self.lines = lines
+        self.columns = columns
+        self.text_fields = text_fields if text_fields is not None else set()
+        self.data = self._parse_lines()  # 初始化時就直接解析
+
+        # 型別檢查
+        is_error, details = self._is_error_types(self.data)
+        if is_error:
+            print(details)
+            raise TypeError("欄位型別錯誤!")
+        else:
+            pass
+            # print("✅ 型別檢查通過")
+
+    def _parse_list(self, raw):
+        """處理中括號包裹的 list，去除空白，並自動轉換"""
+        if not (raw.startswith("[") and raw.endswith("]")):
+            return raw
+
+        content = raw[1:-1].strip()
+        if not content:
+            return []
+
+        # 處理引號和空白
+        items = [x.strip(" '\"") for x in content.split(",")]
+
+        def auto_cast(val):
+            """內部自動轉換，支援 int, float, str"""
+            try:
+                # 優先判斷是否為浮點數
+                if "." in val and val.replace(".", "", 1).isdigit():
+                    return float(val)
+                # 接著判斷是否為整數
+                if val.isdigit() or (val.startswith('-') and val[1:].isdigit()):
+                    return int(val)
+                return val # 預設回傳字串
+            except ValueError:
+                return val
+
+        return [auto_cast(x) for x in items]
+
+    def _auto_cast_value(self, key, value):
+        """根據 key 嘗試自動轉換型別 (布林, 數字, 字串)"""
+
+        # 如果欄位名稱在 text_fields 集合中，則直接回傳字串，不進行數字轉換
+        if key in self.text_fields:
+            return value
+
+        # 1. 處理布林值
+        if value.lower() in {"true", "yes", "1"}:
+            return True
+        if value.lower() in {"false", "no", "0"}:
+            return False
+
+        # 2. 處理數字
+        try:
+            if "." in value:
+                return float(value)
+            return int(value)
+        except ValueError:
+            # 3. 預設回傳字串
+            return value
+
+    def _is_error_types(self, data, check_all=True):
+        """檢查 list[dict] 每個欄位的型別 (內部方法)"""
+        field_types = {}
+        # 僅檢查第一筆資料以判斷型別，除非 check_all=True
+        rows = data if check_all else data[:1]
+
+        for record in rows:
+            for key, value in record.items():
+                field_types.setdefault(key, set()).add(type(value).__name__)
+
+        # 判斷是否有欄位包含超過一種型別
+        is_error = any(len(types) > 1 for types in field_types.values())
+        details = {
+            field: {"types": sorted(list(types)), "is_error": len(types) > 1}
+            for field, types in field_types.items()
+        }
+
+        details_format = "⚠️ 欄位型別不一致檢查結果：\n"
+        for field, info in details.items():
+            types = ", ".join(info["types"])
+            flag = "⚠️" if info["is_error"] else "✅"
+            details_format += f"{flag} {field:<10} → {types}\n"
+
+        return is_error, details_format
+
+    def _preprocess_line(self, line):
+        """將 line 中的 [list] 預先處理，去掉內部空白 (內部方法)"""
+        # 找到所有 [list] 結構
+        def replacer(match):
+            # 對匹配到的 [list] 內容，去掉內部所有空白
+            # 這樣 csv.reader 就不會誤判 list 內部的元素間隔
+            return re.sub(r"\s+", "", match.group(0))
+
+        # 應用替換，只針對中括號內容進行
+        return re.sub(r"\[.*?\]", replacer, line)
+
+    def _parse_lines(self):
+        """解析多行文字，根據 schema 輸出 dict 列表 (內部方法)"""
+        data = []
+        for raw in self.lines.strip().split("\n"):
+            # 1. 預先處理 list 內容，防止 csv.reader 錯誤分割
+            line = self._preprocess_line(raw)
+
+            # 2. 使用 csv.reader 解析，以空格為分隔符，並處理單引號
+            reader = csv.reader(
+                StringIO(line),
+                delimiter=" ",
+                skipinitialspace=True, # 忽略多餘空白
+                quotechar="'"          # 處理 '單引號字串'
+            )
+            try:
+                row = next(reader)
+            except StopIteration:
+                # 處理空行
+                continue
+
+            record = {}
+            # 3. 根據欄位名稱和值進行自動轉換
+            for key, value in zip(self.columns, row):
+                if value.startswith("[") and value.endswith("]"):
+                    # 這是 list 欄位，呼叫專門的 list 解析器
+                    record[key] = self._parse_list(value)
+                else:
+                    # 這是普通欄位，呼叫自動轉換器
+                    record[key] = self._auto_cast_value(key, value)
+            data.append(record)
+        return data
+
+    def to_dict(self):
+        """回傳 list of dict"""
+        return self.data
+
+    def to_dataframe(self, index=None):
+        """轉換成 DataFrame"""
+        df = pd.DataFrame(self.data)
+        if index and index in df.columns:
+            df.set_index(index, inplace=True)
+        return df
+
+    def to_json(self, **kwargs):
+        """轉換成 JSON"""
+        # 確保中文不會變成 \uXXXX
+        return json.dumps(self.data, indent=4, ensure_ascii=False, **kwargs)
+
+class BuildingWorker():
+    # 以資料來源 records 建構一個 結構化的資料
+    # records 是由 LineParser 解析而來的
+    # 作為合併前的準備
+    # 請參閱範例 test2()
+
+    def __init__(self):
+        pass
+
+    def is_records(self, records):
+        # 檢查輸入的 records 列表是否符合以下格式規範：
+        # 1. 必須是 list 類型。
+        # 2. 列表中必須包含至少一個元素。
+        # 3. 每個元素都必須是 dict 類型。
+        # 4. 每個 dict 都必須是單層結構 (值不能是 list 或 dict)。
+        # 5. 所有 dict 的鍵集合必須完全相同。
+
+        # --- 1. 檢查是否為非空列表 ---
+        if not isinstance(records, list) or not records:
+            print("❌ 檢查失敗: 輸入不是一個非空列表 (list)。")
+            return False
+
+        # 取得標準鍵集合 (以第一筆記錄為準)
+        # 由於前面已檢查列表非空，records[0] 必定存在
+        if not isinstance(records[0], dict):
+            print("❌ 檢查失敗: 列表的第一個元素不是字典 (dict)。")
+            return False
+
+        standard_keys = set(records[0].keys())
+
+        # --- 2. 檢查所有記錄 ---
+        for i, record in enumerate(records):
+            # 2a. 檢查元素是否為字典
+            if not isinstance(record, dict):
+                print(f"❌ 檢查失敗: 第 {i+1} 筆記錄不是字典 (dict)。")
+                return False
+
+            # 2b. 檢查鍵集合是否相同
+            current_keys = set(record.keys())
+            if current_keys != standard_keys:
+                print(f"❌ 檢查失敗: 第 {i+1} 筆記錄的鍵集合與標準不符。")
+                return False
+
+            # 2c. 檢查是否為單層結構 (值不能是 list 或 dict)
+            for key, value in record.items():
+                if isinstance(value, (list, dict)):
+                    print(f"❌ 檢查失敗: 第 {i+1} 筆記錄的欄位 '{key}' 不是單層結構 (值為 {type(value).__name__})。")
+                    return False
+
+        # 所有檢查通過
+        # print("✅ 格式檢查通過: 結構正確。")
+        return True
+
+    def build_alias(self, records):
+        # 由 records 建構 alias
+        result = {}
+        if not self.is_records(records):
+            print("❌ records 結構不合法")
+            return {}
+
+        result = {
+                "models": {}
+            }
+
+        for r in records:
+            model = r.get("model")
+            item  = r.get("item")
+            alias = r.get("alias")
+
+            if model not in result["models"]:
+                result["models"][model] = {
+                    "model_items": {}
+                }
+
+            model_items = result["models"][model]["model_items"]
+            model_items[item] = {
+                    "alias": alias
+                }
+
+        return result
+
+def test1(): # 以文字行 解析為 records
+    # 測試
+
+    # columns = [
+    #     "id", "name", "age", "score", "active", "friends", "food", "hobbies", "regex", "username" ]
+    # lines = '''
+    #     awwww allen   18    95.5      true  [joe,andy]                'Curry Rice' ['singing','music']      ^.{18}(028|045).+  al_123
+    #     byy   roger   20    88.0      false [jay]                      Steak       ['movies','drinking']    ^.{18}(063|071).+  roger_01
+    #     ccc   andy    25    72.5      yes   [amy,bob, tom, 100, 88.5] 'Salad Bowl' [reading, 'coding']      ^.{18}(085|100).+  kateX
+    # '''
+    # data = LineParser(lines, columns)
+
+
+    columns = [
+        "model", "item", "alias"]
+    lines = '''
+        03dp   010   10
+    '''
+    data = LineParser(lines, columns, text_fields=("item", "alias")) # 強制數字轉文字
+
+    print("\n📌 DICT 格式：")
+    print(data.to_dict())
+
+    print("\n📌 JSON 格式：")
+    print(data.to_json())
+
+    print("\n📌 DataFrame：")
+    df = data.to_dataframe(index="id")
+    print(df)
+
+def test2(): # 以 records 建構 dict
+    bw = BuildingWorker()
+    records = [
+        {
+            "model": "03dp",
+            "item": "010",
+            "alias": "10"
+        },
+        {
+            "model": "03dp",
+            "item": "018",
+            "alias": "18"
+        },
+        {
+            "model": "05tt",
+            "item": "ah007",
+            "alias": "ah7"
+        }
+    ]
+    result = bw.build_alias(records)
+    print(json.dumps(result, indent=4, ensure_ascii=False))
+    # {
+    #     "models": {
+    #         "03dp": {
+    #             "model_items": {
+    #                 "010": {
+    #                     "alias": "10"
+    #                 },
+    #                 "018": {
+    #                     "alias": "18"
+    #                 }
+    #             }
+    #         },
+    #         "05tt": {
+    #             "model_items": {
+    #                 "ah007": {
+    #                     "alias": "ah7"
+    #                 }
+    #             }
+    #         }
+    #     }
+    # }
+
+if __name__ == "__main__":
+    test2()
