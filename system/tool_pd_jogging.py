@@ -183,7 +183,7 @@ class ProductCheck:
             'name_en': {'type': 'string', 'required': True},
             'name_tw': {'type': 'string', 'required': True},
             'name_zh': {'type': 'string', 'required': True},
-            'postfix_symbol': {'type': 'string', 'required': True, 'allowed': ['', '-']},
+            'postfix_symbol': {'type': 'string', 'required': True, 'allowed': ['', '-','/','\\']},
             'default_value': {'type': 'string', 'required': True},
             'model_item_length': {'type': 'integer', 'required': True},
             'model_items': {'type': 'dict', 'required': True, 'schema': schema_items, 'keysrules': { # keys規則
@@ -222,8 +222,8 @@ class ProductCheck:
 
         # 第 a 層 models
         schema_models = {}
-        for m in self.specification['models_order'][:3]: # 開發中 應刪除
-        # for m in self.specification['models_order']:
+        # for m in self.specification['models_order'][:3]: # 開發中 應刪除
+        for m in self.specification['models_order']:
             schema_models.setdefault(m, {'type': 'dict', 'required': True})
         # print(json.dumps(schema_models, indent=4, ensure_ascii=False))
         vr = Validator(schema_models)
@@ -342,7 +342,7 @@ def test1():
         # print(result['data_original'])
         # print(json.dumps(result['specification'], indent=4, ensure_ascii=False))
         # print(json.dumps(result['friendly'], indent=4, ensure_ascii=False))
-        print(result['fruit'])
+        # print(result['fruit'])
         print(result['data_json'])
 
     else:
