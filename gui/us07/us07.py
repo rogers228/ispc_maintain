@@ -21,13 +21,11 @@ if True:
 
     sys.path.append(os.path.join(ROOT_DIR, "system"))
     from config import ISPC_MAINTAIN_VERSION
-    from share_qt5 import *
+    from share_qt5 import * # 載入所有 qt5
 
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us07'))
     from form_us07 import Ui_MainWindow
-
     from tool_pd_jogging import ProductCheck
-
 
 
 class MainWindow(QMainWindow):
@@ -36,13 +34,20 @@ class MainWindow(QMainWindow):
         super(MainWindow, self).__init__()
         self.ui = Ui_MainWindow();
         self.ui.setupUi(self) # 載入ui
-        self.setWindowTitle(f'預覽')
-        self.resize(712, 460)  # 設定視窗大小
+        self.setWindowTitle(f'檢視')
+        self.resize(962, 650)  # 設定視窗大小
         self.uid = uid
         self.tree = None # treeview 資料來源
         self._load_data()
         # print(self.tree)
         self._load_treeview()
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        new_size = event.size()
+        width = new_size.width()
+        height = new_size.height()
+        self.ui.treeView.setGeometry(0, 0, width, height)
 
     def _load_data(self):
         pc = ProductCheck(self.uid) # 檢查

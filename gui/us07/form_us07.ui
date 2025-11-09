@@ -29,6 +29,11 @@
       <pointsize>12</pointsize>
      </font>
     </property>
+    <property name="styleSheet">
+     <string notr="true">QTreeView {
+    background-color: #F0F0F0; /* 淺灰色 */
+}</string>
+    </property>
     <property name="editTriggers">
      <set>QAbstractItemView::NoEditTriggers</set>
     </property>

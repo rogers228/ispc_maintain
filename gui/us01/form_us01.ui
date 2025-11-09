@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>746</width>
-    <height>494</height>
+    <width>781</width>
+    <height>482</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -21,9 +21,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>30</y>
-      <width>561</width>
-      <height>401</height>
+      <y>60</y>
+      <width>751</width>
+      <height>371</height>
      </rect>
     </property>
     <property name="font">
@@ -42,9 +42,9 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>590</x>
-      <y>30</y>
-      <width>101</width>
+      <x>130</x>
+      <y>0</y>
+      <width>151</width>
       <height>51</height>
      </rect>
     </property>
@@ -70,9 +70,9 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>590</x>
-      <y>100</y>
-      <width>101</width>
+      <x>280</x>
+      <y>0</y>
+      <width>151</width>
       <height>51</height>
      </rect>
     </property>
@@ -98,8 +98,8 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>590</x>
-      <y>170</y>
+      <x>560</x>
+      <y>0</y>
       <width>101</width>
       <height>51</height>
      </rect>
@@ -126,8 +126,8 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>590</x>
-      <y>240</y>
+      <x>660</x>
+      <y>0</y>
       <width>101</width>
       <height>51</height>
      </rect>
@@ -157,7 +157,7 @@
       <x>10</x>
       <y>0</y>
       <width>101</width>
-      <height>31</height>
+      <height>51</height>
      </rect>
     </property>
     <property name="font">
@@ -176,13 +176,41 @@
      <string>下載</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="pd_preview">
+    <property name="enabled">
+     <bool>false</bool>
+    </property>
+    <property name="geometry">
+     <rect>
+      <x>460</x>
+      <y>0</y>
+      <width>101</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="focusPolicy">
+     <enum>Qt::NoFocus</enum>
+    </property>
+    <property name="toolTip">
+     <string>檢視完整樹狀資料</string>
+    </property>
+    <property name="text">
+     <string>檢視</string>
+    </property>
+   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>746</width>
+     <width>781</width>
      <height>25</height>
     </rect>
    </property>

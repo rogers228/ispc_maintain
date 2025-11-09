@@ -6,6 +6,7 @@ if True:
     from cerberus import Validator
     from deepmerge import Merger
     import copy
+    import re
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
         if start_path is None:
@@ -22,11 +23,12 @@ if True:
     ROOT_DIR = find_project_root()
     sys.path.append(os.path.join(ROOT_DIR, "system"))
     from tool_parser import LineParser, BuildingWorker
+    from tool_list import is_all_include, other_itmes
 
 class ProductCheck:
     # 檢查文件，使用者輸入的文件  並產出結果
-
     STORAGE_PATH = os.path.join(ROOT_DIR, 'tempstorage')
+    SUPPLY_ALLOWED_LIST = ['s', 'n', 'd']
     def __init__(self, uid):
         self.uid = uid
         self.data_original = '' # 原始檔案內容 (整個py文字檔)
@@ -53,7 +55,7 @@ class ProductCheck:
             self._transform_friendly()          # 重新構造 friendly
 
         if self.is_verify is True:
-            self._check_friendly_alias()        # 檢查 friendly alias
+            self._check_friendly()        # 檢查 friendly
 
         if self.is_verify is True: # 將 specification, friendly 合併為最終的結果 fruit
             self._merge_fruit()
@@ -115,6 +117,18 @@ class ProductCheck:
         }
         self.specification.update(dic_default)
 
+    def _check_unique_list(self, field, value, error): # 自訂檢查 list 項目不可重複
+        lis = value
+        if len(lis) != len(set(lis)):
+            error(field, '列表中的項目不可重複')
+
+    def _check_pattern(self, field, value, error): # 自訂檢查 正則表達式 是否合法
+        try:
+            pattern = value
+            re.compile(pattern)  # 嘗試編譯正則表達式
+        except re.error as e:
+            error(field, f"正則表達式錯誤")
+
     def _check_specification_root(self): # 檢查 specification 根層
 
         self.is_verify = False # 是否驗證通過
@@ -124,8 +138,8 @@ class ProductCheck:
             'name_en': {'type': 'string', 'required': True},
             'name_tw': {'type': 'string', 'required': True},
             'name_zh': {'type': 'string'},
-            'supply_default_value': {'type': 'string', 'required': True, 'default': 's', 'allowed': ['s', 'n']},
-            'models_order': {'type': 'list', 'required': True},
+            'supply_default_value': {'type': 'string', 'required': True, 'default': 's', 'allowed': ProductCheck.SUPPLY_ALLOWED_LIST},
+            'models_order': {'type': 'list', 'required': True, 'check_with': self._check_unique_list},
             'option_item_count': {'type': 'integer', 'required': True, 'min': 1}, # 非必要，會依照 models_order 更新
             'main_model': {'type': 'string', 'required': True, 'allowed': self.specification['models_order']},
             'select_way': {'type': 'integer', 'required': True, 'allowed': [1, 2]},
@@ -135,7 +149,7 @@ class ProductCheck:
         vr = Validator(schema)
         target = self.specification
         if not vr.validate(target):
-            print(f"❌ 第一層檢查失敗： {vr.errors}")
+            # print(f"❌ 第一層檢查失敗： {vr.errors}")
             self.is_verify = False
             self.message = f"❌ 第一層檢查失敗： {vr.errors}"
         else:
@@ -150,15 +164,15 @@ class ProductCheck:
             'item_name_en': {'type': 'string', 'required': True},
             'item_name_tw': {'type': 'string', 'required': True},
             'item_name_zh': {'type': 'string', 'required': True},
-            'supply': {'type': 'string', 'required': True, 'allowed': ['', 's', 'n']}, # 供貨狀態
+            'supply': {'type': 'string', 'required': True, 'allowed': ProductCheck.SUPPLY_ALLOWED_LIST}, # 供貨狀態
         }
         vr = Validator(schema_c)
         target = self.specification['models'][model]['model_items'][item]
         # print(target)
         if not vr.validate(target):
-            print(f"❌ model: {model} item: {item} 檢查失敗： {vr.errors}")
+            # print(f"❌ model: {model} item: {item} c層檢查失敗： {vr.errors}")
             self.is_verify = False
-            self.message = f"❌ model: {model} 檢查失敗： {vr.errors}"
+            self.message = f"❌ model: {model} c層檢查失敗： {vr.errors}"
             return
         else:
             # print("models 檢查通過")
@@ -190,7 +204,7 @@ class ProductCheck:
                 'type': 'string', 'minlength': model_item_length, 'maxlength': model_item_length
                 }
             },
-            'model_items_order': {'type': 'list', 'required': True, 'schema':{
+            'model_items_order': {'type': 'list', 'required': True, 'check_with': self._check_unique_list, 'schema':{
                     'type': 'string', 'allowed': lis_mo,
                 }
             }
@@ -201,7 +215,7 @@ class ProductCheck:
         vr = Validator(schema_b)
         target = self.specification['models'][model]
         if not vr.validate(target):
-            print(f"❌ model: {model} b層檢查失敗： {vr.errors}")
+            # print(f"❌ model: {model} b層檢查失敗： {vr.errors}")
             self.is_verify = False
             self.message = f"❌ model: {model} b層檢查失敗： {vr.errors}"
             return
@@ -244,31 +258,33 @@ class ProductCheck:
             self._check_specification_b(model) # 檢查 specification 第b層 model
 
     def _transform_friendly(self): # 重新構造 friendly
-
-        alias = LineParser(lines = self.friendly['alias'],
+        # 多行文字轉換為 records [{}...]
+        # records = rd
+        rd_alias = LineParser(lines = self.friendly['alias'],
             columns = ['model', 'item', 'alias'],
-            text_fields=['item', 'alias']) # 轉換為 records格式的 dict
+            text_fields=['item', 'alias'])
+        # print(json.dumps(rd_alias.to_dict(), indent=4, ensure_ascii=False))
 
-        # print(alias.to_dict())
-        # print(json.dumps(alias.to_dict(), indent=4, ensure_ascii=False))
+        rd_runtime_supply = LineParser(lines = self.friendly['runtime_supply'],
+            columns = ['pattern', 'model', 'items', 'supply'],
+            text_fields=['pattern', 'model', 'items', 'supply'])
+        print(json.dumps(rd_runtime_supply.to_dict(), indent=4, ensure_ascii=False))
 
-        friendly_structured = {
-            'alias': alias.to_dict(),
+        friendly_structured = { # 重新構造
+            'alias':          rd_alias.to_dict(),
+            'runtime_supply': rd_runtime_supply.to_dict(),
             }
 
-        self.friendly.update(friendly_structured)
+        self.friendly.update(friendly_structured) # 更新
 
-    def _check_friendly_alias(self): # 檢查 friendly alias
-
+    def _check_friendly(self): # 檢查 friendly
+    # check alias
         for target in self.friendly['alias']: # target = dict
             # print(target)
+            # 提前檢查 target['model'] keyerror 避免 schema_alias 錯誤
             if target['model'] not in self.specification['models']:
                 self.is_verify = False
                 self.message = f"❌ alias 檢查失敗： model: {target['model']} keyerror!"
-                return
-            if target['item'] not in self.specification['models'][target['model']]['model_items_order']:
-                self.is_verify = False
-                self.message = f"❌ alias 檢查失敗： model: {target['item']} keyerror!"
                 return
 
             schema_alias = {
@@ -285,6 +301,37 @@ class ProductCheck:
                 # print(f"❌ alias 檢查失敗： {vr.errors}, model: {target['model']}, item: {target['item']}, alias: {target['alias']}")
                 self.is_verify = False
                 self.message = f"❌ alias 檢查失敗： {vr.errors}, model: {target['model']}, item: {target['item']}, alias: {target['alias']}"
+                return
+            else:
+                # print("alias 檢查通過")
+                self.is_verify = True
+                self.message = ''
+
+    # check runtime_supply
+        # print('check runtime_supply')
+        for target in self.friendly['runtime_supply']: # target = dict
+            # print(target)
+            # 提前檢查 target['model'] keyerror 避免 schema_alias 錯誤
+            if target['model'] not in self.specification['models']:
+                self.is_verify = False
+                self.message = f"❌ runtime_supply 檢查失敗： model: {target['model']} keyerror!"
+                return
+
+            schema_alias = {
+                'pattern': {'type': 'string', 'required': True, 'check_with': self._check_pattern },
+                'model': {'type': 'string', 'required': True, 'allowed': self.specification['models']},
+                'items': {'type': 'list', 'required': True, 'check_with': self._check_unique_list, 'schema': { # 巢狀內容的規則
+                    'type': 'string',
+                    'allowed': self.specification['models'][target['model']]['model_items_order']
+                    }
+                 },
+                'supply': {'type': 'string', 'required': True, 'allowed': ProductCheck.SUPPLY_ALLOWED_LIST},
+            }
+            vr = Validator(schema_alias)
+            if not vr.validate(target):
+                # print(f"❌ runtime_supply 檢查失敗： {vr.errors},  model: {target['model']} pattern: {target['pattern']}")
+                self.is_verify = False
+                self.message = f"❌ runtime_supply 檢查失敗： {vr.errors}, {target['pattern']}  {target['model']}  {','.join(target['items'])}"
                 return
             else:
                 # print("alias 檢查通過")
@@ -309,11 +356,20 @@ class ProductCheck:
         # 將 specification, friendly 合併為最終的結果 fruit
         fruit = copy.deepcopy(self.specification)
 
-        records_alias = self.friendly.get('alias', [])
-        if records_alias:
-            dic_alias = self.bw.build_alias(records_alias) # record 建構為 dict
+        # records = rd
+        # alias
+        rd_alias = self.friendly.get('alias', []) # 已先經過重新構造 _transform_friendly() 才會抓取正確
+        if rd_alias:
+            dic_alias = self.bw.build_alias(rd_alias) # record 建構為 dict
             # print(json.dumps(dic_alias, indent=4, ensure_ascii=False))
-            self.merger.merge(fruit, dic_alias) # 合併
+            self.merger.merge(fruit, dic_alias) # 合併至 fruit
+
+        # runtime_supply
+        rd_runtime_supply = self.friendly.get('runtime_supply', [])
+        if rd_runtime_supply:
+            dic_runtime_supply = self.bw.build_supply(rd_runtime_supply) # record 建構為 dict
+            # print(json.dumps(dic_runtime_supply, indent=4, ensure_ascii=False))
+            self.merger.merge(fruit, dic_runtime_supply) # 合併至 fruit
 
         self.fruit = fruit
 
@@ -343,7 +399,7 @@ def test1():
         # print(json.dumps(result['specification'], indent=4, ensure_ascii=False))
         # print(json.dumps(result['friendly'], indent=4, ensure_ascii=False))
         # print(result['fruit'])
-        print(result['data_json'])
+        # print(result['data_json'])
 
     else:
         print(result['message'])

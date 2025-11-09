@@ -37,6 +37,8 @@ if True:
     # 引用其他作業
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us05'))
     from us05 import MainWindow as MainWindow_us05
+    sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us07'))
+    from us07 import MainWindow as MainWindow_us07
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us09'))
     from us09 import MainWindow as MainWindow_us09
 
@@ -51,17 +53,17 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow();
         self.ui.setupUi(self) # 載入ui
         self.setWindowTitle(f'ispc maintain ({ISPC_MAINTAIN_VERSION})')
-        self.resize(712, 460)  # 設定視窗大小
+        self.resize(770, 460)  # 設定視窗大小
 
         self.auth = AuthManager()
         self.opt = Options()
         self.ps = ProductStorage()
 
         self.us05 = None    # 子表單 登入
+        self.us07 = None    # 子表單 檢視
         self.us09 = None    # 子表單 設定
         self.tree_data = {} # 選單資料 dict
         self.product_sheet = {} # 產品小抄 {uid: name}
-
 
         # 狀態列
         data = self.auth.load_local_data()
@@ -88,21 +90,37 @@ class MainWindow(QMainWindow):
             icon_edit = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'edit.png'))
             icon_check = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'run.png'))
             icon_upload = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'upload.png'))
+            icon_preview = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'preview.png'))
+            icon_release = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'release.png'))
             icon_download = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'download.png'))
+
             self.ui.pd_edit.clicked.connect(self.handle_pd_edit)
             self.ui.pd_check.clicked.connect(self.handle_pd_check)
             self.ui.pd_upload.clicked.connect(self.handle_pd_upload)
+            self.ui.pd_preview.clicked.connect(self.handle_pd_preview)
+            self.ui.pd_release.clicked.connect(self.handle_pd_release)
             self.ui.pd_download.clicked.connect(self.handle_pd_download)
 
             self.ui.pd_edit.setIcon(icon_edit)
             self.ui.pd_check.setIcon(icon_check)
             self.ui.pd_upload.setIcon(icon_upload)
+            self.ui.pd_preview.setIcon(icon_preview)
+            self.ui.pd_release.setIcon(icon_release)
             self.ui.pd_download.setIcon(icon_download)
 
         # 啟動計時器：每 1 小時執行一次刷新程序
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.refresh_auth_status)
         self.timer.start(3600 * 1000)  # 1 小時 = 3600 秒
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        new_size = event.size()
+        top = 60
+        left = 10
+        width = new_size.width() -left -10
+        height = new_size.height() -top -30
+        self.ui.treeView.setGeometry( left, top, width, height)
 
     def closeEvent(self, event):
         reply = QMessageBox.question(self, "結束", "您確定要結束退出嗎？",   QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
@@ -112,7 +130,7 @@ class MainWindow(QMainWindow):
             event.ignore()  # 阻止關閉
 
         # 如果有子窗體開啟，一併關閉子窗體
-        child_windows = [self.us05, self.us09]
+        child_windows = [self.us05, self.us07, self.us09]
         for window in child_windows:
             if window and isinstance(window, QWidget) and window.isVisible():
                 window.close()
@@ -270,6 +288,7 @@ class MainWindow(QMainWindow):
         self.ui.pd_edit.setEnabled(is_enable)
         self.ui.pd_check.setEnabled(is_enable)
         self.ui.pd_upload.setEnabled(is_enable)
+        self.ui.pd_preview.setEnabled(is_enable)
         self.ui.pd_release.setEnabled(is_enable)
 
     def handle_tree_activated(self, index):
@@ -363,6 +382,17 @@ class MainWindow(QMainWindow):
 
                 else:
                     QMessageBox.warning(self, "上傳", f"{self.product_sheet[selected_uid]}\n\n驗證失敗!")
+
+    def handle_pd_preview(self):
+        # print('handle_pd_preview')
+        selected_uid = self._get_selected_product_uid()
+        if selected_uid:
+            self.us07 = MainWindow_us07(selected_uid) # 檢視
+            self.us07.show()
+
+    def handle_pd_release(self):
+        print('handle_pd_release')
+        pass
 
     def action_test(self, item_text, item_uid):
         print("\n=== 執行 action_test ===")

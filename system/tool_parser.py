@@ -5,6 +5,7 @@ if True:
     import json
     import pandas as pd
     from io import StringIO
+    from collections import defaultdict
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
         if start_path is None:
@@ -41,7 +42,7 @@ class LineParser:
             pass
             # print("✅ 型別檢查通過")
 
-    def _parse_list(self, raw):
+    def _parse_list(self, key, raw):
         """處理中括號包裹的 list，去除空白，並自動轉換"""
         if not (raw.startswith("[") and raw.endswith("]")):
             return raw
@@ -55,6 +56,8 @@ class LineParser:
 
         def auto_cast(val):
             """內部自動轉換，支援 int, float, str"""
+            if key in self.text_fields:
+                return val
             try:
                 # 優先判斷是否為浮點數
                 if "." in val and val.replace(".", "", 1).isdigit():
@@ -151,7 +154,7 @@ class LineParser:
             for key, value in zip(self.columns, row):
                 if value.startswith("[") and value.endswith("]"):
                     # 這是 list 欄位，呼叫專門的 list 解析器
-                    record[key] = self._parse_list(value)
+                    record[key] = self._parse_list(key, value)
                 else:
                     # 這是普通欄位，呼叫自動轉換器
                     record[key] = self._auto_cast_value(key, value)
@@ -255,6 +258,39 @@ class BuildingWorker():
 
         return result
 
+    def build_supply(self, records):
+
+        supply_structure = defaultdict(lambda: {"model_items": defaultdict(dict)})
+
+        # 遍歷輸入的 records 列表
+        for record in records:
+            model = record["model"]
+            items = record["items"]
+
+            # 提取 pattern 和 supply，作為 runtime_supply 的值
+            runtime_supply_data = {
+                "pattern": record["pattern"],
+                "supply": record["supply"]
+            }
+
+            # 遍歷當前 record 中的所有 item
+            for item in items:
+                # 存取方式：
+                # 1. supply_structure[model] 得到 { "model_items": defaultdict(dict) }
+                # 2. supply_structure[model]['model_items'] 得到 item 層的 defaultdict
+                # 3. 賦值：在 item 層中，以 item 為鍵，並賦予 runtime_supply 資料
+                supply_structure[model]['model_items'][item]['runtime_supply'] = runtime_supply_data
+
+        # 將 defaultdict 轉換回標準的 dict 格式
+        # 並加上最外層的 'models' 鍵，並將內層的 defaultdict 也轉為 dict
+        final_models = {}
+        for model_key, model_value in supply_structure.items():
+            # 確保 model_items 內的 defaultdict(dict) 也被轉換為標準 dict
+            model_value['model_items'] = dict(model_value['model_items'])
+            final_models[model_key] = model_value
+
+        return {"models": final_models}
+
 def test1(): # 以文字行 解析為 records
     # 測試
 
@@ -267,13 +303,30 @@ def test1(): # 以文字行 解析為 records
     # '''
     # data = LineParser(lines, columns)
 
+    # columns = [
+    #     "model", "item", "alias"]
+    # lines = '''
+    #     03dp   010   10
+    # '''
+    # data = LineParser(lines, columns, text_fields=("item", "alias")) # 強制數字轉文字
+
+    # columns = [
+    #     "id", "age", "code", "codes", "friends"]
+    # lines = '''
+    #     awwww   18   200  [200, 201, 202]  [joe,andy]
+    #     byy     20   300  [300, 301, 302]  [jay]
+    #     ccc     25   400  [400, 401, 402]  [amy,bob, tom, 100, 88.5]
+    # '''
+    # data = LineParser(lines, columns, text_fields=("code", "codes"))
 
     columns = [
-        "model", "item", "alias"]
+        "pattern", "model", "items", "supply"]
     lines = '''
-        03dp   010   10
+        ^.{15}(10).+       03dp  [018, 028]  d
+        ^.{15}(60).+       03dp  [045, 071]  d
+        ^.{15}(80).+       05sr  [52 ]  n
     '''
-    data = LineParser(lines, columns, text_fields=("item", "alias")) # 強制數字轉文字
+    data = LineParser(lines, columns, text_fields=("pattern", "model", "items", "supply"))
 
     print("\n📌 DICT 格式：")
     print(data.to_dict())
@@ -285,7 +338,7 @@ def test1(): # 以文字行 解析為 records
     df = data.to_dataframe(index="id")
     print(df)
 
-def test2(): # 以 records 建構 dict
+def test51(): # 以 records 建構 dict
     bw = BuildingWorker()
     records = [
         {
@@ -328,5 +381,83 @@ def test2(): # 以 records 建構 dict
     #     }
     # }
 
+
+def test52():
+    bw = BuildingWorker()
+    records =[
+        {
+            "pattern": "^.{15}(10).+",
+            "model": "03dp",
+            "items": [
+                "018",
+                "028"
+            ],
+            "supply": "d"
+        },
+        {
+            "pattern": "^.{15}(60).+",
+            "model": "03dp",
+            "items": [
+                "045",
+                "085"
+            ],
+            "supply": "d"
+        },
+        {
+            "pattern": "^.{15}(80).+",
+            "model": "05sr",
+            "items": [
+                "52"
+            ],
+            "supply": "n"
+        }
+    ]
+
+    result = bw.build_supply(records) # 由 records 建構 runtime_supply
+    # print(json.dumps(result, indent=4, ensure_ascii=False))
+    # {
+    #     "models": {
+    #         "03dp": {
+    #             "model_items": {
+    #                 "018": {
+    #                     "runtime_supply": {
+    #                         "pattern": "^.{15}(10).+",
+    #                         "supply": "d"
+    #                     }
+    #                 },
+    #                 "028": {
+    #                     "runtime_supply": {
+    #                         "pattern": "^.{15}(10).+",
+    #                         "supply": "d"
+    #                     }
+    #                 },
+    #                 "045": {
+    #                     "runtime_supply": {
+    #                         "pattern": "^.{15}(60).+",
+    #                         "supply": "d"
+    #                     }
+    #                 },
+    #                 "085": {
+    #                     "runtime_supply": {
+    #                         "pattern": "^.{15}(60).+",
+    #                         "supply": "d"
+    #                     }
+    #                 }
+    #             }
+    #         },
+    #         "05sr": {
+    #             "model_items": {
+    #                 "52": {
+    #                     "runtime_supply": {
+    #                         "pattern": "^.{15}(80).+",
+    #                         "supply": "n"
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     }
+    # }
+
+
 if __name__ == "__main__":
-    test2()
+    test52()
