@@ -34,13 +34,13 @@ class LineParser:
         self.data = self._parse_lines()  # 初始化時就直接解析
 
         # 型別檢查
-        is_error, details = self._is_error_types(self.data)
-        if is_error:
-            print(details)
-            raise TypeError("欄位型別錯誤!")
-        else:
-            pass
-            # print("✅ 型別檢查通過")
+        # is_error, message = self._is_error_types(self.data)
+        # if is_error:
+        #     print(message)
+        #     raise TypeError("欄位型別錯誤!")
+        # else:
+        #     pass
+        #     # print("✅ 型別檢查通過")
 
     def _parse_list(self, key, raw):
         """處理中括號包裹的 list，去除空白，並自動轉換"""
@@ -110,13 +110,13 @@ class LineParser:
             for field, types in field_types.items()
         }
 
-        details_format = "⚠️ 欄位型別不一致檢查結果：\n"
+        message = "⚠️ 欄位型別不一致檢查結果：\n"
         for field, info in details.items():
             types = ", ".join(info["types"])
             flag = "⚠️" if info["is_error"] else "✅"
-            details_format += f"{flag} {field:<10} → {types}\n"
+            message += f"{flag} {field:<10} → {types}\n"
 
-        return is_error, details_format
+        return is_error, message
 
     def _preprocess_line(self, line):
         """將 line 中的 [list] 預先處理，去掉內部空白 (內部方法)"""
@@ -160,6 +160,18 @@ class LineParser:
                     record[key] = self._auto_cast_value(key, value)
             data.append(record)
         return data
+
+    def parse_info(self):
+        # 解析狀況
+
+        result = {'is_error': False, 'message': ''}
+        # 型別檢查
+        is_error, message = self._is_error_types(self.data)
+        if is_error:
+            return {'is_error': True, 'message': message}
+
+        # print("✅ 檢查通過")
+        return result
 
     def to_dict(self):
         """回傳 list of dict"""
@@ -322,11 +334,16 @@ def test1(): # 以文字行 解析為 records
     columns = [
         "pattern", "model", "items", "supply"]
     lines = '''
-        ^.{15}(10).+       03dp  [018, 028]  d
+        ^.{15}(10).+  ;     03dp  [018, 028]  d
         ^.{15}(60).+       03dp  [045, 071]  d
         ^.{15}(80).+       05sr  [52 ]  n
     '''
     data = LineParser(lines, columns, text_fields=("pattern", "model", "items", "supply"))
+
+    result = data.parse_info()
+    if result['is_error'] is True:
+        print('解析錯誤!', result['message'])
+        return
 
     print("\n📌 DICT 格式：")
     print(data.to_dict())
@@ -460,4 +477,4 @@ def test52():
 
 
 if __name__ == "__main__":
-    test52()
+    test1()

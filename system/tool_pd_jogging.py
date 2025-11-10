@@ -258,21 +258,66 @@ class ProductCheck:
             self._check_specification_b(model) # 檢查 specification 第b層 model
 
     def _transform_friendly(self): # 重新構造 friendly
+        # 僅能解析後，以使用者資料重新構造     若欲新增資料應在檢查後才能進行，否則會有錯誤
         # 多行文字轉換為 records [{}...]
         # records = rd
-        rd_alias = LineParser(lines = self.friendly['alias'],
-            columns = ['model', 'item', 'alias'],
-            text_fields=['item', 'alias'])
-        # print(json.dumps(rd_alias.to_dict(), indent=4, ensure_ascii=False))
 
-        rd_runtime_supply = LineParser(lines = self.friendly['runtime_supply'],
-            columns = ['pattern', 'model', 'items', 'supply'],
-            text_fields=['pattern', 'model', 'items', 'supply'])
-        print(json.dumps(rd_runtime_supply.to_dict(), indent=4, ensure_ascii=False))
+        if True: # alias
+            rd_alias = LineParser(lines = self.friendly['alias'],
+                columns = ['model', 'item', 'alias'],
+                text_fields=['item', 'alias'])
+
+            result = rd_alias.parse_info() # 解析結果
+            if result['is_error'] is True: # 解析錯誤
+                self.is_verify = False
+                self.message = f"❌ friendly['alias'] 解析失敗：{result['message']}"
+                return
+
+            new_records_alias = rd_alias.to_dict()
+            # print(json.dumps(new_records_alias, indent=4, ensure_ascii=False))
+
+        if True: # runtime_supply
+            rd_runtime_supply = LineParser(lines = self.friendly['runtime_supply'],
+                columns = ['pattern', 'model', 'items', 'supply'],
+                text_fields=['pattern', 'model', 'items', 'supply'])
+
+            result = rd_runtime_supply.parse_info() # 解析結果
+            if result['is_error'] is True: # 解析錯誤
+                self.is_verify = False
+                self.message = f"❌ friendly['runtime_supply'] 解析失敗：{result['message']}"
+                return
+
+            new_records_runtime_supply = rd_runtime_supply.to_dict()
+            # print(json.dumps(new_records_runtime_supply, indent=4, ensure_ascii=False))
+
+        if True: # runtime_filter
+            rd_runtime_filter = LineParser(lines = self.friendly['runtime_filter'],
+                columns = ['pattern', 'model', 'items', 'method'],
+                text_fields=['pattern', 'model', 'items', 'method'])
+
+            result = rd_runtime_filter.parse_info() # 解析結果
+            if result['is_error'] is True: # 解析錯誤
+                self.is_verify = False
+                self.message = f"❌ friendly['runtime_filter'] 解析失敗：{result['message']}"
+                return
+
+            new_records_runtime_filter = rd_runtime_filter.to_dict()
+            print(json.dumps(new_records_runtime_filter, indent=4, ensure_ascii=False))
+
+            # 以下錯誤  應先檢查完畢，最後才能建立相反資料
+            # reverse_records = copy.deepcopy(new_records_runtime_filter) # 建立相反
+            # for record in reverse_records:
+            #     print(record)
+            #     new_items = other_itmes(record['items'], self.specification['models'][record['model']]['model_items_order'])
+            #     print('new_items:', new_items)
+
+
+            # print(json.dumps(reverse_records, indent=4, ensure_ascii=False))
+            # 添加 反向
 
         friendly_structured = { # 重新構造
-            'alias':          rd_alias.to_dict(),
-            'runtime_supply': rd_runtime_supply.to_dict(),
+            'alias':          new_records_alias,
+            'runtime_supply': new_records_runtime_supply,
             }
 
         self.friendly.update(friendly_structured) # 更新
