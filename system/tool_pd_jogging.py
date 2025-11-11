@@ -29,6 +29,7 @@ class ProductCheck:
     # 檢查文件，使用者輸入的文件  並產出結果
     STORAGE_PATH = os.path.join(ROOT_DIR, 'tempstorage')
     SUPPLY_ALLOWED_LIST = ['s', 'n', 'd']
+    HUMAN_EXPRESSION_LIST = ['-s', '-u'] # 人類表達方式以  -s向方式表達 與 -u反向方式表達
     def __init__(self, uid):
         self.uid = uid
         self.data_original = '' # 原始檔案內容 (整個py文字檔)
@@ -55,10 +56,21 @@ class ProductCheck:
             self._transform_friendly()          # 重新構造 friendly
 
         if self.is_verify is True:
-            self._check_friendly()        # 檢查 friendly
+            self._check_friendly()              # 檢查 friendly
+
+        if self.is_verify is True:
+            self._insert_opposite()             # 添加對向規則
 
         if self.is_verify is True: # 將 specification, friendly 合併為最終的結果 fruit
             self._merge_fruit()
+
+    def _toggle_human(self, flag):
+        # 切換 -s | -u
+        mapping = {
+            '-s': '-u',
+            '-u': '-s'
+        }
+        return mapping.get(flag, None)
 
     def _load_content(self): # 動態讀取 python content
         self.is_verify = False
@@ -302,22 +314,12 @@ class ProductCheck:
                 return
 
             new_records_runtime_filter = rd_runtime_filter.to_dict()
-            print(json.dumps(new_records_runtime_filter, indent=4, ensure_ascii=False))
-
-            # 以下錯誤  應先檢查完畢，最後才能建立相反資料
-            # reverse_records = copy.deepcopy(new_records_runtime_filter) # 建立相反
-            # for record in reverse_records:
-            #     print(record)
-            #     new_items = other_itmes(record['items'], self.specification['models'][record['model']]['model_items_order'])
-            #     print('new_items:', new_items)
-
-
-            # print(json.dumps(reverse_records, indent=4, ensure_ascii=False))
-            # 添加 反向
+            # print(json.dumps(new_records_runtime_filter, indent=4, ensure_ascii=False))
 
         friendly_structured = { # 重新構造
             'alias':          new_records_alias,
             'runtime_supply': new_records_runtime_supply,
+            'runtime_filter': new_records_runtime_filter,
             }
 
         self.friendly.update(friendly_structured) # 更新
@@ -382,6 +384,53 @@ class ProductCheck:
                 # print("alias 檢查通過")
                 self.is_verify = True
                 self.message = ''
+
+    # check runtime_filter
+        # print('check runtime_filter')
+        for target in self.friendly['runtime_filter']: # target = dict
+            # print(target)
+            # 提前檢查 target['model'] keyerror 避免 schema_alias 錯誤
+            if target['model'] not in self.specification['models']:
+                self.is_verify = False
+                self.message = f"❌ runtime_filter 檢查失敗： model: {target['model']} keyerror!"
+                return
+
+            schema_filter = {
+                'pattern': {'type': 'string', 'required': True, 'check_with': self._check_pattern },
+                'model': {'type': 'string', 'required': True, 'allowed': self.specification['models']},
+                'items': {'type': 'list', 'required': True, 'check_with': self._check_unique_list, 'schema': { # 巢狀內容的規則
+                    'type': 'string',
+                    'allowed': self.specification['models'][target['model']]['model_items_order']
+                    }
+                 },
+                'method': {'type': 'string', 'required': True, 'allowed': ProductCheck.HUMAN_EXPRESSION_LIST},
+            }
+            vr = Validator(schema_filter)
+            if not vr.validate(target):
+                # print(f"❌ runtime_supply 檢查失敗： {vr.errors},  model: {target['model']} pattern: {target['pattern']}")
+                self.is_verify = False
+                self.message = f"❌ runtime_filter 檢查失敗： {vr.errors}, {target['pattern']}  {target['model']}  {','.join(target['items'])}"
+                return
+            else:
+                # print("alias 檢查通過")
+                self.is_verify = True
+                self.message = ''
+
+    def _insert_opposite(self): # 添加對向規則
+    # runtime_filter
+        # 建立對象規則 record
+        opposite_records = copy.deepcopy(self.friendly['runtime_filter'])
+        for record in opposite_records:
+            new_items = other_itmes(record['items'], self.specification['models'][record['model']]['model_items_order'])
+            new_method = self._toggle_human(record['method'])
+            # print('new_items:', new_items)
+            # print('new_method:', new_method)
+            record.update({'items': new_items, 'method': new_method}) # 更新
+
+        # print(json.dumps(opposite_records, indent=4, ensure_ascii=False))
+        self.friendly['runtime_filter'].extend(opposite_records) # 添加入主規則
+        # print(json.dumps(self.friendly['runtime_filter'], indent=4, ensure_ascii=False))
+
 
     def _dict_to_json(self, data):
         # 將 data(dict) 轉換為 json

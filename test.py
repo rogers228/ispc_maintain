@@ -65,5 +65,9 @@ def test1():
     else:
         print("主程式呼叫: 更新失敗或未操作。")
 
+
+
+def test2():
+    lis = ['-s', '-u']
 if __name__ == '__main__':
     test1()
