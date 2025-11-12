@@ -311,5 +311,5 @@ def test8(): # 檢查是否需要更新
         print('不需要更新')
 
 if __name__ == "__main__":
-    # test2()
+    # test6()
     main() # 會被呼叫 預設使用 main
