@@ -465,6 +465,13 @@ class ProductCheck:
             # print(json.dumps(dic_runtime_supply, indent=4, ensure_ascii=False))
             self.merger.merge(fruit, dic_runtime_supply) # 合併至 fruit
 
+        # runtime_filter
+        rd_runtime_filter = self.friendly.get('runtime_filter', [])
+        if rd_runtime_filter:
+            dic_runtime_filter = self.bw.build_filter(rd_runtime_filter) # record 建構為 dict
+            # print(json.dumps(dic_runtime_filter, indent=4, ensure_ascii=False))
+            self.merger.merge(fruit, dic_runtime_filter) # 合併至 fruit
+
         self.fruit = fruit
 
     def get_detaile(self):

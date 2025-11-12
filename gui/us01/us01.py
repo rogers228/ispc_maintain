@@ -334,7 +334,9 @@ class MainWindow(QMainWindow):
 
     def handle_pd_download(self):
         # 下載
-        reply = QMessageBox.question(self, "下載", "您確定要從雲端下載資料嗎？，這動作將會覆蓋本地資料",   QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        reply = QMessageBox.question(self, "下載",
+            "您確定要從雲端下載資料嗎？，這動作將會覆蓋本地資料\n\n若您不確定，建議您先選擇否，手動備份後再行下載。\n",
+            QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
             selected_uid = self._get_selected_product_uid()
             if selected_uid:

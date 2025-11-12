@@ -243,66 +243,75 @@ class BuildingWorker():
         return True
 
     def build_alias(self, records):
-        # 由 records 建構 alias
-        result = {}
-        if not self.is_records(records):
-            print("❌ records 結構不合法")
-            return {}
 
-        result = {
-                "models": {}
-            }
+        alias_structure = defaultdict(lambda: {"model_items": defaultdict(dict)})
 
-        for r in records:
-            model = r.get("model")
-            item  = r.get("item")
-            alias = r.get("alias")
-
-            if model not in result["models"]:
-                result["models"][model] = {
-                    "model_items": {}
-                }
-
-            model_items = result["models"][model]["model_items"]
-            model_items[item] = {
-                    "alias": alias
-                }
-
-        return result
-
-    def build_supply(self, records):
-
-        supply_structure = defaultdict(lambda: {"model_items": defaultdict(dict)})
-
-        # 遍歷輸入的 records 列表
         for record in records:
             model = record["model"]
-            items = record["items"]
+            item = record["item"]
+            alias = record["alias"]
+            alias_structure[model]['model_items'][item]['alias'] = alias
 
-            # 提取 pattern 和 supply，作為 runtime_supply 的值
-            runtime_supply_data = {
-                "pattern": record["pattern"],
-                "supply": record["supply"]
-            }
-
-            # 遍歷當前 record 中的所有 item
-            for item in items:
-                # 存取方式：
-                # 1. supply_structure[model] 得到 { "model_items": defaultdict(dict) }
-                # 2. supply_structure[model]['model_items'] 得到 item 層的 defaultdict
-                # 3. 賦值：在 item 層中，以 item 為鍵，並賦予 runtime_supply 資料
-                supply_structure[model]['model_items'][item]['runtime_supply'] = runtime_supply_data
-
-        # 將 defaultdict 轉換回標準的 dict 格式
-        # 並加上最外層的 'models' 鍵，並將內層的 defaultdict 也轉為 dict
         final_models = {}
-        for model_key, model_value in supply_structure.items():
-            # 確保 model_items 內的 defaultdict(dict) 也被轉換為標準 dict
+        for model_key, model_value in alias_structure.items():
             model_value['model_items'] = dict(model_value['model_items'])
             final_models[model_key] = model_value
 
         return {"models": final_models}
 
+    def build_supply(self, records):
+
+        supply_structure = defaultdict(lambda: {"model_items": defaultdict(dict)})
+
+        for record in records:
+            model = record["model"]
+            pattern = record["pattern"]
+            items = record["items"]
+            supply = record["supply"]
+            supply_data = {"supply": supply}
+
+            for item in items:
+                item_data = supply_structure[model]['model_items'][item]
+                if "runtime_pattern" not in item_data:
+                    item_data["runtime_pattern"] = {}
+
+                item_data["runtime_pattern"][pattern] = supply_data
+
+        final_models = {}
+        for model_key, model_value in supply_structure.items():
+            model_items_dict = dict(model_value['model_items'])
+            final_models[model_key] = {'model_items': model_items_dict}
+
+        return {"models": final_models}
+
+    def build_filter(self, records):
+
+        filter_structure = defaultdict(lambda: {"model_items": defaultdict(dict)})
+        display_mapping = {
+            "-s": True,
+            "-u": False
+        }
+
+        for record in records:
+            model = record["model"]
+            pattern = record["pattern"]
+            items = record["items"]
+            method = record["method"]
+
+            display_value = display_mapping.get(method, True)
+            display_data = {"display": display_value}
+            for item in items:
+                item_data = filter_structure[model]['model_items'][item]
+                if "runtime_pattern" not in item_data:
+                    item_data["runtime_pattern"] = {}
+                item_data["runtime_pattern"][pattern] = display_data
+
+        final_models = {}
+        for model_key, model_value in filter_structure.items():
+            model_items_dict = dict(model_value['model_items'])
+            final_models[model_key] = {'model_items': model_items_dict}
+
+        return {"models": final_models}
 def test1(): # 以文字行 解析為 records
     # 測試
 
@@ -355,6 +364,23 @@ def test1(): # 以文字行 解析為 records
     df = data.to_dataframe(index="id")
     print(df)
 
+def build_alias(records):
+
+    alias_structure = defaultdict(lambda: {"model_items": defaultdict(dict)})
+
+    for record in records:
+        model = record["model"]
+        item = record["item"]
+        alias = record["alias"]
+        alias_structure[model]['model_items'][item]['alias'] = alias
+
+    final_models = {}
+    for model_key, model_value in alias_structure.items():
+        model_value['model_items'] = dict(model_value['model_items'])
+        final_models[model_key] = model_value
+
+    return {"models": final_models}
+
 def test51(): # 以 records 建構 dict
     bw = BuildingWorker()
     records = [
@@ -398,7 +424,6 @@ def test51(): # 以 records 建構 dict
     #     }
     # }
 
-
 def test52():
     bw = BuildingWorker()
     records =[
@@ -431,33 +456,37 @@ def test52():
     ]
 
     result = bw.build_supply(records) # 由 records 建構 runtime_supply
-    # print(json.dumps(result, indent=4, ensure_ascii=False))
+    print(json.dumps(result, indent=4, ensure_ascii=False))
     # {
     #     "models": {
     #         "03dp": {
     #             "model_items": {
     #                 "018": {
-    #                     "runtime_supply": {
-    #                         "pattern": "^.{15}(10).+",
-    #                         "supply": "d"
+    #                     "runtime_pattern": {
+    #                         "^.{15}(10).+": {
+    #                             "supply": "d"
+    #                         }
     #                     }
     #                 },
     #                 "028": {
-    #                     "runtime_supply": {
-    #                         "pattern": "^.{15}(10).+",
-    #                         "supply": "d"
+    #                     "runtime_pattern": {
+    #                         "^.{15}(10).+": {
+    #                             "supply": "d"
+    #                         }
     #                     }
     #                 },
     #                 "045": {
-    #                     "runtime_supply": {
-    #                         "pattern": "^.{15}(60).+",
-    #                         "supply": "d"
+    #                     "runtime_pattern": {
+    #                         "^.{15}(60).+": {
+    #                             "supply": "d"
+    #                         }
     #                     }
     #                 },
     #                 "085": {
-    #                     "runtime_supply": {
-    #                         "pattern": "^.{15}(60).+",
-    #                         "supply": "d"
+    #                     "runtime_pattern": {
+    #                         "^.{15}(60).+": {
+    #                             "supply": "d"
+    #                         }
     #                     }
     #                 }
     #             }
@@ -465,9 +494,10 @@ def test52():
     #         "05sr": {
     #             "model_items": {
     #                 "52": {
-    #                     "runtime_supply": {
-    #                         "pattern": "^.{15}(80).+",
-    #                         "supply": "n"
+    #                     "runtime_pattern": {
+    #                         "^.{15}(80).+": {
+    #                             "supply": "n"
+    #                         }
     #                     }
     #                 }
     #             }
@@ -475,6 +505,94 @@ def test52():
     #     }
     # }
 
+def test53():
+    bw = BuildingWorker()
+    records = [
+        {
+            "pattern": "^.(010|018).+",
+            "model": "03dp",
+            "items": [
+                "015",
+                "018"
+            ],
+            "method": "-s"
+        },
+        {
+            "pattern": "^.(050|070).+",
+            "model": "08axv",
+            "items": [
+                "S1",
+                "U1"
+            ],
+            "method": "-s"
+        },
+        {
+            "pattern": "^.(038|042).+",
+            "model": "08axv",
+            "items": [
+                "S2",
+                "U2"
+            ],
+            "method": "-u"
+        },
+    ]
+
+    result = bw.build_filter(records) # 由 records 建構 runtime_filter
+    print(json.dumps(result, indent=4, ensure_ascii=False))
+    # {
+    #     "models": {
+    #         "03dp": {
+    #             "model_items": {
+    #                 "015": {
+    #                     "runtime_pattern": {
+    #                         "^.(015|018).+": {
+    #                             "display": true
+    #                         }
+    #                     }
+    #                 },
+    #                 "018": {
+    #                     "runtime_pattern": {
+    #                         "^.(015|018).+": {
+    #                             "display": true
+    #                         }
+    #                     }
+    #                 }
+    #             }
+    #         },
+    #         "08axv": {
+    #             "model_items": {
+    #                 "S1": {
+    #                     "runtime_pattern": {
+    #                         "^.(050|070).+": {
+    #                             "display": true
+    #                         }
+    #                     }
+    #                 },
+    #                 "U1": {
+    #                     "runtime_pattern": {
+    #                         "^.(050|070).+": {
+    #                             "display": true
+    #                         }
+    #                     }
+    #                 },
+    #                 "S2": {
+    #                     "runtime_pattern": {
+    #                         "^.(038|042).+": {
+    #                             "display": false
+    #                         }
+    #                     }
+    #                 },
+    #                 "U2": {
+    #                     "runtime_pattern": {
+    #                         "^.(038|042).+": {
+    #                             "display": false
+    #                         }
+    #                     }
+    #                 }
+    #             }
+    #         }
+    #     }
+    # }
 
 if __name__ == "__main__":
-    test1()
+    test53()
