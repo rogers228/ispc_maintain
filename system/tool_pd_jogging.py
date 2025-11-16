@@ -28,8 +28,10 @@ if True:
 class ProductCheck:
     # 檢查文件，使用者輸入的文件  並產出結果
     STORAGE_PATH = os.path.join(ROOT_DIR, 'tempstorage')
-    SUPPLY_ALLOWED_LIST = ['s', 'n', 'd']
+    SUPPLY_ALLOWED_LIST = ['s', 'n', 'd'] # 供貨方式 s正常供貨, n不供貨, d特殊供貨
     HUMAN_EXPRESSION_LIST = ['-s', '-u'] # 人類表達方式以  -s向方式表達 與 -u反向方式表達
+    POSTFIX_SPMBOL_LIST = ['', '-','/','\\'] # 後置符號 \\ 即 \
+
     def __init__(self, uid):
         self.uid = uid
         self.data_original = '' # 原始檔案內容 (整個py文字檔)
@@ -209,7 +211,7 @@ class ProductCheck:
             'name_en': {'type': 'string', 'required': True},
             'name_tw': {'type': 'string', 'required': True},
             'name_zh': {'type': 'string', 'required': True},
-            'postfix_symbol': {'type': 'string', 'required': True, 'allowed': ['', '-','/','\\']},
+            'postfix_symbol': {'type': 'string', 'required': True, 'allowed': ProductCheck.POSTFIX_SPMBOL_LIST},
             'default_value': {'type': 'string', 'required': True},
             'model_item_length': {'type': 'integer', 'required': True},
             'model_items': {'type': 'dict', 'required': True, 'schema': schema_items, 'keysrules': { # keys規則
@@ -316,6 +318,20 @@ class ProductCheck:
             new_records_runtime_filter = rd_runtime_filter.to_dict()
             # print(json.dumps(new_records_runtime_filter, indent=4, ensure_ascii=False))
 
+        if True: # runtime_disable
+            rd_runtime_disable = LineParser(lines = self.friendly['runtime_disable'],
+                columns = ['pattern', 'model', 'items', 'method'],
+                text_fields=['pattern', 'model', 'items', 'method'])
+
+            result = rd_runtime_disable.parse_info() # 解析結果
+            if result['is_error'] is True: # 解析錯誤
+                self.is_verify = False
+                self.message = f"❌ friendly['runtime_disable'] 解析失敗：{result['message']}"
+                return
+
+            new_records_runtime_disable = rd_runtime_disable.to_dict()
+            # print(json.dumps(new_records_runtime_disable, indent=4, ensure_ascii=False))
+
         if True: # fast_model
             lis_index = lambda count: [f'index_{i}' for i in range(count)] # 建立 lis_index 函數 回傳 ['index_0', 'index_1'...]
             columns = lis_index(len(self.specification['models_order']))
@@ -333,152 +349,197 @@ class ProductCheck:
             # print(json.dumps(new_records_fast_model, indent=4, ensure_ascii=False))
 
         friendly_structured = { # 重新構造
-            'alias':          new_records_alias,
-            'runtime_supply': new_records_runtime_supply,
-            'runtime_filter': new_records_runtime_filter,
-            'fast_model':     new_records_fast_model,
+            'alias':           new_records_alias,
+            'runtime_supply':  new_records_runtime_supply,
+            'runtime_filter':  new_records_runtime_filter,
+            'runtime_disable': new_records_runtime_disable,
+            'fast_model':      new_records_fast_model,
             }
 
         self.friendly.update(friendly_structured) # 更新
 
     def _check_friendly(self): # 檢查 friendly
-    # check alias
-        for target in self.friendly['alias']: # target = dict
-            # print(target)
-            # 提前檢查 target['model'] keyerror 避免 schema_alias 錯誤
-            if target['model'] not in self.specification['models']:
-                self.is_verify = False
-                self.message = f"❌ alias 檢查失敗： model: {target['model']} keyerror!"
-                return
-
-            schema_alias = {
-                'model': {'type': 'string', 'required': True,
-                    'allowed': self.specification['models_order']},
-                'item': {'type': 'string', 'required': True,
-                    'allowed': self.specification['models'][target['model']]['model_items_order']},
-                'alias': {'type': 'string', 'required': True},
-            }
-            # print(schema_alias)
-
-            vr = Validator(schema_alias)
-            if not vr.validate(target):
-                # print(f"❌ alias 檢查失敗： {vr.errors}, model: {target['model']}, item: {target['item']}, alias: {target['alias']}")
-                self.is_verify = False
-                self.message = f"❌ alias 檢查失敗： {vr.errors}, model: {target['model']}, item: {target['item']}, alias: {target['alias']}"
-                return
-            else:
-                # print("alias 檢查通過")
-                self.is_verify = True
-                self.message = ''
-
-    # check runtime_supply
-        # print('check runtime_supply')
-        for target in self.friendly['runtime_supply']: # target = dict
-            # print(target)
-            # 提前檢查 target['model'] keyerror 避免 schema_alias 錯誤
-            if target['model'] not in self.specification['models']:
-                self.is_verify = False
-                self.message = f"❌ runtime_supply 檢查失敗： model: {target['model']} keyerror!"
-                return
-
-            schema_alias = {
-                'pattern': {'type': 'string', 'required': True, 'check_with': self._check_pattern },
-                'model': {'type': 'string', 'required': True, 'allowed': self.specification['models']},
-                'items': {'type': 'list', 'required': True, 'check_with': self._check_unique_list, 'schema': { # 巢狀內容的規則
-                    'type': 'string',
-                    'allowed': self.specification['models'][target['model']]['model_items_order']
-                    }
-                 },
-                'supply': {'type': 'string', 'required': True, 'allowed': ProductCheck.SUPPLY_ALLOWED_LIST},
-            }
-            vr = Validator(schema_alias)
-            if not vr.validate(target):
-                # print(f"❌ runtime_supply 檢查失敗： {vr.errors},  model: {target['model']} pattern: {target['pattern']}")
-                self.is_verify = False
-                self.message = f"❌ runtime_supply 檢查失敗： {vr.errors}, {target['pattern']}  {target['model']}  {','.join(target['items'])}"
-                return
-            else:
-                # print("alias 檢查通過")
-                self.is_verify = True
-                self.message = ''
-
-    # check runtime_filter
-        # print('check runtime_filter')
-        for target in self.friendly['runtime_filter']: # target = dict
-            # print(target)
-            # 提前檢查 target['model'] keyerror 避免 schema_alias 錯誤
-            if target['model'] not in self.specification['models']:
-                self.is_verify = False
-                self.message = f"❌ runtime_filter 檢查失敗： model: {target['model']} keyerror!"
-                return
-
-            schema_filter = {
-                'pattern': {'type': 'string', 'required': True, 'check_with': self._check_pattern },
-                'model': {'type': 'string', 'required': True, 'allowed': self.specification['models']},
-                'items': {'type': 'list', 'required': True, 'check_with': self._check_unique_list, 'schema': { # 巢狀內容的規則
-                    'type': 'string',
-                    'allowed': self.specification['models'][target['model']]['model_items_order']
-                    }
-                 },
-                'method': {'type': 'string', 'required': True, 'allowed': ProductCheck.HUMAN_EXPRESSION_LIST},
-            }
-            vr = Validator(schema_filter)
-            if not vr.validate(target):
-                # print(f"❌ runtime_supply 檢查失敗： {vr.errors},  model: {target['model']} pattern: {target['pattern']}")
-                self.is_verify = False
-                self.message = f"❌ runtime_filter 檢查失敗： {vr.errors}, {target['pattern']}  {target['model']}  {','.join(target['items'])}"
-                return
-            else:
-                # print("alias 檢查通過")
-                self.is_verify = True
-                self.message = ''
-
-    # check fast_model
-        # print('check fast_model')
-        for target in self.friendly['fast_model']: # target = dict
-            # print(target)
-            schema_fast_model = {}
-            for key, _ in target.items(): # key = 'index_8'
-                index = key.split('_')[1]
-                target_model = self.specification['models_order'][int(index)]
-                # print('key:', key, 'index:', index, 'model:', target_model)
-
-                # 提前檢查 self.specification['models'] keyerror 避免 schema_fast_model 錯誤
-                if target_model not in self.specification['models']:
+        if True: # check alias
+            for target in self.friendly['alias']: # target = dict
+                # print(target)
+                # 提前檢查 target['model'] keyerror 避免 schema_alias 錯誤
+                if target['model'] not in self.specification['models']:
                     self.is_verify = False
-                    self.message = f"❌ fast_model 檢查失敗： model: {target_model} keyerror!"
+                    self.message = f"❌ alias 檢查失敗： model: {target['model']} keyerror!"
                     return
 
-                schema_fast_model.setdefault(key, {'type': 'string', 'required': True,
-                    'allowed': self.specification['models'][target_model]['model_items_order']})
+                schema_alias = {
+                    'model': {'type': 'string', 'required': True,
+                        'allowed': self.specification['models_order']},
+                    'item': {'type': 'string', 'required': True,
+                        'allowed': self.specification['models'][target['model']]['model_items_order']},
+                    'alias': {'type': 'string', 'required': True},
+                }
+                # print(schema_alias)
 
-            # print(json.dumps(schema_fast_model, indent=4, ensure_ascii=False))
-            vr = Validator(schema_fast_model)
-            if not vr.validate(target):
-                # print(f"❌ fast_model 檢查失敗： {vr.errors})
-                self.is_verify = False
-                self.message = f"❌ fast_model 檢查失敗： {vr.errors}"
-                return
-            else:
-                # print("alias 檢查通過")
-                self.is_verify = True
-                self.message = ''
+                vr = Validator(schema_alias)
+                if not vr.validate(target):
+                    # print(f"❌ alias 檢查失敗： {vr.errors}, model: {target['model']}, item: {target['item']}, alias: {target['alias']}")
+                    self.is_verify = False
+                    self.message = f"❌ alias 檢查失敗： {vr.errors}, model: {target['model']}, item: {target['item']}, alias: {target['alias']}"
+                    return
+                else:
+                    # print("alias 檢查通過")
+                    self.is_verify = True
+                    self.message = ''
+
+        if True: # check runtime_supply
+            # print('check runtime_supply')
+            for target in self.friendly['runtime_supply']: # target = dict
+                # print(target)
+                # 提前檢查 target['model'] keyerror 避免 schema_alias 錯誤
+                if target['model'] not in self.specification['models']:
+                    self.is_verify = False
+                    self.message = f"❌ runtime_supply 檢查失敗： model: {target['model']} keyerror!"
+                    return
+
+                schema_alias = {
+                    'pattern': {'type': 'string', 'required': True, 'check_with': self._check_pattern },
+                    'model': {'type': 'string', 'required': True, 'allowed': self.specification['models']},
+                    'items': {'type': 'list', 'required': True, 'check_with': self._check_unique_list, 'schema': { # 巢狀內容的規則
+                        'type': 'string',
+                        'allowed': self.specification['models'][target['model']]['model_items_order']
+                        }
+                     },
+                    'supply': {'type': 'string', 'required': True, 'allowed': ProductCheck.SUPPLY_ALLOWED_LIST},
+                }
+                vr = Validator(schema_alias)
+                if not vr.validate(target):
+                    # print(f"❌ runtime_supply 檢查失敗： {vr.errors},  model: {target['model']} pattern: {target['pattern']}")
+                    self.is_verify = False
+                    self.message = f"❌ runtime_supply 檢查失敗： {vr.errors}, {target['pattern']}  {target['model']}  {','.join(target['items'])}"
+                    return
+                else:
+                    # print("alias 檢查通過")
+                    self.is_verify = True
+                    self.message = ''
+
+        if True: # check runtime_filter
+            # print('check runtime_filter')
+            for target in self.friendly['runtime_filter']: # target = dict
+                # print(target)
+                # 提前檢查 target['model'] keyerror 避免 schema_alias 錯誤
+                if target['model'] not in self.specification['models']:
+                    self.is_verify = False
+                    self.message = f"❌ runtime_filter 檢查失敗： model: {target['model']} keyerror!"
+                    return
+
+                schema_filter = {
+                    'pattern': {'type': 'string', 'required': True, 'check_with': self._check_pattern },
+                    'model': {'type': 'string', 'required': True, 'allowed': self.specification['models']},
+                    'items': {'type': 'list', 'required': True, 'check_with': self._check_unique_list, 'schema': { # 巢狀內容的規則
+                        'type': 'string',
+                        'allowed': self.specification['models'][target['model']]['model_items_order']
+                        }
+                     },
+                    'method': {'type': 'string', 'required': True, 'allowed': ProductCheck.HUMAN_EXPRESSION_LIST},
+                }
+                vr = Validator(schema_filter)
+                if not vr.validate(target):
+                    # print(f"❌ runtime_supply 檢查失敗： {vr.errors},  model: {target['model']} pattern: {target['pattern']}")
+                    self.is_verify = False
+                    self.message = f"❌ runtime_filter 檢查失敗： {vr.errors}, {target['pattern']}  {target['model']}  {','.join(target['items'])}"
+                    return
+                else:
+                    # print("alias 檢查通過")
+                    self.is_verify = True
+                    self.message = ''
+
+        if True: # check runtime_disable
+            # print('check runtime_disable')
+            for target in self.friendly['runtime_disable']: # target = dict
+                # print(target)
+                # 提前檢查 target['model'] keyerror 避免 schema_alias 錯誤
+                if target['model'] not in self.specification['models']:
+                    self.is_verify = False
+                    self.message = f"❌ runtime_disable 檢查失敗： model: {target['model']} keyerror!"
+                    return
+
+                schema_disable = {
+                    'pattern': {'type': 'string', 'required': True, 'check_with': self._check_pattern },
+                    'model': {'type': 'string', 'required': True, 'allowed': self.specification['models']},
+                    'items': {'type': 'list', 'required': True, 'check_with': self._check_unique_list, 'schema': { # 巢狀內容的規則
+                        'type': 'string',
+                        'allowed': self.specification['models'][target['model']]['model_items_order']
+                        }
+                     },
+                    'method': {'type': 'string', 'required': True, 'allowed': ProductCheck.HUMAN_EXPRESSION_LIST},
+                }
+                vr = Validator(schema_disable)
+                if not vr.validate(target):
+                    # print(f"❌ runtime_supply 檢查失敗： {vr.errors},  model: {target['model']} pattern: {target['pattern']}")
+                    self.is_verify = False
+                    self.message = f"❌ runtime_disable 檢查失敗： {vr.errors}, {target['pattern']}  {target['model']}  {','.join(target['items'])}"
+                    return
+                else:
+                    # print("alias 檢查通過")
+                    self.is_verify = True
+                    self.message = ''
+
+        if True: # check fast_model
+            # print('check fast_model')
+            for target in self.friendly['fast_model']: # target = dict
+                # print(target)
+                schema_fast_model = {}
+                for key, _ in target.items(): # key = 'index_8'
+                    index = key.split('_')[1]
+                    target_model = self.specification['models_order'][int(index)]
+                    # print('key:', key, 'index:', index, 'model:', target_model)
+
+                    # 提前檢查 self.specification['models'] keyerror 避免 schema_fast_model 錯誤
+                    if target_model not in self.specification['models']:
+                        self.is_verify = False
+                        self.message = f"❌ fast_model 檢查失敗： model: {target_model} keyerror!"
+                        return
+
+                    schema_fast_model.setdefault(key, {'type': 'string', 'required': True,
+                        'allowed': self.specification['models'][target_model]['model_items_order']})
+
+                # print(json.dumps(schema_fast_model, indent=4, ensure_ascii=False))
+                vr = Validator(schema_fast_model)
+                if not vr.validate(target):
+                    # print(f"❌ fast_model 檢查失敗： {vr.errors})
+                    self.is_verify = False
+                    self.message = f"❌ fast_model 檢查失敗： {vr.errors}"
+                    return
+                else:
+                    # print("alias 檢查通過")
+                    self.is_verify = True
+                    self.message = ''
 
     def _insert_opposite(self): # 添加對向規則
-    # runtime_filter
-        # 建立對象規則 record
-        opposite_records = copy.deepcopy(self.friendly['runtime_filter'])
-        for record in opposite_records:
-            new_items = other_itmes(record['items'], self.specification['models'][record['model']]['model_items_order'])
-            new_method = self._toggle_human(record['method'])
-            # print('new_items:', new_items)
-            # print('new_method:', new_method)
-            record.update({'items': new_items, 'method': new_method}) # 更新
+        if True: # runtime_filter
+            # 建立反向規則 record
+            opposite_records = copy.deepcopy(self.friendly['runtime_filter'])
+            for record in opposite_records:
+                new_items = other_itmes(record['items'], self.specification['models'][record['model']]['model_items_order'])
+                new_method = self._toggle_human(record['method'])
+                # print('new_items:', new_items)
+                # print('new_method:', new_method)
+                record.update({'items': new_items, 'method': new_method}) # 更新
 
-        # print(json.dumps(opposite_records, indent=4, ensure_ascii=False))
-        self.friendly['runtime_filter'].extend(opposite_records) # 添加入主規則
-        # print(json.dumps(self.friendly['runtime_filter'], indent=4, ensure_ascii=False))
+            # print(json.dumps(opposite_records, indent=4, ensure_ascii=False))
+            self.friendly['runtime_filter'].extend(opposite_records) # 添加入主規則
+            # print(json.dumps(self.friendly['runtime_filter'], indent=4, ensure_ascii=False))
 
+        if True: # runtime_disable
+            # 建立反向規則 record
+            opposite_records = copy.deepcopy(self.friendly['runtime_disable'])
+            for record in opposite_records:
+                new_items = other_itmes(record['items'], self.specification['models'][record['model']]['model_items_order'])
+                new_method = self._toggle_human(record['method'])
+                # print('new_items:', new_items)
+                # print('new_method:', new_method)
+                record.update({'items': new_items, 'method': new_method}) # 更新
+
+            # print(json.dumps(opposite_records, indent=4, ensure_ascii=False))
+            self.friendly['runtime_disable'].extend(opposite_records) # 添加入主規則
+            # print(json.dumps(self.friendly['runtime_disable'], indent=4, ensure_ascii=False))
 
     def _dict_to_json(self, data):
         # 將 data(dict) 轉換為 json
@@ -493,6 +554,14 @@ class ProductCheck:
             return None
 
         return data_json
+
+    def _models_pattern_dict(self):
+        models_pattern = {}
+        code_lenght = 0
+        for model in self.specification['models_order']:
+            models_pattern.setdefault(f"{model}", f'^.{{{code_lenght}}}')
+            code_lenght += self.specification['models'][model]['model_item_length']
+        return models_pattern
 
     def _merge_fruit(self):
         # 將 specification, friendly 合併為最終的結果 fruit
@@ -520,10 +589,20 @@ class ProductCheck:
             # print(json.dumps(dic_runtime_filter, indent=4, ensure_ascii=False))
             self.merger.merge(fruit, dic_runtime_filter) # 合併至 fruit
 
+        # runtime_disable
+        rd_runtime_disable = self.friendly.get('runtime_disable', [])
+        if rd_runtime_disable:
+            dic_runtime_disable = self.bw.build_disable(rd_runtime_disable) # record 建構為 dict
+            # print(json.dumps(dic_runtime_disable, indent=4, ensure_ascii=False))
+            self.merger.merge(fruit, dic_runtime_disable) # 合併至 fruit
+
         # fast_model
         rd_fast_model = self.friendly.get('fast_model', [])
         if rd_fast_model:
-            fruit.setdefault('fast_model', self.bw.build_fast_model(rd_fast_model))
+            fruit.setdefault('fast_model', self.bw.build_fast_model(rd_fast_model)) # 添加 fast_model
+
+        # models_pattern
+        fruit.setdefault('models_pattern', self._models_pattern_dict()) # 添加 models_pattern
 
         self.fruit = fruit
 

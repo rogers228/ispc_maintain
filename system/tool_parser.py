@@ -313,8 +313,38 @@ class BuildingWorker():
 
         return {"models": final_models}
 
+    def build_disable(self, records):
+
+        filter_structure = defaultdict(lambda: {"model_items": defaultdict(dict)})
+        disable_mapping = {
+            "-s": False,
+            "-u": True
+        }
+
+        for record in records:
+            model = record["model"]
+            pattern = record["pattern"]
+            items = record["items"]
+            method = record["method"]
+
+            disable_value = disable_mapping.get(method, True)
+            display_data = {"disable": disable_value}
+            for item in items:
+                item_data = filter_structure[model]['model_items'][item]
+                if "runtime_pattern" not in item_data:
+                    item_data["runtime_pattern"] = {}
+                item_data["runtime_pattern"][pattern] = display_data
+
+        final_models = {}
+        for model_key, model_value in filter_structure.items():
+            model_items_dict = dict(model_value['model_items'])
+            final_models[model_key] = {'model_items': model_items_dict}
+
+        return {"models": final_models}
+
     def build_fast_model(self, records):
         return [''.join(e.values()) for e in records] if records else []
+
 
 def test1(): # 以文字行 解析為 records
     # 測試
@@ -634,5 +664,46 @@ def test54():
     result = bw.build_fast_model(records)
     print(result)
 
+def test55():
+    bw = BuildingWorker()
+    records = [
+        {
+            "pattern": "^.{6}(010).+",
+            "model": "08axv",
+            "items": [
+                "S1",
+                "U1",
+                "P1"
+            ],
+            "method": "-s"
+        },
+        {
+            "pattern": "^.{6}(010).+",
+            "model": "08axv",
+            "items": [
+                "S4",
+                "U2",
+                "S2",
+                "R2",
+                "U4",
+                "W4",
+                "R3",
+                "S6",
+                "W5",
+                "S5",
+                "R4",
+                "W6",
+                "U5",
+                "U6",
+                "S3",
+                "P2",
+                "R5"
+            ],
+            "method": "-u"
+        }
+    ]
+    result = bw.build_disable(records)
+    print(json.dumps(result, indent=4, ensure_ascii=False))
+
 if __name__ == "__main__":
-    test54()
+    test55()
