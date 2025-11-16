@@ -316,10 +316,27 @@ class ProductCheck:
             new_records_runtime_filter = rd_runtime_filter.to_dict()
             # print(json.dumps(new_records_runtime_filter, indent=4, ensure_ascii=False))
 
+        if True: # fast_model
+            lis_index = lambda count: [f'index_{i}' for i in range(count)] # 建立 lis_index 函數 回傳 ['index_0', 'index_1'...]
+            columns = lis_index(len(self.specification['models_order']))
+            rd_fast_model = LineParser(lines = self.friendly['fast_model'],
+                columns = columns,
+                text_fields = columns)
+
+            result = rd_fast_model.parse_info() # 解析結果
+            if result['is_error'] is True: # 解析錯誤
+                self.is_verify = False
+                self.message = f"❌ friendly['fast_model'] 解析失敗：{result['message']}"
+                return
+
+            new_records_fast_model = rd_fast_model.to_dict()
+            # print(json.dumps(new_records_fast_model, indent=4, ensure_ascii=False))
+
         friendly_structured = { # 重新構造
             'alias':          new_records_alias,
             'runtime_supply': new_records_runtime_supply,
             'runtime_filter': new_records_runtime_filter,
+            'fast_model':     new_records_fast_model,
             }
 
         self.friendly.update(friendly_structured) # 更新
@@ -416,6 +433,37 @@ class ProductCheck:
                 self.is_verify = True
                 self.message = ''
 
+    # check fast_model
+        # print('check fast_model')
+        for target in self.friendly['fast_model']: # target = dict
+            # print(target)
+            schema_fast_model = {}
+            for key, _ in target.items(): # key = 'index_8'
+                index = key.split('_')[1]
+                target_model = self.specification['models_order'][int(index)]
+                # print('key:', key, 'index:', index, 'model:', target_model)
+
+                # 提前檢查 self.specification['models'] keyerror 避免 schema_fast_model 錯誤
+                if target_model not in self.specification['models']:
+                    self.is_verify = False
+                    self.message = f"❌ fast_model 檢查失敗： model: {target_model} keyerror!"
+                    return
+
+                schema_fast_model.setdefault(key, {'type': 'string', 'required': True,
+                    'allowed': self.specification['models'][target_model]['model_items_order']})
+
+            # print(json.dumps(schema_fast_model, indent=4, ensure_ascii=False))
+            vr = Validator(schema_fast_model)
+            if not vr.validate(target):
+                # print(f"❌ fast_model 檢查失敗： {vr.errors})
+                self.is_verify = False
+                self.message = f"❌ fast_model 檢查失敗： {vr.errors}"
+                return
+            else:
+                # print("alias 檢查通過")
+                self.is_verify = True
+                self.message = ''
+
     def _insert_opposite(self): # 添加對向規則
     # runtime_filter
         # 建立對象規則 record
@@ -471,6 +519,11 @@ class ProductCheck:
             dic_runtime_filter = self.bw.build_filter(rd_runtime_filter) # record 建構為 dict
             # print(json.dumps(dic_runtime_filter, indent=4, ensure_ascii=False))
             self.merger.merge(fruit, dic_runtime_filter) # 合併至 fruit
+
+        # fast_model
+        rd_fast_model = self.friendly.get('fast_model', [])
+        if rd_fast_model:
+            fruit.setdefault('fast_model', self.bw.build_fast_model(rd_fast_model))
 
         self.fruit = fruit
 

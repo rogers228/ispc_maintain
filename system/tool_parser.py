@@ -312,6 +312,10 @@ class BuildingWorker():
             final_models[model_key] = {'model_items': model_items_dict}
 
         return {"models": final_models}
+
+    def build_fast_model(self, records):
+        return [''.join(e.values()) for e in records] if records else []
+
 def test1(): # 以文字行 解析為 records
     # 測試
 
@@ -364,22 +368,22 @@ def test1(): # 以文字行 解析為 records
     df = data.to_dataframe(index="id")
     print(df)
 
-def build_alias(records):
+# def build_alias(records):
 
-    alias_structure = defaultdict(lambda: {"model_items": defaultdict(dict)})
+#     alias_structure = defaultdict(lambda: {"model_items": defaultdict(dict)})
 
-    for record in records:
-        model = record["model"]
-        item = record["item"]
-        alias = record["alias"]
-        alias_structure[model]['model_items'][item]['alias'] = alias
+#     for record in records:
+#         model = record["model"]
+#         item = record["item"]
+#         alias = record["alias"]
+#         alias_structure[model]['model_items'][item]['alias'] = alias
 
-    final_models = {}
-    for model_key, model_value in alias_structure.items():
-        model_value['model_items'] = dict(model_value['model_items'])
-        final_models[model_key] = model_value
+#     final_models = {}
+#     for model_key, model_value in alias_structure.items():
+#         model_value['model_items'] = dict(model_value['model_items'])
+#         final_models[model_key] = model_value
 
-    return {"models": final_models}
+#     return {"models": final_models}
 
 def test51(): # 以 records 建構 dict
     bw = BuildingWorker()
@@ -594,5 +598,41 @@ def test53():
     #     }
     # }
 
+def test54():
+    bw = BuildingWorker()
+    records =[
+        {
+            "index_0": "PA10V",
+            "index_1": "O",
+            "index_2": "018",
+            "index_3": "00DRG",
+            "index_4": "53",
+            "index_5": "R",
+            "index_6": "V",
+            "index_7": "S2",
+            "index_8": "A",
+            "index_9": "12",
+            "index_10": "N00",
+            "index_11": "0"
+        },
+        {
+            "index_0": "PA10V",
+            "index_1": "O",
+            "index_2": "028",
+            "index_3": "00DRG",
+            "index_4": "53",
+            "index_5": "R",
+            "index_6": "V",
+            "index_7": "S3",
+            "index_8": "A",
+            "index_9": "12",
+            "index_10": "N00",
+            "index_11": "0"
+        }
+    ]
+
+    result = bw.build_fast_model(records)
+    print(result)
+
 if __name__ == "__main__":
-    test53()
+    test54()

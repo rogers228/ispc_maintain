@@ -38,8 +38,8 @@ class MainWindow(QMainWindow):
         self.resize(962, 650)  # 設定視窗大小
         self.uid = uid
         self.tree = None # treeview 資料來源
+        self.list_expand_keys = ['fast_model'] # 展開 list的欄位
         self._load_data()
-        # print(self.tree)
         self._load_treeview()
 
     def resizeEvent(self, event):
@@ -58,8 +58,17 @@ class MainWindow(QMainWindow):
         else:
             self.tree = {}
 
-    def _populate_json_tree(self, data: dict or list, parent_item: QStandardItem = None):
-        # 遞迴地將巢狀 dict/list 轉換為 QStandardItem 結構。
+    def _populate_json_tree(self,
+                            data: dict or List,
+                            parent_item: QStandardItem = None,
+                            current_key = None): # 【修改點 1】新增 current_key 參數
+        """
+        遞迴地將巢狀 dict/list 轉換為 QStandardItem 結構。
+
+        :param data: 當前的 dict 或 list 數據
+        :param parent_item: 父級 QStandardItem
+        :param current_key: 當前節點的 key 名稱 (用於判斷是否展開列表)
+        """
 
         if parent_item is None:
             parent_item = QStandardItem() # 如果是頂層，創建一個虛擬根節點
@@ -68,7 +77,6 @@ class MainWindow(QMainWindow):
             # 處理字典 (物件)
             for key, value in data.items():
 
-                # 判斷是否為容器類型 (需要遞迴)
                 is_container = isinstance(value, (dict, list))
 
                 # 建立新的項目作為當前節點 (key)
@@ -76,35 +84,48 @@ class MainWindow(QMainWindow):
                 key_item = QStandardItem(item_text)
                 key_item.setEditable(False)
 
-                # 將新的項目添加到父節點
                 parent_item.appendRow(key_item)
 
-                # 如果是容器，則遞迴調用
                 if is_container:
-                    # 遞迴處理子結構
-                    self._populate_json_tree(value, key_item)
+                    self._populate_json_tree(value, key_item, current_key=key)
 
         elif isinstance(data, list):
             # 處理列表 (陣列)
 
-            # 檢查列表是否為單純的元素列表 (所有元素都不是容器)
+            # 1. 判斷是否為單純的元素列表 (所有元素都不是容器)
             is_simple_list = all(not isinstance(item, (dict, list)) for item in data)
 
-            if is_simple_list:
-                # 遵循您的要求 4: 列表無子項目時
-                # 建立一個單一項目來顯示整個列表內容
-                item_text = f"[{len(data)} items]: {', '.join(map(repr, data))}"
+            # 2. 判斷是否需要強制展開 (即使是簡單列表，如果 key 在列表中也展開)
+            should_expand = current_key in self.list_expand_keys
+
+            # 【修改點 3】調整列表的顯示邏輯
+            # 條件：如果不是容器列表 AND 不需要強制展開
+            if is_simple_list and not should_expand:
+                # 採用單一項目顯示整個列表內容 (預設行為)
+
+                # 確保列表有內容，空列表則顯示 []
+                if data:
+                    item_text = f"[{len(data)} items]: {', '.join(map(repr, data))}"
+                else:
+                    item_text = "[] (Empty List)"
+
                 list_item = QStandardItem(item_text)
                 list_item.setEditable(False)
                 parent_item.appendRow(list_item)
 
             else:
-                # 遵循您的要求 5: 列表有子項目的容器
+                # 容器列表 或 簡單列表但需要展開 (樹狀結構)
+
                 for index, value in enumerate(data):
                     is_sub_container = isinstance(value, (dict, list))
 
                     # 建立新的項目作為當前節點 (索引)
-                    item_text = f"[{index}]: <{type(value).__name__}>" if is_sub_container else f"[{index}]: {repr(value)}"
+                    # 只有在非容器時才顯示值
+                    if is_sub_container:
+                        item_text = f"[{index}]: <{type(value).__name__}>"
+                    else:
+                        item_text = f"[{index}]: {repr(value)}"
+
                     index_item = QStandardItem(item_text)
                     index_item.setEditable(False)
 
@@ -112,6 +133,7 @@ class MainWindow(QMainWindow):
 
                     # 遞迴處理子結構
                     if is_sub_container:
+                        # 容器遞迴時，不傳遞 item 的索引作為 key
                         self._populate_json_tree(value, index_item)
 
         return parent_item
