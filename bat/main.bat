@@ -16,4 +16,4 @@ REM 切換到上層  為root  路徑才會正確
 cd /d "%~dp0.."
 
 rem 主程式的主表單
-%PYTHON_EXE% gui\us01\us01.py
+%PYTHON_EXE% system\tool_startup.py

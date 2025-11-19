@@ -26,7 +26,7 @@ if True:
     from config import ISPC_MAINTAIN_VERSION
     from share_qt5 import *
     from tool_auth import AuthManager
-    from tool_launch import startup
+    # from tool_launch import startup
     from tool_options import Options
     from tool_pd_storage import ProductStorage
     from tool_pd_jogging import ProductCheck
@@ -404,7 +404,7 @@ class MainWindow(QMainWindow):
 
 def main():
     print("🚀 Python executable:", sys.executable) # 目前執行的python路徑 用來判斷是否是虛擬環境python 或 本機python
-    startup() # 正常啟動
+    # startup() # 正常啟動
     app = QApplication(sys.argv)
     argv1 = sys.argv[1] if len(sys.argv) > 1 else "no argv" # 預留參數接口
     # print('argv1:', argv1)
