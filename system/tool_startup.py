@@ -5,7 +5,6 @@ if True:
     from git import Repo, GitCommandError
     import subprocess
     import multiprocessing
-    # from typing import Optional
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
         if start_path is None:
@@ -59,35 +58,14 @@ if True:
     MAIN_FORM = os.path.join(ROOT_DIR, "gui", "us01","us01.py")
 
     sys.path.append(os.path.join(ROOT_DIR, "system"))
-    from share_qt5 import *
+    # from share_qt5 import *
     from tool_gui import hide_cmd_window
     from tool_auth import AuthManager
-
-# 全局變數，用於儲存 QApplication 實例
-_APP_INSTANCE = None
-
-def get_or_create_qapplication() -> QApplication:
-    # 獲取現有的 QApplication 實例，如果不存在則創建一個新的。
-    global _APP_INSTANCE
-    app = QApplication.instance()
-    if app is None:
-        app = QApplication(sys.argv)
-    _APP_INSTANCE = app
-    return app
-
-def show_error_alert(title, message):
-    get_or_create_qapplication()
-    msg_box = QMessageBox()
-    msg_box.setIcon(QMessageBox.Critical)
-    msg_box.setWindowTitle(title)
-    msg_box.setText(message)
-    msg_box.setStandardButtons(QMessageBox.Ok)
-    msg_box.exec_() # 注意：這裡不需要運行 app.exec_()，因為 QMessageBox.exec_() 已經處理了事件迴圈。
+    from tool_msgbox import error
 
 def update_modules():
     # 檢查 套件
     # print('update_modules...')
-
     try:
         command = [PYTHON_EXECUTABLE, CHECK_SCRIPT_PATH]
         # print(f"🚀 檢查執行環境檢查: {PYTHON_EXECUTABLE}")
@@ -157,16 +135,22 @@ def main_form():
         print(f"\n🔴 執行檢查腳本時發生未預期的錯誤: {e}")
 
 def main():
-    result = update_modules() # 檢查套件
+    # 檢查套件
+    result = update_modules()
     if result is False:
-        show_error_alert('檢查', '🚫 請聯繫系統管理員，或手動更新環境。')
+        error("啟動錯誤", "請聯繫系統管理員，或手動更新環境。",
+          detail=f"原因是您的python環境套件，與 requirements.txt 文件內容不符\n🚀 Python executable: {sys.executable}")
         return
 
-    update_repo() # 更新主程序
-    p = multiprocessing.Process(target=production_env_hide_cmd) # 獨立進程
-    p.start() # 啟動獨立進程異步執行 將隱藏命令視窗
+    # 更新主程序
+    update_repo()
 
-    main_form() # 最後才執行gui 開啟主表單
+    # 啟動獨立進程異步執行 不阻塞主視窗 將隱藏命令視窗
+    p = multiprocessing.Process(target=production_env_hide_cmd)
+    p.start()
+
+    # 開啟主表單
+    main_form()
 
 if __name__ == '__main__':
     main()

@@ -115,6 +115,7 @@ def run_environment_check():
         for pkg in to_update:
             print(f" - 🔄 {pkg}")
 
+
     # 檢查失敗，使用 sys.exit(1) 觸發 main.py 中的 subprocess.CalledProcessError
     sys.exit(1)
 
