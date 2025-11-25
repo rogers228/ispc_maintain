@@ -144,7 +144,7 @@ class ProductStorage:
         resp = requests.patch(url, headers=headers, json=payload)
         if resp.status_code == 200:
             updated_data = resp.json()
-            if updated_data: # 未通過 Policies 的使用者 回傳 空 list []
+            if updated_data:
                 print("✅ UPDATE 成功!")
                 # print("回傳更新資料:", updated_data)
                 return updated_data[0]
