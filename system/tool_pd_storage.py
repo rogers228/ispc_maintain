@@ -144,9 +144,13 @@ class ProductStorage:
         resp = requests.patch(url, headers=headers, json=payload)
         if resp.status_code == 200:
             updated_data = resp.json()
-            print("✅ UPDATE 成功!")
-            # print("回傳更新資料:", updated_data)
-            return updated_data[0] # PostgREST for PATCH returns a list of objects
+            if updated_data: # 未通過 Policies 的使用者 回傳 空 list []
+                print("✅ UPDATE 成功!")
+                # print("回傳更新資料:", updated_data)
+                return updated_data[0]
+            else:
+                print(" ❌ 未通過 Policies 無法更新!")
+                return None
         elif resp.status_code == 204:
             print("✅ UPDATE 成功 (無回傳內容 - 204 No Content)。")
             return True
@@ -230,10 +234,10 @@ class ProductStorage:
         # print(json.dumps(data, indent=4, ensure_ascii=False))
         result = self.update_one(uid, data)
         return {
-                'is_verify': True,
-                'message': '',
-                'result': result,
-            }
+            'is_verify': True,
+            'message': '',
+            'result': result,
+        }
 
 def test1():
     # 新增一筆

@@ -1,4 +1,5 @@
 # 首次啟動相關程序
+# 是由安裝程序 install_ispc_maintain.bat 內執行 _clone_ispc_maintain.py 呼叫執行 本檔案，進行首次啟動相關程序
 
 if True:
     import sys, os
