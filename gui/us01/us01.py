@@ -30,6 +30,7 @@ if True:
     from tool_options import Options
     from tool_pd_storage import ProductStorage
     from tool_pd_jogging import ProductCheck
+    from tool_msgbox import error, warning
 
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us01'))
     from form_us01 import Ui_MainWindow
@@ -161,25 +162,31 @@ class MainWindow(QMainWindow):
         options = self.opt.get_options_auto() # 讀取 option 依據設定 自動判斷抓取來源
         # print(options)
         # 依登入 uses, options, 轉換為僅顯示有權限的產品資料至選單
-        permissions = options['permissions'][user] # # 抓取權限 可在 temp_options.py 測試
+
+        # permissions = options['permissions'][user] # # 抓取權限 可在 temp_options.py 測試
+        permissions = options['permissions'].get(user, None) # 抓取權限 可在 temp_options.py 測試
         # print('permissions:', permissions)
-        dic_p = {}
-        for e in permissions:
-            pdno = next(iter(e.keys()))
-            attt = next(iter(e.values()))
-            # print(pdno)
-            # print(attt.get('name'))
-            # print(attt.get('uid'))
-            dic_p[attt.get('name')] = {'action': self.action_test, 'uid': attt.get('uid')}
-            self.product_sheet[attt.get('uid')] = attt.get('name') # 產品小抄 {uid: name}
 
-        self.tree_data['產品資料']  = dic_p
+        if permissions:
+            dic_p = {}
+            for e in permissions:
+                pdno = next(iter(e.keys()))
+                attt = next(iter(e.values()))
+                # print(pdno)
+                # print(attt.get('name'))
+                # print(attt.get('uid'))
+                dic_p[attt.get('name')] = {'action': self.action_test, 'uid': attt.get('uid')}
+                self.product_sheet[attt.get('uid')] = attt.get('name') # 產品小抄 {uid: name}
 
-        # 標準格式範本
-        # self.tree_data['產品資料'] = {
-        #     'A': {'action': self.action_test, 'uid': '產品A的uuid'},
-        #     'B': {'action': self.action_test, 'uid': '產品B的uuid'},
-        # }
+            self.tree_data['產品資料']  = dic_p
+
+            # 標準格式範本
+            # self.tree_data['產品資料'] = {
+            #     'A': {'action': self.action_test, 'uid': '產品A的uuid'},
+            #     'B': {'action': self.action_test, 'uid': '產品B的uuid'},
+            # }
+        else:
+            warning("讀取產品選單失敗", "未設定權限!請洽管理員", detail=f"option中無法讀取到 user: {user} 的權限設定")
 
     def display_tree(self, data_dict, parent):
         # 展示選單
@@ -380,7 +387,11 @@ class MainWindow(QMainWindow):
             if reply == QMessageBox.Yes:
                 result = self.ps.upload(selected_uid) # 執行上傳程序  會先檢查 驗證失敗將停止
                 if result['is_verify'] is True:
-                    QMessageBox.information(self, "上傳", f'{self.product_sheet[selected_uid]}\n\n上傳成功。\n')
+                    if result['result'] is None:
+                        # 未設定 Policies
+                        QMessageBox.warning(self, "上傳", f"{self.product_sheet[selected_uid]}\n\n上傳失敗!\n\n未設定 Policies!")
+                    else:
+                        QMessageBox.information(self, "上傳", f'{self.product_sheet[selected_uid]}\n\n上傳成功。\n')
 
                 else:
                     QMessageBox.warning(self, "上傳", f"{self.product_sheet[selected_uid]}\n\n驗證失敗!")
