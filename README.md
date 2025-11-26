@@ -1,5 +1,6 @@
 # 系統需求
-應具有網路環境
+1. 應具有網路環境
+2. 應安裝Git
 
 # 建立python執行環境
 
@@ -9,7 +10,7 @@
 
 # 建立主程式
 
-1. 以檔案總管進入 C:\python_green\python-3.12.
+1. 以檔案總管進入 C:\python_green\python-3.12
 2. 找到 install_ispc_maintain.bat 點兩下執行，他將建立主程式
 
 # 開啟
