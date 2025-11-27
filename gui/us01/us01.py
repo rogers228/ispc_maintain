@@ -414,7 +414,6 @@ class MainWindow(QMainWindow):
         print("========================")
 
 def main():
-    print("🚀 Python executable:", sys.executable) # 目前執行的python路徑 用來判斷是否是虛擬環境python 或 本機python
     # startup() # 正常啟動
     app = QApplication(sys.argv)
     argv1 = sys.argv[1] if len(sys.argv) > 1 else "no argv" # 預留參數接口

@@ -109,7 +109,7 @@ def update_modules():
     # print('update_modules...')
     try:
         command = [PYTHON_EXECUTABLE, CHECK_SCRIPT_PATH]
-        print(f"🚀 檢查執行環境檢查: {PYTHON_EXECUTABLE}")
+        print(f"🚀 檢查套件，執行環境: {PYTHON_EXECUTABLE}")
 
         result = subprocess.run(command,
             capture_output=False, # 讓 check_env.py 的 print 輸出直接顯示

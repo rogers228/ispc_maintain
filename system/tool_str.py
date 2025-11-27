@@ -61,4 +61,4 @@ def test2():
     print(f"輸入 '999-20250930': {version3}") # 輸出: '1000.20251012'
 
 if __name__ == '__main__':
-    test2()
+    test1()

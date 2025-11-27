@@ -3,19 +3,20 @@ venv/
 *.py[cod]
 
 
-# admin
+# temp_options.py 是 admin 設定用
 temp_options.py
 
-# private.json 是在建立時自動產生
+# private.json 是在建立時自動產生，用途是儲存local端的 登入、設定資料
 system/private.json
 
-# config.txt 是在建立時自動產生
+# config.txt 是在建立時自動產生，用途是 local端的 python 環境資料
 bat/config.txt
 
-# ISPC.lnk 是在建立時自動產生
+# ISPC.lnk 是在建立時自動產生，依據安裝路徑產生的捷徑
 ISPC.lnk
 
-# tempstorage/ 是暫存於本地的工作區
-# template.py 為例外
+# tempstorage/ 是暫存 local端的 工作區產品資料
 tempstorage/*.py
+
+# template.py 為例外
 !tempstorage/template.py
