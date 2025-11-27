@@ -63,6 +63,7 @@ class MainWindow(QMainWindow):
         self.us05 = None    # 子表單 登入
         self.us07 = None    # 子表單 檢視
         self.us09 = None    # 子表單 設定
+        self.options = None # options 參數設定
         self.tree_data = {} # 選單資料 dict
         self.product_sheet = {} # 產品小抄 {uid: name}
 
@@ -159,12 +160,12 @@ class MainWindow(QMainWindow):
 
         data = self.auth.load_local_data()
         user = data.get("email")
-        options = self.opt.get_options_auto() # 讀取 option 依據設定 自動判斷抓取來源
+        self.options = self.opt.get_options_auto() # 讀取 option 依據設定 自動判斷抓取來源
         # print(options)
         # 依登入 uses, options, 轉換為僅顯示有權限的產品資料至選單
 
         # permissions = options['permissions'][user] # # 抓取權限 可在 temp_options.py 測試
-        permissions = options['permissions'].get(user, None) # 抓取權限 可在 temp_options.py 測試
+        permissions = self.options['permissions'].get(user, None) # 抓取權限 可在 temp_options.py 測試
         # print('permissions:', permissions)
 
         if permissions:
@@ -407,11 +408,26 @@ class MainWindow(QMainWindow):
         print('handle_pd_release')
         pass
 
+    def _get_uid_users(self, uid):
+        result = []
+        permissions = self.options.get('permissions', {})
+        for email, items in permissions.items():
+            for item in items:
+                # item 是 {'ys_v_dev': {...}} 的格式，因此需要取出 value
+                for data in item.values():
+                    if data.get('uid') == uid:
+                        result.append(email)
+                        break  # 已找到該 email 的匹配 uid，就不用再找此 email 下其他項目
+        return result
+
     def action_test(self, item_text, item_uid):
-        print("\n=== 執行 action_test ===")
-        print(f"點擊的項目文字是: {item_text}")
-        print(f"該產品的 UID 是: {item_uid}")
-        print("========================")
+        name = item_text
+        uid = item_uid
+        users = self._get_uid_users(item_uid)
+        # print(f"點擊的項目文字是: {name}")
+        # print(f"該產品的 UID 是: {uid}")
+        # print(f"具有編輯權限者是: {', '.join(users)}")
+        QMessageBox.information(self, "information", f'{name}\n{uid}\n編輯權限: {', '.join(users)}')
 
 def main():
     # startup() # 正常啟動
