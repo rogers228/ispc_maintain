@@ -22,7 +22,7 @@ if True:
     from config import spwr_api_url, spwr_api_anon_key
     from tool_auth import AuthManager
     from tool_time import get_local_time
-    from tool_str import get_str_hash, version_upgrade
+    from tool_str import get_str_hash, generate_random_char
     from tool_pd_jogging import ProductCheck
 
 class ProductStorage:
@@ -43,7 +43,8 @@ class ProductStorage:
         payload['data_hash'] = get_str_hash(data_original) if data_original else ''
         payload['last_time'] = get_local_time()
         payload['edit_user'] = auth_data.get("full_name", 'Unknown User')
-        payload['version'] = version_upgrade(version)
+        # version 由 supabase 觸發事件後執行 database function 自動更新
+
         # 確保 'source_id' 欄位是 None 而不是空字串，如果它沒有值 (PostgreSQL 對 UUID 欄位比較嚴格)
         if payload.get('source_id') == '':
             payload['source_id'] = None
@@ -242,16 +243,18 @@ class ProductStorage:
 def test1():
     # 新增一筆
     ps = ProductStorage()
-    test_data_original = f"這是測試產品資料，新增於 {get_local_time()}"
     data = {
-        'pdno': f'TEST_API_{int(time.time())}',
-        'name': 'API 測試產品 (動態傳入)',
-        'use_type': 1, # 1: 預覽版
-        'data_original': test_data_original,
-        'data_json': json.dumps({"test_key": "test_value"}),
+        'pdno': generate_random_char(),
+        'name': 'ys_V系列柱塞泵_開發預覽版',
+        'use_type': 1, # 1: 開發預覽版
+        'data_original': '',
+        'data_json': '',
         'source_id': None, # 工作預覽版無來源
     }
+    print(data)
+    print('adding')
     ps.insert_one(data)
+    print('add success, 請至 temp_options.py 添加使用者權限')
 
 def test2():
     # 更新
@@ -280,16 +283,17 @@ def test3():
         print("❌ SELECT MULTIPLE 步驟失敗。")
 
 def test4():
-    # 建立 uid.py
+    # 下載建立 uid.py
     ps = ProductStorage()
     uid = 'dbdcedbe-7bde-4b2c-8cfb-b21e8ccde68d'
     ps.pull_data_original(uid)
 
 def test5():
+    # 上傳 uid.py
     ps = ProductStorage()
     uid = 'dbdcedbe-7bde-4b2c-8cfb-b21e8ccde68d'
     result = ps.upload(uid)
     print(result)
 
 if __name__ == '__main__':
-    test5()
+    test1()

@@ -23,7 +23,7 @@
 | data_hash     | varchar   | 用來檢查dirty (僅工作預覽版有data_hash)     |
 | last_time     | timestamp | 最後時間 用來記錄最後更新的時間，所有版都有   |
 | edit_user     | varchar   | 最後上傳者，發布者                          |
-| version       | varchar   | 版本，自動產生，固定格式 274.20251002 用來識別，只要有更新即往上升版    |
+| version       | varchar   | 版本，PL/pgSQL 自動產生，固定格式 1-20251002 用來識別，只要有更新即往上升版|
 | source_id     | uuid      | 來源id  工作預覽版無來源，   正式版的來源為預覽版， target紀錄在options |
 
 ## use_type

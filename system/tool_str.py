@@ -1,6 +1,8 @@
 import hashlib
 import time
 from datetime import datetime
+import random
+import string
 
 def get_str_hash(content):
     # 接收字串內容 (content)，使用 SHA-256 演算法生成雜湊值 (Hash Value)。
@@ -32,6 +34,13 @@ def version_upgrade(old_version=None):
 
     return f"{version}-{datetime.now().strftime('%Y%m%d')}" # AAA-YYYYMMDD
 
+def generate_random_char(length=12):
+    # string.ascii_letters 包含所有大小寫英文字母
+    # string.digits 包含所有數字 0-9
+    characters = string.ascii_letters + string.digits
+    random_string = ''.join(random.choices(characters, k=length))
+    return random_string
+
 def test1():
     content_v1 = "這是一段不會變動的配置內容。"
     content_v2 = "這是一段不會變動的配置內容。"
@@ -60,5 +69,8 @@ def test2():
     version3 = version_upgrade('999-20250930')
     print(f"輸入 '999-20250930': {version3}") # 輸出: '1000.20251012'
 
+def test3():
+    print(generate_random_char())
+
 if __name__ == '__main__':
-    test1()
+    test3()
