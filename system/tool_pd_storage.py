@@ -241,11 +241,11 @@ class ProductStorage:
         }
 
 def test1():
-    # 新增一筆
+    # 新增一筆，完成後請至 temp_options.py 添加使用者權限
     ps = ProductStorage()
     data = {
         'pdno': generate_random_char(),
-        'name': 'ys_V系列柱塞泵_開發預覽版',
+        'name': 'ys_AR系列柱塞泵_開發預覽版',
         'use_type': 1, # 1: 開發預覽版
         'data_original': '',
         'data_json': '',
