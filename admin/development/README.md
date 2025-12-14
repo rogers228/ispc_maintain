@@ -9,8 +9,8 @@
 5. 具有專門的規格維護後台，可處理規格屬性之間的互相禁用，(例如iphone具有max功能就不能選擇air機型)
 
 ## ispc_maintain
-資料維護的github專案
-
+1. 專門用來維護資料的後台，python pyqt5 winform專案。
+2. 採用github專案，自動更新
 
 
 ## data
