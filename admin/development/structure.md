@@ -1,4 +1,4 @@
-# 資料結構
+# supabase_資料結構
 
 ## rec_option
 
@@ -11,6 +11,7 @@
 | last_time     | timestamp | 最後時間           | 
 
 ## rec_pd
+產品工作預覽版
 
 | 名稱          |類型        | 說明                                      |
 | --            | --        |--                                         |
@@ -26,10 +27,11 @@
 | version       | varchar   | 版本，PL/pgSQL 自動產生，固定格式 1-20251002 用來識別，只要有更新即往上升版|
 | source_id     | uuid      | 來源id  工作預覽版的部屬為正式版的目標id | 正式版的發布來源id |
 
-## use_type
+## 預計廢除欄位 use_type, source_id
 
-工作預覽版 > 正式版 < 備份副本版(可復原正式版)
-
-1. 工作預覽版 非正式上線，僅供內部預覽，為資料的第一層確認保護
-2. 正式版，由預覽版發布，data_json覆蓋過來 last_time，edit_user
-
+## rec_pd_release
+產品正式發布版，由rec_pd min壓縮而來
+| id            | uuid      | pk   同 rec_pd                            |
+| data_json     | jsonb     | 產品資料 轉換 mis                          |
+| version       | varchar   | 版本                                      |
+| build_state   | int2      | 0無或不需要  1需要SSG部屬版本  給SSG查詢用   |
