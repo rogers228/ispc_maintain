@@ -30,8 +30,11 @@
 ## 預計廢除欄位 use_type, source_id
 
 ## rec_pd_release
-產品正式發布版，由rec_pd min壓縮而來
-| id            | uuid      | pk   同 rec_pd                            |
-| data_json     | jsonb     | 產品資料 轉換 mis                          |
-| version       | varchar   | 版本                                      |
-| build_state   | int2      | 0無或不需要  1需要SSG部屬版本  給SSG查詢用   |
+產品正式發布版
+由rec_pd.data_json min壓縮而來，
+可發起請求 netlify build ssg
+| id            | uuid      | pk   同 rec_pd.id                            |
+| data_json     | jsonb     | 產品資料 轉換 mis                             |
+| version       | varchar   | 版本                                         |
+| build_state   | int2      | 0或不需要 1需要SSG部屬版本 2部屬完畢 7部屬失敗 SSG 雲端編譯後更新為2   |
+| build_time    | timestamp | 雲端編譯時間  0無或不需要  1需要SSG部屬版本  給SSG後更新回0   |
