@@ -16,7 +16,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtCore import (
     Qt, QPoint, QSize, QObject, QModelIndex, pyqtSignal,
     QStandardPaths, QSettings,
-    QThread, QTimer,
+    QThread, QTimer, QUrl
     )
 
 from PyQt5.QtGui import (
@@ -25,6 +25,7 @@ from PyQt5.QtGui import (
     QFont, QIcon, QPixmap, QColor,
     QKeySequence, QKeyEvent,
     QClipboard, QBrush,
+    QDesktopServices
     )
 
 def test1():

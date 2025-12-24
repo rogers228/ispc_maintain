@@ -54,7 +54,7 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow();
         self.ui.setupUi(self) # 載入ui
         self.setWindowTitle(f'ispc maintain ({ISPC_MAINTAIN_VERSION})')
-        self.resize(770, 460)  # 設定視窗大小
+        self.resize(878, 460)  # 設定視窗大小
 
         self.auth = AuthManager()
         self.opt = Options()
@@ -70,6 +70,7 @@ class MainWindow(QMainWindow):
         # 狀態列
         data = self.auth.load_local_data()
         full_name = data.get("full_name", "未設定")
+        self.email = data.get("email", "") # 使用者 email
         self.label_user = QLabel(f"使用者: {full_name}")
         self.label_status = QLabel("登入狀態: 檢查中...")
         self.ui.statusbar.addWidget(self.label_user)
@@ -95,6 +96,7 @@ class MainWindow(QMainWindow):
             icon_preview = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'preview.png'))
             icon_release = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'release.png'))
             icon_download = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'download.png'))
+            icon_web_preview = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'web.png'))
 
             self.ui.pd_edit.clicked.connect(self.handle_pd_edit)
             self.ui.pd_check.clicked.connect(self.handle_pd_check)
@@ -102,6 +104,7 @@ class MainWindow(QMainWindow):
             self.ui.pd_preview.clicked.connect(self.handle_pd_preview)
             self.ui.pd_release.clicked.connect(self.handle_pd_release)
             self.ui.pd_download.clicked.connect(self.handle_pd_download)
+            self.ui.pd_web_preview.clicked.connect(self.handle_pd_web_preview)
 
             self.ui.pd_edit.setIcon(icon_edit)
             self.ui.pd_check.setIcon(icon_check)
@@ -109,6 +112,7 @@ class MainWindow(QMainWindow):
             self.ui.pd_preview.setIcon(icon_preview)
             self.ui.pd_release.setIcon(icon_release)
             self.ui.pd_download.setIcon(icon_download)
+            self.ui.pd_web_preview.setIcon(icon_web_preview)
 
         # 啟動計時器：每 1 小時執行一次刷新程序
         self.timer = QTimer(self)
@@ -161,7 +165,7 @@ class MainWindow(QMainWindow):
         data = self.auth.load_local_data()
         user = data.get("email")
         self.options = self.opt.get_options_auto() # 讀取 option 依據設定 自動判斷抓取來源
-        # print(options)
+        # print(json.dumps(self.options, indent=4, ensure_ascii=False))
         # 依登入 uses, options, 轉換為僅顯示有權限的產品資料至選單
 
         # permissions = options['permissions'][user] # # 抓取權限 可在 temp_options.py 測試
@@ -298,6 +302,7 @@ class MainWindow(QMainWindow):
         self.ui.pd_upload.setEnabled(is_enable)
         self.ui.pd_preview.setEnabled(is_enable)
         self.ui.pd_release.setEnabled(is_enable)
+        self.ui.pd_web_preview.setEnabled(is_enable)
 
     def handle_tree_activated(self, index):
         item = self.model.itemFromIndex(index)
@@ -339,6 +344,17 @@ class MainWindow(QMainWindow):
             return None # 4. 選取項是 '產品資料' 父節點本身，或沒有 UID
 
         return item_uid
+
+    def _find_pdno_by_uid(self, permissions_user, target_uid):
+        # permissions_user 是 self.option[permissions][email]
+        for item in permissions_user:
+            # 每個 item 是一個只有一個 key 的 dict，例如 {"ys_v_dev": {...}}
+            for _, info in item.items():
+                # info 就是內層 dict
+                if info.get("uid") == target_uid:
+                    return info.get("pdno")
+        return None
+
 
     def handle_pd_download(self):
         # 下載
@@ -403,6 +419,13 @@ class MainWindow(QMainWindow):
         if selected_uid:
             self.us07 = MainWindow_us07(selected_uid) # 檢視
             self.us07.show()
+
+    def handle_pd_web_preview(self):
+        selected_uid = self._get_selected_product_uid()
+        pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], selected_uid)
+        # print('pdno:', pdno)
+        url = f'http://www.ispc.com/{pdno}'
+        QDesktopServices.openUrl(QUrl(url))
 
     def handle_pd_release(self):
         print('handle_pd_release')

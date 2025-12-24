@@ -45,9 +45,10 @@ class ProductStorage:
         payload['edit_user'] = auth_data.get("full_name", 'Unknown User')
         # version 由 supabase 觸發事件後執行 database function 自動更新
 
+        # 2025/12/24 廢除 source_id
         # 確保 'source_id' 欄位是 None 而不是空字串，如果它沒有值 (PostgreSQL 對 UUID 欄位比較嚴格)
-        if payload.get('source_id') == '':
-            payload['source_id'] = None
+        # if payload.get('source_id') == '':
+        #     payload['source_id'] = None
         return payload
 
     def select_multiple(self, lis_uid: list):
@@ -246,10 +247,10 @@ def test1():
     data = {
         'pdno': generate_random_char(),
         'name': 'ys_AR系列柱塞泵_開發預覽版',
-        'use_type': 1, # 1: 開發預覽版
+        # 2025/12/24 廢除 use_type
+        # 'use_type': 1, # 1: 開發預覽版
         'data_original': '',
         'data_json': '',
-        'source_id': None, # 工作預覽版無來源
     }
     print(data)
     print('adding')
@@ -263,10 +264,10 @@ def test2():
     new_data_original = f"這是測試產品資料，修改於 {get_local_time()}"
     data = {
         'name': 'API 測試產品 (已更新名稱)', # 更新名稱
-        'use_type': 2, # 狀態從預覽版(1)改為正式版(2)
+        # 2025/12/24 廢除 use_type
+        # 'use_type': 2, # 狀態從預覽版(1)改為正式版(2)
         'data_original': new_data_original, # 傳入新資料來重新計算 data_hash
         'data_json': json.dumps({"status": "updated"}),
-        'source_id': '2022f111-ddfa-4338-8023-8a72f8bea2cb'
     }
     ps.update_one(uid, data)
 
