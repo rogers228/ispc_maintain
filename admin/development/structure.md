@@ -5,9 +5,9 @@
 | 名稱          |類型        |說明               |
 | --            | --        |--                 |
 | id            | uuid      |                   |
-| options       | jsonb     | 轉為json前端讀取用     |
+| options       | jsonb     | 轉為json前端讀取用  |
 | original      | text      | 原始檔編輯用       |
-| original_hash | varchar   | 原始檔hash值 |
+| original_hash | varchar   | 原始檔hash值       |
 | last_time     | timestamp | 最後時間           | 
 
 ## rec_pd
@@ -29,17 +29,18 @@
 version 由 supabase database functions 觸發before 事件，自動更新
 
 ## rec_pd_release
-產品正式發布版，無gui介面
+產品發布，無gui介面
 
-可發起請求 netlify build ssg
 | id            | uuid      | pk   同 rec_pd.id                            |
-| data_json     | jsonb     | 產品資料 轉換 mis                             |
-| version       | varchar   | 版本  跟隨預覽版                              |
-| build_state   | int2      | netlify-ssg 雲端編譯為靜態js檔案  狀態碼   0或不需要 1需要部屬 2部屬完畢 7部屬失敗 ，netlify-ssg編譯後更新為2   |
-| build_time    | timestamp | netlify-ssg 雲端編譯為靜態js檔案的完成時間    |
+| release_user  | varchar    |  發布者                                      |
+| release_time  | timestamptz | 發布時間                                   |
+| data_json     | jsonb       | 產品資料                             |
+| version       | varchar     | 版本                                 |
+| build_state   | int2      | netlify-ssg 雲端編譯為靜態js檔案  狀態碼   0或不需要 1需要部屬 2部屬完畢 3 ssg編譯中 7部屬失敗 ，netlify-ssg編譯後更新為2   |
+| build_time    | timestamptz | netlify-ssg 雲端編譯為靜態js檔案的完成時間    |
 
 ### 注意事項
-data_json 由rec_pd.data_json min壓縮而來，
-version 跟隨預覽版
-build_state 由 ispc_maintain 寫入0或1 由 netlify-ssg寫入2或7
-build_time 由 netlify-ssg寫入
+1. 由 ispc_maintain 後台使用者選擇產品後，按下發布按鈕，寫入更新 rec_pd_release.id, release_user, release_time，及 build_state=1
+2. database functions 設定 befure update 自動更新複製 data_json, version 來源是table rec_pd 相同id的data_json, version
+3. 資料寫入成功後，由ispc_maintain 向 netlify build hook 發起請求執行 build
+4. netlify build 將執行netlify-ssg.py 讀取rec_pd_release.build_state=1 的資料進行ssg，新更新build_state=3最後更新 build_state=2, build_time

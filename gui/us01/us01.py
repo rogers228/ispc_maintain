@@ -23,13 +23,14 @@ if True:
     ROOT_DIR = find_project_root() # 專案 root
 
     sys.path.append(os.path.join(ROOT_DIR, "system"))
-    from config import ISPC_MAINTAIN_VERSION
+    from config import ISPC_MAINTAIN_VERSION, WEB_ISCP_SVELTE_DOMAIN_URL
     from share_qt5 import *
     from tool_auth import AuthManager
     # from tool_launch import startup
     from tool_options import Options
     from tool_pd_storage import ProductStorage
     from tool_pd_jogging import ProductCheck
+    from tool_pd_release import ProductRelease
     from tool_msgbox import error, warning
 
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us01'))
@@ -54,11 +55,12 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow();
         self.ui.setupUi(self) # 載入ui
         self.setWindowTitle(f'ispc maintain ({ISPC_MAINTAIN_VERSION})')
-        self.resize(878, 460)  # 設定視窗大小
+        self.resize(765, 460)  # 設定視窗大小
 
         self.auth = AuthManager()
         self.opt = Options()
         self.ps = ProductStorage()
+        self.pr = pr = ProductRelease()
 
         self.us05 = None    # 子表單 登入
         self.us07 = None    # 子表單 檢視
@@ -85,6 +87,10 @@ class MainWindow(QMainWindow):
         self.display_tree(self.tree_data, self.model.invisibleRootItem()) # 展示選單
         self.ui.treeView.activated.connect(self.handle_tree_activated) # 連接 activated 信號到處理函式 (當項目被點擊或啟動時觸發)
         self.ui.treeView.setModel(self.model)  # 綁定model 到 TreeView
+
+        self.ui.treeView.setContextMenuPolicy(Qt.CustomContextMenu) # 設定右鍵選單政策
+        self.ui.treeView.customContextMenuRequested.connect(self.show_tree_context_menu)
+
         self.ui.treeView.setHeaderHidden(True) # 隱藏root
         self.ui.treeView.expandAll() # 展開全部
         self.ui.treeView.selectionModel().currentChanged.connect(self.handle_tree_selection_changed) # 選取事件
@@ -96,7 +102,6 @@ class MainWindow(QMainWindow):
             icon_preview = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'preview.png'))
             icon_release = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'release.png'))
             icon_download = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'download.png'))
-            icon_web_preview = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'web.png'))
 
             self.ui.pd_edit.clicked.connect(self.handle_pd_edit)
             self.ui.pd_check.clicked.connect(self.handle_pd_check)
@@ -104,7 +109,6 @@ class MainWindow(QMainWindow):
             self.ui.pd_preview.clicked.connect(self.handle_pd_preview)
             self.ui.pd_release.clicked.connect(self.handle_pd_release)
             self.ui.pd_download.clicked.connect(self.handle_pd_download)
-            self.ui.pd_web_preview.clicked.connect(self.handle_pd_web_preview)
 
             self.ui.pd_edit.setIcon(icon_edit)
             self.ui.pd_check.setIcon(icon_check)
@@ -112,7 +116,6 @@ class MainWindow(QMainWindow):
             self.ui.pd_preview.setIcon(icon_preview)
             self.ui.pd_release.setIcon(icon_release)
             self.ui.pd_download.setIcon(icon_download)
-            self.ui.pd_web_preview.setIcon(icon_web_preview)
 
         # 啟動計時器：每 1 小時執行一次刷新程序
         self.timer = QTimer(self)
@@ -236,6 +239,46 @@ class MainWindow(QMainWindow):
             if isinstance(value, dict) and 'action' not in value and value:
                 self.display_tree(value, item)
 
+    def show_tree_context_menu(self, position):
+        """處理右鍵點擊事件"""
+        index = self.ui.treeView.indexAt(position)
+        if not index.isValid():
+            return
+
+        # 取得父節點名稱來判斷是否為產品
+        parent_index = index.parent()
+        if parent_index.isValid():
+            parent_text = parent_index.data(Qt.DisplayRole)
+
+            # 判斷上階項目是否為 '產品資料'
+            if parent_text == '產品資料':
+                item_text = index.data(Qt.DisplayRole)
+                item_uid = index.data(ITEM_UID_ROLE)
+
+                # 建立選單
+                menu = QMenu()
+                action_preview = menu.addAction("開啟預覽版")
+                action_official = menu.addAction("開啟正式版")
+
+                # 顯示選單並取得使用者點擊的動作
+                action = menu.exec_(self.ui.treeView.viewport().mapToGlobal(position))
+
+                if action == action_preview:
+                    self.open_preview_version(item_text, item_uid)
+                elif action == action_official:
+                    self.open_official_version(item_text, item_uid)
+
+    def open_preview_version(self, name, uid):
+        #  開啟預覽版
+        pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], uid)
+        QDesktopServices.openUrl(QUrl(f'{WEB_ISCP_SVELTE_DOMAIN_URL}#/preview?pdno={pdno}'))
+
+    def open_official_version(self, name, uid):
+        # 開啟正式版
+        pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], uid)
+        # QDesktopServices.openUrl(QUrl(f'{WEB_ISCP_SVELTE_DOMAIN_URL}#/product?pdno={pdno}'))
+        QDesktopServices.openUrl(QUrl(f'{WEB_ISCP_SVELTE_DOMAIN_URL}/{pdno}'))
+
     def refresh_auth_status(self):
         """檢查是否過期，必要時刷新，並更新狀態列"""
         print("🙍 ", time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), 'refresh_auth_status...')
@@ -302,7 +345,6 @@ class MainWindow(QMainWindow):
         self.ui.pd_upload.setEnabled(is_enable)
         self.ui.pd_preview.setEnabled(is_enable)
         self.ui.pd_release.setEnabled(is_enable)
-        self.ui.pd_web_preview.setEnabled(is_enable)
 
     def handle_tree_activated(self, index):
         item = self.model.itemFromIndex(index)
@@ -420,16 +462,18 @@ class MainWindow(QMainWindow):
             self.us07 = MainWindow_us07(selected_uid) # 檢視
             self.us07.show()
 
-    def handle_pd_web_preview(self):
-        selected_uid = self._get_selected_product_uid()
-        pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], selected_uid)
-        # print('pdno:', pdno)
-        url = f'http://www.ispc.com/{pdno}'
-        QDesktopServices.openUrl(QUrl(url))
-
     def handle_pd_release(self):
-        print('handle_pd_release')
-        pass
+        # print('handle_pd_release')
+        selected_uid = self._get_selected_product_uid()
+        if selected_uid:
+            reply = QMessageBox.question(self, "發布", f"{self.product_sheet[selected_uid]}\n\n您確定要發布為正式版嗎？\n", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                result = self.pr.release(selected_uid)
+
+                if result['is_error']:
+                    QMessageBox.warning(self, "發布", result['message'])
+                else:
+                    QMessageBox.information(self, "發布", "恭喜你，已發布!")
 
     def _get_uid_users(self, uid):
         result = []

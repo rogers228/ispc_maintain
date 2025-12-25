@@ -1,16 +1,9 @@
-# 自動更新版本號
+# 說明
+新增或編輯資料前，自動更新版本號。
 
-自動更新 rec_pd.version
-使用pg sql
 
-```
--- ==========================================================
--- 步驟 1: 建立或取代 (CREATE OR REPLACE) PL/pgSQL 函式
--- 函式名稱: increment_version
--- 目的: 計算並設定 rec_pd 表格的 version 欄位
--- ==========================================================
-CREATE OR REPLACE FUNCTION public.increment_version()
-RETURNS trigger AS $$
+## increment_version
+```sql
 DECLARE
     -- 用於存放從舊版本號中解析出來的數字部分
     old_version_number INTEGER := 0;
@@ -50,30 +43,16 @@ BEGIN
     -- 返回 NEW 行數據，PostgreSQL 會使用這個修改後的 NEW 數據來完成操作
     RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
--- 使用 SECURITY DEFINER 確保函式有足夠權限執行操作
-
--- ==========================================================
--- 步驟 2: 建立觸發器 (CREATE TRIGGER)
--- 目的: 在 rec_pd 表的每次 INSERT 或 UPDATE 之前呼叫函式
--- ==========================================================
--- 假設您的表格名稱是 public.rec_pd
-CREATE OR REPLACE TRIGGER auto_version_increment_trigger
-BEFORE INSERT OR UPDATE ON public.rec_pd
-FOR EACH ROW EXECUTE FUNCTION public.increment_version();
 ```
 
-## 尋找觸發器
-```
-SELECT
-    t.tgname AS trigger_name,
-    c.relname AS table_name,
-    pg_get_triggerdef(t.oid) AS definition
-FROM
-    pg_trigger t
-JOIN
-    pg_class c ON t.tgrelid = c.oid
-WHERE
-    c.relname = 'rec_pd' -- 鎖定您的目標表格
-    AND t.tgisinternal = FALSE;
-```
+# 說明
+
+database functions 
+名稱increment_version
+用來自動更新版本號，當使用者更新資料後，會自動更新版本號。
+
+database trigger
+名稱 auto_version_increment_trigger
+事件 before update, before insert
+
+於 supabase dashboard 設定

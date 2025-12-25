@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>1079</width>
+    <width>774</width>
     <height>482</height>
    </rect>
   </property>
@@ -126,7 +126,7 @@
     </property>
     <property name="geometry">
      <rect>
-      <x>760</x>
+      <x>660</x>
       <y>0</y>
       <width>101</width>
       <height>51</height>
@@ -204,42 +204,14 @@
      <string>檢視</string>
     </property>
    </widget>
-   <widget class="QPushButton" name="pd_web_preview">
-    <property name="enabled">
-     <bool>false</bool>
-    </property>
-    <property name="geometry">
-     <rect>
-      <x>660</x>
-      <y>0</y>
-      <width>101</width>
-      <height>51</height>
-     </rect>
-    </property>
-    <property name="font">
-     <font>
-      <family>新細明體</family>
-      <pointsize>12</pointsize>
-     </font>
-    </property>
-    <property name="focusPolicy">
-     <enum>Qt::NoFocus</enum>
-    </property>
-    <property name="toolTip">
-     <string>使用瀏覽器開啟</string>
-    </property>
-    <property name="text">
-     <string>開啟</string>
-    </property>
-   </widget>
   </widget>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>1079</width>
-     <height>21</height>
+     <width>774</width>
+     <height>25</height>
     </rect>
    </property>
   </widget>
