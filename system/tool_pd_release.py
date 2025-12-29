@@ -4,6 +4,7 @@ if True:
     import json
     import time
     import requests
+    import multiprocessing
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
         if start_path is None:
@@ -22,6 +23,25 @@ if True:
     from config import spwr_api_url, spwr_api_anon_key, WEB_ISCP_SVELTE_BUILD_HOOK_URL
     from tool_auth import AuthManager
     from tool_time import get_local_time_tz
+    from tool_msgbox import error, info
+
+def trigger_netlify_build():
+    # 觸發 netlify build
+    try:
+        # 發送 POST 請求
+        # Netlify 會回傳 200 OK (即使目前已經在 Build 中也一樣)
+        response = requests.post(WEB_ISCP_SVELTE_BUILD_HOOK_URL, timeout=10)
+        if response.status_code == 200:
+            info("操作成功", "Netlify 接收成功，建構隊列已啟動。", timeout_s=3)
+            return True
+        else:
+            error("ERROR", "trigger_netlify_build()",
+                  detail=f"Netlify 回應錯誤碼: {response.status_code}")
+            return False
+
+    except Exception as e:
+        error("ERROR", "連線至 Netlify 時發生異常", detail={str(e)})
+        return False, str(e)
 
 class ProductRelease:
     def __init__(self):
@@ -45,7 +65,7 @@ class ProductRelease:
             "release_time": get_local_time_tz(), # 取得符合 PostgreSQL 格式的帶時區時間
             "build_state": 1 # 需要編譯
         }
-        print('payload:', payload)
+        # print('payload:', payload)
         headers = {
             "apikey": spwr_api_anon_key,
             "Authorization": f"Bearer {jwt}",
@@ -66,20 +86,11 @@ class ProductRelease:
                 return {"is_error": True, "message": f"DB 更新失敗: {response.text}"}
 
             # print(f"✅ 資料更新成功")
-            return {"is_error": False, "message": f"資料更新成功"}
-            # print(f"✅ 資料庫已就緒 (build_state=1)，正在觸發編譯...")
-            # 2. 觸發 Netlify Build Hook (如果 config 有設定)
-            # try:
-            #     hook_url = WEB_ISCP_SVELTE_BUILD_HOOK_URL
-            #     hook_res = requests.post(hook_url, json={}) # Netlify 通常接受空的 JSON POST
-            #     if hook_res.status_code in [200, 201, 202]:
-            #         print("🚀 Netlify Build Hook 觸發成功！")
-            #     else:
-            #         print(f"⚠️ Hook 觸發異常: {hook_res.status_code}")
-            # except Exception as e:
-            #     print(f"⚠️ 無法連線至 Netlify Hook: {e}")
-
-            # return {"is_error": False, "message": "發布請求已送出，系統開始編譯"}
+            # 啟動獨立進程異步執行 觸發 Netlify Build Hook
+            # print('觸發 Netlify Build Hook')
+            # p = multiprocessing.Process(target=trigger_netlify_build)
+            # p.start()
+            return {"is_error": False, "message": f"正在發佈，完成後另行通知."}
 
         except Exception as e:
             print(f"❌ 執行發布程序時發生崩潰: {e}")

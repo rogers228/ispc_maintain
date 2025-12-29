@@ -473,7 +473,7 @@ class MainWindow(QMainWindow):
                 if result['is_error']:
                     QMessageBox.warning(self, "發布", result['message'])
                 else:
-                    QMessageBox.information(self, "發布", "恭喜你，已發布!")
+                    QMessageBox.information(self, "發布", result['message'])
 
     def _get_uid_users(self, uid):
         result = []
