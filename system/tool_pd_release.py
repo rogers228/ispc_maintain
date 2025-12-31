@@ -20,7 +20,7 @@ if True:
 
     ROOT_DIR = find_project_root()
     sys.path.append(os.path.join(ROOT_DIR, "system"))
-    from config import spwr_api_url, spwr_api_anon_key, WEB_ISCP_SVELTE_BUILD_HOOK_URL
+    from config import spwr_api_url, spwr_api_anon_key
     from tool_auth import AuthManager
     from tool_time import get_local_time_tz
     from tool_msgbox import error, info
