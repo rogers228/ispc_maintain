@@ -25,24 +25,6 @@ if True:
     from tool_time import get_local_time_tz
     from tool_msgbox import error, info
 
-def trigger_netlify_build():
-    # 觸發 netlify build
-    try:
-        # 發送 POST 請求
-        # Netlify 會回傳 200 OK (即使目前已經在 Build 中也一樣)
-        response = requests.post(WEB_ISCP_SVELTE_BUILD_HOOK_URL, timeout=10)
-        if response.status_code == 200:
-            info("操作成功", "Netlify 接收成功，建構隊列已啟動。", timeout_s=3)
-            return True
-        else:
-            error("ERROR", "trigger_netlify_build()",
-                  detail=f"Netlify 回應錯誤碼: {response.status_code}")
-            return False
-
-    except Exception as e:
-        error("ERROR", "連線至 Netlify 時發生異常", detail={str(e)})
-        return False, str(e)
-
 class ProductRelease:
     def __init__(self):
         self.table = "rec_pd_release"
@@ -58,7 +40,7 @@ class ProductRelease:
             print("❌ 錯誤: 找不到 JWT。請確認已登入。")
             return None
 
-        print('uid:', uid)
+        # print('uid:', uid)
         payload = {
             "id": uid,
             "release_user": email,
@@ -85,11 +67,6 @@ class ProductRelease:
                 print(response.text)
                 return {"is_error": True, "message": f"DB 更新失敗: {response.text}"}
 
-            # print(f"✅ 資料更新成功")
-            # 啟動獨立進程異步執行 觸發 Netlify Build Hook
-            # print('觸發 Netlify Build Hook')
-            # p = multiprocessing.Process(target=trigger_netlify_build)
-            # p.start()
             return {"is_error": False, "message": f"正在發佈，完成後另行通知."}
 
         except Exception as e:
