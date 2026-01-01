@@ -23,7 +23,8 @@ if True:
     ROOT_DIR = find_project_root() # 專案 root
 
     sys.path.append(os.path.join(ROOT_DIR, "system"))
-    from config import ISPC_MAINTAIN_VERSION, WEB_ISCP_SVELTE_DOMAIN_URL
+    from config import ISPC_MAINTAIN_VERSION
+    from config_web import WEB_ISCP_SVELTE_DOMAIN_URL
     from share_qt5 import *
     from tool_auth import AuthManager
     # from tool_launch import startup

@@ -15,7 +15,7 @@ if True:
 
     ROOT_DIR = find_project_root()
     sys.path.append(os.path.join(ROOT_DIR, "system"))
-    from config import *
+    from config_web import *
 
 def test1():
     print(spwr_api_url)

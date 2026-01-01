@@ -20,7 +20,6 @@ if True:
     ROOT_DIR = find_project_root() # 專案 root
 
     sys.path.append(os.path.join(ROOT_DIR, "system"))
-    from config import ISPC_MAINTAIN_VERSION
     from share_qt5 import * # 載入所有 qt5
 
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us07'))

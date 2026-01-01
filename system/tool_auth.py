@@ -20,7 +20,8 @@ if True:
     PRIVATE_JSON = os.path.join(ROOT_DIR, "system", "private.json")
 
     sys.path.append(os.path.join(ROOT_DIR, "system"))
-    from config import spwr_api_url, spwr_api_anon_key
+    # from config import spwr_api_url, spwr_api_anon_key
+    from config_web import spwr_api_url, spwr_api_anon_key
 
 class AuthManager:
     def __init__(self):
