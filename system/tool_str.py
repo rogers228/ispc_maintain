@@ -70,7 +70,8 @@ def test2():
     print(f"輸入 '999-20250930': {version3}") # 輸出: '1000.20251012'
 
 def test3():
-    print(generate_random_char())
+    for _ in range(0, 4):
+        print(generate_random_char().lower())
 
 if __name__ == '__main__':
     test3()
