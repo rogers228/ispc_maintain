@@ -1,5 +1,6 @@
 if True:
     import sys, os
+    import requests
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
         if start_path is None:
@@ -15,10 +16,18 @@ if True:
 
     ROOT_DIR = find_project_root()
     sys.path.append(os.path.join(ROOT_DIR, "system"))
-    from config_web import *
+    from config_web import spwr_api_url, spwr_api_anon_key
+    from tool_auth import AuthManager
 
 def test1():
     print(spwr_api_url)
+
+
+class StorageBuckets:
+
+    def __init__(self):
+        self.auth = AuthManager()
+
 
 if __name__ == '__main__':
     test1()

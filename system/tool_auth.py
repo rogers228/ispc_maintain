@@ -1,8 +1,10 @@
+# tool_auth.py
 if True:
     import sys, os
     import json
     import time
     import requests
+    import jwt
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
         if start_path is None:
@@ -141,6 +143,7 @@ class AuthManager:
             print("Exception in refresh_session:", e)
             return False
 
+
     def logout(self):
         """登出：清理 session 與本地紀錄"""
         print('logout...')
@@ -163,6 +166,34 @@ class AuthManager:
             print("Logout failed ❌:", e)
             return False
 
+    def get_user_id(self):
+        """
+        從本地快取的 JWT 中解析出 User ID (UUID)。
+        不需要網路請求，解析 JWT 的 'sub' 欄位即可。
+        """
+        data = self.load_local_data()
+        jwt_token = data.get("jwt")
+
+        if not jwt_token:
+            print("⚠️ 錯誤: 本地無 JWT 資訊，無法獲取 User ID")
+            return None
+
+        try:
+            # import jwt
+            # 我們只需要解碼讀取內容，不需要驗證簽名 (由伺服器驗證)
+            decoded = jwt.decode(jwt_token, options={"verify_signature": False})
+            user_id = decoded.get("sub")
+            return user_id
+        except ImportError:
+            print("❌ 錯誤: 請先安裝 PyJWT (pip install PyJWT)")
+            return None
+        except Exception as e:
+            print(f"❌ 解析 JWT 失敗: {e}")
+            # 備案：如果登入時有把 user 物件存下來，可以從那裡拿
+            user_obj = data.get("user")
+            if user_obj and isinstance(user_obj, dict):
+                return user_obj.get("id")
+            return None
 def test1():
     auth = AuthManager()
     data = auth.load_local_data()
@@ -193,5 +224,9 @@ def test2():
         else:
             print("Refresh 失敗 ❌，請重新登入")
 
+def test3():
+    auth = AuthManager()
+    print(auth.get_user_id())
+
 if __name__ == '__main__':
-    test2()
+    test3()

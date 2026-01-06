@@ -41,6 +41,13 @@ def generate_random_char(length=12):
     random_string = ''.join(random.choices(characters, k=length))
     return random_string
 
+def generate_random_char_lower(length=12):
+    # string.ascii_lowercase 僅包含所有小寫英文字母 (a-z)
+    # string.digits 包含所有數字 (0-9)
+    characters = string.ascii_lowercase + string.digits
+    random_string = ''.join(random.choices(characters, k=length))
+    return random_string
+
 def test1():
     content_v1 = "這是一段不會變動的配置內容。"
     content_v2 = "這是一段不會變動的配置內容。"
@@ -71,7 +78,7 @@ def test2():
 
 def test3():
     for _ in range(0, 4):
-        print(generate_random_char().lower())
+        print(generate_random_char_lower(length=16))
 
 if __name__ == '__main__':
     test3()

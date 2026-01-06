@@ -44,3 +44,20 @@ version 由 supabase database functions 觸發before 事件，自動更新
 2. database functions 設定 befure update 自動更新複製 data_json, version 來源是table rec_pd 相同id的data_json, version
 3. 資料寫入成功後，由ispc_maintain 向 netlify build hook 發起請求執行 build
 4. netlify build 將執行netlify-ssg.py 讀取rec_pd_release.build_state=1 的資料進行ssg，新更新build_state=3最後更新 build_state=2, build_time
+
+
+## rec_storage
+| id                  | uuid default gen_random_uuid() primary key |
+| title               | text not null        | 顯示的標題 |
+| file_path           | text not null unique | Bucket 裡的完整路徑 (例如: pdfs/test.pdf) |
+| summary             | text                 | 摘要
+| category            | text                 | 分類 :報表、小說   |
+| file_size           | bigint,              | 檔案大小 (bytes) |
+| content_type        | text,                | MIME 類型        |
+| created_by          | uuid references auth.users(id)   | -- 紀錄是哪個使用者上傳的
+| created_at          | timestamptz default now()        |
+| updated_at          | timestamptz default now()        |
+
+## buckets assets 
+目前是僅允許驗證過才能讀取
+是因為要使用 Cloudflare Workers (CFW) 作為代理，然後就能讓所有人查看

@@ -23,7 +23,7 @@ if True:
     from config_web import spwr_api_url, spwr_api_anon_key
     from tool_auth import AuthManager
     from tool_time import get_local_time
-    from tool_str import get_str_hash, generate_random_char
+    from tool_str import get_str_hash, generate_random_char_lower
     from tool_pd_jogging import ProductCheck
 
 class ProductStorage:
@@ -246,7 +246,7 @@ def test1():
     # 新增一筆，完成後請至 temp_options.py 添加使用者權限
     ps = ProductStorage()
     data = {
-        'pdno': generate_random_char(),
+        'pdno': generate_random_char_lower(),
         'name': 'ys_AR系列柱塞泵_開發預覽版',
         # 2025/12/24 廢除 use_type
         # 'use_type': 1, # 1: 開發預覽版
@@ -297,5 +297,9 @@ def test5():
     result = ps.upload(uid)
     print(result)
 
+def test6():
+    print(spwr_api_url)
+    print(spwr_api_anon_key)
+
 if __name__ == '__main__':
-    test1()
+    test6()
