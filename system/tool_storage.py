@@ -126,7 +126,8 @@ class StorageBuckets:
             return []
 
         # 1. 構建基礎 URL (最新上傳優先)
-        db_url = f"{spwr_api_url}/rest/v1/rec_storage?select=*&order=created_at.desc&limit={limit}"
+        fields = "id,title,summary,file_path,content_type,created_at"
+        db_url = f"{spwr_api_url}/rest/v1/rec_storage?select={fields}&order=created_at.desc&limit={limit}"
 
         # 2. 加入分類篩選 (針對 Array 欄位)
         # if category and category != "全部": # 假設 "全部" 是你不篩選的預設值
@@ -161,6 +162,7 @@ class StorageBuckets:
         except Exception as e:
             print(f"💥 查詢發生異常: {e}")
             return []
+
 def test1():
     print('test upload_file...')
     sb = StorageBuckets()
@@ -171,7 +173,7 @@ def test1():
 def test2():
     sb = StorageBuckets()
     # 測試：搜尋標題包含 "pump" 且限量 5 筆的資料
-    results = sb.query_storage(search_title="", limit=5)
+    results = sb.query_storage(search_title="", limit=100)
     print(results)
     # for item in results:
     #     print(f"ID: {item['id']} | Title: {item['title']} | Path: {item['file_path']}")

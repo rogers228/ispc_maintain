@@ -8,7 +8,7 @@ from PyQt5.QtWidgets import (
     QLineEdit, QTextEdit, QPushButton, QCheckBox, QComboBox,
     QScrollArea, QVBoxLayout, QWidget,
     QShortcut, QMenu, QAction,
-
+    QHeaderView, QAbstractItemView,
     QLabel, QStatusBar,
     )
 

@@ -36,14 +36,102 @@ class MainWindow(QMainWindow):
         self.resize(958, 680)  # 設定視窗大小
         self.sb = StorageBuckets() # 檔案儲存
 
+        self.init_table_config() # 設定 TableWidget 的外觀與標題
+        # self.ui.scrollArea
+
         self.init_query_params()
+
+        # button
+        self.ui.query.clicked.connect(self.handle_query)
+
+    def init_table_config(self):
+        """初始化表格欄位與樣式"""
+        table = self.ui.treeView # 根據你的註解，此處為 QTableWidget
+        table.setColumnCount(4)
+        table.setHorizontalHeaderLabels(['縮圖', '標題', '類型', '上傳時間'])
+
+        # 設定欄位伸縮：標題欄自動填滿
+        header = table.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.Fixed) # 縮圖固定寬度
+        table.setColumnWidth(0, 80)
+        header.setSectionResizeMode(1, QHeaderView.Stretch) # 標題自動拉長
+        header.setSectionResizeMode(2, QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeToContents)
+
+        # 設定選取行為
+        table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        table.setEditTriggers(QAbstractItemView.NoEditTriggers) # 不可直接修改
 
     def init_query_params(self):
         self.ui.w_title.setText('')
         self.ui.w_summary.setText('')
-        self.ui.w_content_type.addItems(['application/pdf', 'image/jpeg']) # QComboBox
-        # 設定預設值為 'image/jpeg'
+        self.ui.w_content_type.clear()
+        self.ui.w_content_type.addItems(['全部', 'application/pdf', 'image/jpeg']) # QComboBox
         self.ui.w_counts.setText('250')
+
+    def handle_query(self):
+        """處理查詢按鈕點擊事件"""
+        # 1. 獲取介面上的參數
+        title_kw = self.ui.w_title.text().strip()
+        summary_kw = self.ui.w_summary.text().strip()
+        content_type = self.ui.w_content_type.currentText()
+
+        try:
+            limit = int(self.ui.w_counts.text())
+        except:
+            limit = 200
+
+        # 針對 '全部' 進行處理
+        if content_type == '全部':
+            content_type = None
+
+        print(f"🔍 執行查詢: Title={title_kw}, Summary={summary_kw}, Limit={limit}")
+
+        # 2. 呼叫後端查詢 (注意：你的 query_storage 暫時沒支援 content_type 參數，我們等一下微調它)
+        # 如果 query_storage 尚未加入 content_type，我們可以先在前端過濾或後續擴充
+        results = self.sb.query_storage(
+            search_title=title_kw if title_kw else None,
+            search_summary=summary_kw if summary_kw else None,
+            limit=limit
+        )
+
+        # 3. 將資料填入表格
+        self.render_table(results)
+
+    def render_table(self, data_list):
+        """將 JSON 資料清單渲染到 QTableWidget"""
+        table = self.ui.treeView
+        table.setRowCount(0) # 清空現有內容
+
+        if not data_list:
+            print("⚠️ 查詢結果為空")
+            return
+
+        table.setRowCount(len(data_list))
+
+        for row, item in enumerate(data_list):
+            # A. 縮圖欄 (暫時放文字，下一階段換成圖片)
+            table.setItem(row, 0, QTableWidgetItem("載入中..."))
+
+            # B. 標題
+            title_item = QTableWidgetItem(item.get('title', '無標題'))
+            # 將完整的資料 dict 存入該 Item 的 UserRole 中，方便點擊時取用
+            title_item.setData(Qt.UserRole, item)
+            table.setItem(row, 1, title_item)
+
+            # C. 類型
+            table.setItem(row, 2, QTableWidgetItem(item.get('content_type', '-')))
+
+            # D. 時間 (格式化：2024-01-01T12:00:00 -> 2024-01-01)
+            raw_date = item.get('created_at', '')
+            formatted_date = raw_date[:10] if len(raw_date) >= 10 else raw_date
+            table.setItem(row, 3, QTableWidgetItem(formatted_date))
+
+        # 設定行高以預留縮圖空間
+        for i in range(len(data_list)):
+            table.setRowHeight(i, 60)
+
+        print(f"✅ 成功渲染 {len(data_list)} 筆資料")
 
 def main():
     app = QApplication(sys.argv)

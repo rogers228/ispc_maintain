@@ -14,9 +14,45 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1028, 658)
+        MainWindow.resize(859, 535)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
+        self.treeView = QtWidgets.QTableWidget(self.centralwidget)
+        self.treeView.setGeometry(QtCore.QRect(10, 60, 551, 451))
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(1)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.treeView.sizePolicy().hasHeightForWidth())
+        self.treeView.setSizePolicy(sizePolicy)
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.treeView.setFont(font)
+        self.treeView.setStyleSheet("QTableWidget {\n"
+"    alternate-background-color: #f2f2f2; /* 隔行背景顏色 */\n"
+"    selection-background-color: #0078d7;  /* 選擇背景顏色 */\n"
+"}\n"
+"QHeaderView::section {\n"
+"    background-color: #f0f0f0; /* 表頭背景顏色 */\n"
+"}")
+        self.treeView.setAlternatingRowColors(True)
+        self.treeView.setColumnCount(0)
+        self.treeView.setObjectName("treeView")
+        self.treeView.setRowCount(0)
+        self.treeView.verticalHeader().setDefaultSectionSize(24)
+        self.scrollArea = QtWidgets.QScrollArea(self.centralwidget)
+        self.scrollArea.setGeometry(QtCore.QRect(575, 60, 261, 451))
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(2)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.scrollArea.sizePolicy().hasHeightForWidth())
+        self.scrollArea.setSizePolicy(sizePolicy)
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.setObjectName("scrollArea")
+        self.scrollAreaWidgetContents = QtWidgets.QWidget()
+        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 259, 449))
+        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
+        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         self.w_content_type = QtWidgets.QComboBox(self.centralwidget)
         self.w_content_type.setGeometry(QtCore.QRect(430, 33, 221, 24))
         font = QtGui.QFont()
@@ -109,34 +145,6 @@ class Ui_MainWindow(object):
         self.query.setFocusPolicy(QtCore.Qt.NoFocus)
         self.query.setToolTip("")
         self.query.setObjectName("query")
-        self.splitter = QtWidgets.QSplitter(self.centralwidget)
-        self.splitter.setGeometry(QtCore.QRect(10, 60, 911, 581))
-        self.splitter.setOrientation(QtCore.Qt.Horizontal)
-        self.splitter.setObjectName("splitter")
-        self.treeView = QtWidgets.QTableWidget(self.splitter)
-        font = QtGui.QFont()
-        font.setFamily("新細明體")
-        font.setPointSize(12)
-        self.treeView.setFont(font)
-        self.treeView.setStyleSheet("QTableWidget {\n"
-"    alternate-background-color: #f2f2f2; /* 隔行背景顏色 */\n"
-"    selection-background-color: #0078d7;  /* 選擇背景顏色 */\n"
-"}\n"
-"QHeaderView::section {\n"
-"    background-color: #f0f0f0; /* 表頭背景顏色 */\n"
-"}")
-        self.treeView.setAlternatingRowColors(True)
-        self.treeView.setColumnCount(0)
-        self.treeView.setObjectName("treeView")
-        self.treeView.setRowCount(0)
-        self.treeView.verticalHeader().setDefaultSectionSize(24)
-        self.scrollArea = QtWidgets.QScrollArea(self.splitter)
-        self.scrollArea.setWidgetResizable(True)
-        self.scrollArea.setObjectName("scrollArea")
-        self.scrollAreaWidgetContents = QtWidgets.QWidget()
-        self.scrollAreaWidgetContents.setGeometry(QtCore.QRect(0, 0, 199, 579))
-        self.scrollAreaWidgetContents.setObjectName("scrollAreaWidgetContents")
-        self.scrollArea.setWidget(self.scrollAreaWidgetContents)
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
