@@ -48,16 +48,16 @@ version 由 supabase database functions 觸發before 事件，自動更新
 
 ## rec_storage
 | id                  | uuid default gen_random_uuid() primary key |
-| title               | text not null        | 顯示的標題 |
+| title               | text not null        | 顯示的標題 給使用者看的|
 | file_path           | text not null unique | Bucket 裡的完整路徑 (例如: pdfs/test.pdf) |
-| summary             | text                 | 摘要
-| category            | text                 | 分類 :報表、小說   |
+| summary             | text                 | 摘要 (給後台人員看的) |
+| category            | text array           | 分類 :報表、小說   |
 | file_size           | bigint,              | 檔案大小 (bytes) |
 | content_type        | text,                | MIME 類型        |
 | created_by          | uuid references auth.users(id)   | -- 紀錄是哪個使用者上傳的
 | created_at          | timestamptz default now()        |
 | updated_at          | timestamptz default now()        |
 
-## buckets assets 
+## buckets assets
 目前是僅允許驗證過才能讀取
 是因為要使用 Cloudflare Workers (CFW) 作為代理，然後就能讓所有人查看

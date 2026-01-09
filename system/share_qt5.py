@@ -1,9 +1,9 @@
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QMessageBox, QFileDialog,
+    QProgressDialog,
     QDesktopWidget, QSplashScreen,
     QHBoxLayout,
     QTableView, QTableWidget, QTableWidgetItem,
-
     QListWidgetItem, QTreeView,
     QLineEdit, QTextEdit, QPushButton, QCheckBox, QComboBox,
     QScrollArea, QVBoxLayout, QWidget,

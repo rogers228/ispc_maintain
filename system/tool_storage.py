@@ -90,7 +90,7 @@ class StorageBuckets:
                     "file_path": dest_path, # 這是對應 Bucket 的關鍵路徑
                     "created_by": user_id,
                     "summary" : summary,
-                    "category": folder,     # 暫時以資料夾名稱作為分類
+                    "category": None,     # array
                     "file_size": len(file_data),
                     "content_type": content_type
                 }
@@ -111,6 +111,56 @@ class StorageBuckets:
             print(f"💥 發生異常: {e}")
             return None
 
+    def query_storage(self, category=None, search_title=None, search_summary=None, limit=200):
+        """
+        查詢 rec_storage 資料表
+        :param category: 篩選分類 (text)
+        :param search_title: 標題關鍵字模糊搜尋
+        :param search_summary: 簡介內容關鍵字模糊搜尋
+        :param limit: 回傳筆數上限
+        """
+        auth_data = self.auth.load_local_data()
+        jwt = auth_data.get("jwt")
+        if not jwt:
+            print("❌ 錯誤: 找不到 JWT。")
+            return []
+
+        # 1. 構建基礎 URL (最新上傳優先)
+        db_url = f"{spwr_api_url}/rest/v1/rec_storage?select=*&order=created_at.desc&limit={limit}"
+
+        # 2. 加入分類篩選 (針對 Array 欄位)
+        # if category and category != "全部": # 假設 "全部" 是你不篩選的預設值
+        #     db_url += f"&category=cs.{{ {category} }}"
+
+        # 3. 加入標題模糊搜尋 (ilike)
+        if search_title:
+            db_url += f"&title=ilike.*{search_title}*"
+
+        # 4. 加入簡介模糊搜尋 (ilike)
+        if search_summary:
+            db_url += f"&summary=ilike.*{search_summary}*"
+
+        headers = {
+            "Authorization": f"Bearer {jwt}",
+            "apikey": spwr_api_anon_key,
+            "Content-Type": "application/json"
+        }
+
+        try:
+            print(f"🔍 正在發送請求: {db_url}")
+            response = requests.get(db_url, headers=headers)
+
+            if response.status_code == 200:
+                data = response.json()
+                print(f"✅ 成功取得 {len(data)} 筆紀錄")
+                return data
+            else:
+                print(f"❌ 查詢失敗: {response.status_code} - {response.text}")
+                return []
+
+        except Exception as e:
+            print(f"💥 查詢發生異常: {e}")
+            return []
 def test1():
     print('test upload_file...')
     sb = StorageBuckets()
@@ -118,5 +168,14 @@ def test1():
     result = sb.upload_file(file)
     print(result)
 
+def test2():
+    sb = StorageBuckets()
+    # 測試：搜尋標題包含 "pump" 且限量 5 筆的資料
+    results = sb.query_storage(search_title="", limit=5)
+    print(results)
+    # for item in results:
+    #     print(f"ID: {item['id']} | Title: {item['title']} | Path: {item['file_path']}")
+
 if __name__ == '__main__':
-    test1()
+    # test1()
+    test2()

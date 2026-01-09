@@ -1,0 +1,323 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>859</width>
+    <height>535</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QTableWidget" name="treeView">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>60</y>
+      <width>551</width>
+      <height>451</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+      <horstretch>1</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QTableWidget {
+    alternate-background-color: #f2f2f2; /* 隔行背景顏色 */
+    selection-background-color: #0078d7;  /* 選擇背景顏色 */
+}
+QHeaderView::section {
+    background-color: #f0f0f0; /* 表頭背景顏色 */
+}</string>
+    </property>
+    <property name="alternatingRowColors">
+     <bool>true</bool>
+    </property>
+    <property name="columnCount">
+     <number>0</number>
+    </property>
+    <attribute name="verticalHeaderDefaultSectionSize">
+     <number>24</number>
+    </attribute>
+   </widget>
+   <widget class="QScrollArea" name="scrollArea">
+    <property name="geometry">
+     <rect>
+      <x>575</x>
+      <y>60</y>
+      <width>261</width>
+      <height>451</height>
+     </rect>
+    </property>
+    <property name="sizePolicy">
+     <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+      <horstretch>2</horstretch>
+      <verstretch>0</verstretch>
+     </sizepolicy>
+    </property>
+    <property name="widgetResizable">
+     <bool>true</bool>
+    </property>
+    <widget class="QWidget" name="scrollAreaWidgetContents">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>259</width>
+       <height>449</height>
+      </rect>
+     </property>
+    </widget>
+   </widget>
+   <widget class="QComboBox" name="w_content_type">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>33</y>
+      <width>221</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_5">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>10</y>
+      <width>211</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="contextMenuPolicy">
+     <enum>Qt::PreventContextMenu</enum>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QLabel {
+    border: 1px solid black; /* 邊框粗細與顏色 */
+    padding: 2px;           /* 內邊距 */
+}</string>
+    </property>
+    <property name="text">
+     <string>顯示標題</string>
+    </property>
+    <property name="scaledContents">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="w_counts">
+    <property name="geometry">
+     <rect>
+      <x>650</x>
+      <y>33</y>
+      <width>81</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string>200</string>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_12">
+    <property name="geometry">
+     <rect>
+      <x>430</x>
+      <y>10</y>
+      <width>221</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="contextMenuPolicy">
+     <enum>Qt::PreventContextMenu</enum>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QLabel {
+    border: 1px solid black; /* 邊框粗細與顏色 */
+    padding: 2px;           /* 內邊距 */
+}</string>
+    </property>
+    <property name="text">
+     <string>檔案類型</string>
+    </property>
+    <property name="scaledContents">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="w_title">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>33</y>
+      <width>211</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_7">
+    <property name="geometry">
+     <rect>
+      <x>650</x>
+      <y>10</y>
+      <width>81</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="contextMenuPolicy">
+     <enum>Qt::PreventContextMenu</enum>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QLabel {
+    border: 1px solid black; /* 邊框粗細與顏色 */
+    padding: 2px;           /* 內邊距 */
+}</string>
+    </property>
+    <property name="text">
+     <string>限制筆數</string>
+    </property>
+    <property name="scaledContents">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="w_summary">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>33</y>
+      <width>211</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLabel" name="label_6">
+    <property name="geometry">
+     <rect>
+      <x>220</x>
+      <y>10</y>
+      <width>211</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="contextMenuPolicy">
+     <enum>Qt::PreventContextMenu</enum>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QLabel {
+    border: 1px solid black; /* 邊框粗細與顏色 */
+    padding: 2px;           /* 內邊距 */
+}</string>
+    </property>
+    <property name="text">
+     <string>摘要</string>
+    </property>
+    <property name="scaledContents">
+     <bool>false</bool>
+    </property>
+   </widget>
+   <widget class="QPushButton" name="query">
+    <property name="geometry">
+     <rect>
+      <x>740</x>
+      <y>10</y>
+      <width>101</width>
+      <height>48</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="focusPolicy">
+     <enum>Qt::NoFocus</enum>
+    </property>
+    <property name="toolTip">
+     <string/>
+    </property>
+    <property name="text">
+     <string>查詢</string>
+    </property>
+   </widget>
+  </widget>
+ </widget>
+ <tabstops>
+  <tabstop>w_title</tabstop>
+  <tabstop>w_summary</tabstop>
+  <tabstop>w_content_type</tabstop>
+  <tabstop>w_counts</tabstop>
+  <tabstop>treeView</tabstop>
+  <tabstop>scrollArea</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>
