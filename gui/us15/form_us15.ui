@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>859</width>
-    <height>535</height>
+    <width>1231</width>
+    <height>811</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -18,9 +18,9 @@
     <property name="geometry">
      <rect>
       <x>10</x>
-      <y>60</y>
-      <width>551</width>
-      <height>451</height>
+      <y>90</y>
+      <width>931</width>
+      <height>701</height>
      </rect>
     </property>
     <property name="sizePolicy">
@@ -57,10 +57,10 @@ QHeaderView::section {
    <widget class="QScrollArea" name="scrollArea">
     <property name="geometry">
      <rect>
-      <x>575</x>
-      <y>60</y>
+      <x>950</x>
+      <y>90</y>
       <width>261</width>
-      <height>451</height>
+      <height>701</height>
      </rect>
     </property>
     <property name="sizePolicy">
@@ -68,6 +68,9 @@ QHeaderView::section {
       <horstretch>2</horstretch>
       <verstretch>0</verstretch>
      </sizepolicy>
+    </property>
+    <property name="focusPolicy">
+     <enum>Qt::NoFocus</enum>
     </property>
     <property name="widgetResizable">
      <bool>true</bool>
@@ -78,15 +81,31 @@ QHeaderView::section {
        <x>0</x>
        <y>0</y>
        <width>259</width>
-       <height>449</height>
+       <height>699</height>
       </rect>
      </property>
+     <widget class="QLabel" name="label_preview">
+      <property name="geometry">
+       <rect>
+        <x>100</x>
+        <y>20</y>
+        <width>58</width>
+        <height>15</height>
+       </rect>
+      </property>
+      <property name="text">
+       <string/>
+      </property>
+      <property name="alignment">
+       <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignVCenter</set>
+      </property>
+     </widget>
     </widget>
    </widget>
    <widget class="QComboBox" name="w_content_type">
     <property name="geometry">
      <rect>
-      <x>430</x>
+      <x>560</x>
       <y>33</y>
       <width>221</width>
       <height>24</height>
@@ -107,7 +126,7 @@ QHeaderView::section {
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>211</width>
+      <width>271</width>
       <height>24</height>
      </rect>
     </property>
@@ -136,9 +155,9 @@ QHeaderView::section {
    <widget class="QLineEdit" name="w_counts">
     <property name="geometry">
      <rect>
-      <x>650</x>
+      <x>780</x>
       <y>33</y>
-      <width>81</width>
+      <width>91</width>
       <height>24</height>
      </rect>
     </property>
@@ -155,7 +174,7 @@ QHeaderView::section {
    <widget class="QLabel" name="label_12">
     <property name="geometry">
      <rect>
-      <x>430</x>
+      <x>560</x>
       <y>10</y>
       <width>221</width>
       <height>24</height>
@@ -188,7 +207,7 @@ QHeaderView::section {
      <rect>
       <x>10</x>
       <y>33</y>
-      <width>211</width>
+      <width>271</width>
       <height>24</height>
      </rect>
     </property>
@@ -205,9 +224,9 @@ QHeaderView::section {
    <widget class="QLabel" name="label_7">
     <property name="geometry">
      <rect>
-      <x>650</x>
+      <x>780</x>
       <y>10</y>
-      <width>81</width>
+      <width>91</width>
       <height>24</height>
      </rect>
     </property>
@@ -236,9 +255,9 @@ QHeaderView::section {
    <widget class="QLineEdit" name="w_summary">
     <property name="geometry">
      <rect>
-      <x>220</x>
+      <x>280</x>
       <y>33</y>
-      <width>211</width>
+      <width>281</width>
       <height>24</height>
      </rect>
     </property>
@@ -255,9 +274,9 @@ QHeaderView::section {
    <widget class="QLabel" name="label_6">
     <property name="geometry">
      <rect>
-      <x>220</x>
+      <x>280</x>
       <y>10</y>
-      <width>211</width>
+      <width>281</width>
       <height>24</height>
      </rect>
     </property>
@@ -286,10 +305,10 @@ QHeaderView::section {
    <widget class="QPushButton" name="query">
     <property name="geometry">
      <rect>
-      <x>740</x>
-      <y>10</y>
-      <width>101</width>
-      <height>48</height>
+      <x>880</x>
+      <y>7</y>
+      <width>131</width>
+      <height>51</height>
      </rect>
     </property>
     <property name="font">
@@ -308,13 +327,99 @@ QHeaderView::section {
      <string>查詢</string>
     </property>
    </widget>
+   <widget class="QPushButton" name="addnew">
+    <property name="geometry">
+     <rect>
+      <x>1010</x>
+      <y>7</y>
+      <width>171</width>
+      <height>51</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="focusPolicy">
+     <enum>Qt::NoFocus</enum>
+    </property>
+    <property name="toolTip">
+     <string/>
+    </property>
+    <property name="text">
+     <string>上傳檔案</string>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="f_summary">
+    <property name="geometry">
+     <rect>
+      <x>280</x>
+      <y>58</y>
+      <width>281</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QLineEdit" name="f_title">
+    <property name="geometry">
+     <rect>
+      <x>10</x>
+      <y>58</y>
+      <width>271</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="text">
+     <string/>
+    </property>
+   </widget>
+   <widget class="QComboBox" name="f_content_type">
+    <property name="geometry">
+     <rect>
+      <x>560</x>
+      <y>58</y>
+      <width>221</width>
+      <height>24</height>
+     </rect>
+    </property>
+    <property name="font">
+     <font>
+      <family>新細明體</family>
+      <pointsize>12</pointsize>
+     </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true"/>
+    </property>
+   </widget>
   </widget>
+  <widget class="QStatusBar" name="statusBar"/>
  </widget>
  <tabstops>
   <tabstop>w_title</tabstop>
   <tabstop>w_summary</tabstop>
   <tabstop>w_content_type</tabstop>
   <tabstop>w_counts</tabstop>
+  <tabstop>f_title</tabstop>
+  <tabstop>f_summary</tabstop>
+  <tabstop>f_content_type</tabstop>
   <tabstop>treeView</tabstop>
   <tabstop>scrollArea</tabstop>
  </tabstops>

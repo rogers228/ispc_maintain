@@ -44,6 +44,8 @@ if True:
     from us07 import MainWindow as MainWindow_us07
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us09'))
     from us09 import MainWindow as MainWindow_us09
+    sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us15'))
+    from us15 import MainWindow as MainWindow_us15
 
 # === 新增自訂角色定義：用於儲存多筆資料 ===
 ITEM_ACTION_ROLE = Qt.UserRole     # 用於儲存要執行的函式  指標
@@ -56,7 +58,7 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow();
         self.ui.setupUi(self) # 載入ui
         self.setWindowTitle(f'ispc maintain ({ISPC_MAINTAIN_VERSION})')
-        self.resize(765, 460)  # 設定視窗大小
+        self.resize(871, 460)  # 設定視窗大小
 
         self.auth = AuthManager()
         self.opt = Options()
@@ -66,6 +68,7 @@ class MainWindow(QMainWindow):
         self.us05 = None    # 子表單 登入
         self.us07 = None    # 子表單 檢視
         self.us09 = None    # 子表單 設定
+        self.us15 = None    # 子表單 檔案
         self.options = None # options 參數設定
         self.tree_data = {} # 選單資料 dict
         self.product_sheet = {} # 產品小抄 {uid: name}
@@ -103,6 +106,7 @@ class MainWindow(QMainWindow):
             icon_preview = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'preview.png'))
             icon_release = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'release.png'))
             icon_download = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'download.png'))
+            icon_file = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'image.png'))
 
             self.ui.pd_edit.clicked.connect(self.handle_pd_edit)
             self.ui.pd_check.clicked.connect(self.handle_pd_check)
@@ -110,6 +114,7 @@ class MainWindow(QMainWindow):
             self.ui.pd_preview.clicked.connect(self.handle_pd_preview)
             self.ui.pd_release.clicked.connect(self.handle_pd_release)
             self.ui.pd_download.clicked.connect(self.handle_pd_download)
+            self.ui.file.clicked.connect(self.handle_file)
 
             self.ui.pd_edit.setIcon(icon_edit)
             self.ui.pd_check.setIcon(icon_check)
@@ -117,6 +122,7 @@ class MainWindow(QMainWindow):
             self.ui.pd_preview.setIcon(icon_preview)
             self.ui.pd_release.setIcon(icon_release)
             self.ui.pd_download.setIcon(icon_download)
+            self.ui.file.setIcon(icon_file)
 
         # 啟動計時器：每 1 小時執行一次刷新程序
         self.timer = QTimer(self)
@@ -140,7 +146,7 @@ class MainWindow(QMainWindow):
             event.ignore()  # 阻止關閉
 
         # 如果有子窗體開啟，一併關閉子窗體
-        child_windows = [self.us05, self.us07, self.us09]
+        child_windows = [self.us05, self.us07, self.us09, self.us15]
         for window in child_windows:
             if window and isinstance(window, QWidget) and window.isVisible():
                 window.close()
@@ -398,6 +404,15 @@ class MainWindow(QMainWindow):
                     return info.get("pdno")
         return None
 
+    def handle_file(self):
+        auth_data = self.auth.load_local_data()
+        jwt = auth_data.get("jwt")
+        if not jwt:
+            QMessageBox.warning(self, '尚未登入', '請先登入')
+            return
+
+        self.us15 = MainWindow_us15() # 檔案
+        self.us15.show()
 
     def handle_pd_download(self):
         # 下載

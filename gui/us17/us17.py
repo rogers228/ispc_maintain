@@ -41,11 +41,11 @@ class MainWindow(QMainWindow):
         self.ui.treeView.setHorizontalHeaderLabels(['檔案路徑', '顯示標題', '摘要'])
 
         # 設定欄位寬度調整模式：第一欄自動伸展，或指定寬度
-        self.ui.treeView.setColumnWidth(0, 500) # source
-        self.ui.treeView.setColumnWidth(1, 300) # title
-        self.ui.treeView.setColumnWidth(2, 300) # summary
-        # 設定 ResizeMode 為 Interactive 或 Fixed，防止它跟著視窗自動拉長
-        # header.setSectionResizeMode(0, QHeaderView.Interactive)
+        self.ui.treeView.setColumnWidth(0, 200) # source
+        self.ui.treeView.setColumnWidth(1, 400) # title
+        self.ui.treeView.setColumnWidth(2, 460) # summary
+        self.ui.treeView.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.ui.treeView.customContextMenuRequested.connect(self.show_context_menu)
 
         # 2. 開啟拖放功能 (TableWidget 本身也需要設定)
         self.setAcceptDrops(True)
@@ -64,6 +64,25 @@ class MainWindow(QMainWindow):
             '.svg'                           # 向量圖
         }
 
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        new_size = event.size()
+        width = new_size.width()
+        height = new_size.height()
+
+        tb = self.ui.treeView
+        tb_t, tb_l = 10, 10
+        tb_w = width -10 -10
+        tb_h = height - 10 - 60
+        tb.setGeometry(tb_l, tb_t, tb_w, tb_h)
+
+        button_t = tb_t + tb_h + 5
+        cancel_left = int(width/2 - self.ui.cancel.width()) -10
+        upload_left = cancel_left +self.ui.cancel.width() +10
+        self.ui.clean.move(10, button_t)
+        self.ui.cancel.move(cancel_left, button_t)
+        self.ui.upload.move(upload_left, button_t)
+
     # --- 拖放邏輯實作 ---
     def dragEnterEvent(self, event):
         if event.mimeData().hasUrls():
@@ -76,20 +95,6 @@ class MainWindow(QMainWindow):
             event.accept()
         else:
             event.ignore()
-
-    # def dropEvent(self, event):
-    #     files = [u.toLocalFile() for u in event.mimeData().urls()]
-    #     for file_path in files:
-    #         # 取得附檔名並轉小寫
-    #         ext = os.path.splitext(file_path)[1].lower()
-
-    #         # 檢查 1: 必須是檔案 (排除資料夾)
-    #         # 檢查 2: 必須在合法清單內
-    #         if os.path.isfile(file_path) and ext in self.LEGAL_EXTENSIONS:
-    #             self.add_file_to_table(file_path)
-    #         else:
-    #             # 可以在 console 提示非法格式，或者乾淨地忽略它
-    #             print(f"🚫 略過非法格式或資料夾: {file_path}")
 
     def dropEvent(self, event):
         urls = event.mimeData().urls()
@@ -179,6 +184,8 @@ class MainWindow(QMainWindow):
         return None # 代表檢查通過
 
     def handle_upload(self):
+        self.ui.treeView.clearFocus() # 讓 treeView 失去焦點 迫使輸入完成
+        self.ui.treeView.setCurrentCell(-1, -1) # 更保險地強制關閉編輯器
         # 1. 蒐集目前表格中的資料
         data_list = []
         for row in range(self.ui.treeView.rowCount()):
@@ -198,6 +205,7 @@ class MainWindow(QMainWindow):
         total_files = len(data_list)
         progress = QProgressDialog("正在準備上傳...", "取消上傳", 0, total_files, self)
         progress.setWindowTitle("上傳進度")
+        progress.setFixedSize(600, 150) # 寬 600, 高 150
         progress.setWindowModality(Qt.WindowModal) # 鎖定視窗，避免重複點擊
         progress.setMinimumDuration(0)             # 立即顯示
         progress.show()
@@ -247,6 +255,33 @@ class MainWindow(QMainWindow):
         # print('handle_clean')
         # 移除所有資料列
         self.ui.treeView.setRowCount(0)
+
+    def show_context_menu(self, pos):
+        """處理右鍵選單彈出"""
+        index = self.ui.treeView.indexAt(pos)
+        if not index.isValid():
+            return
+
+        # 取得被點擊的行號
+        row = index.row()
+
+        # 建立選單
+        menu = QMenu()
+        delete_action = menu.addAction("刪除")
+
+        # 顯示選單並取得使用者點擊的動作
+        action = menu.exec_(self.ui.treeView.viewport().mapToGlobal(pos))
+
+        if action == delete_action:
+            self.handle_delete_table_row(row)
+
+    def handle_delete_table_row(self, row):
+        """執行刪除表格中的某一列"""
+        # 取得該列的標題，用於提示使用者
+        title_item = self.ui.treeView.item(row, 1)
+        title = title_item.text() if title_item else "未知檔案"
+        self.ui.treeView.removeRow(row)
+        print(f"已從清單移除: {title}")
 
 def main():
     app = QApplication(sys.argv)

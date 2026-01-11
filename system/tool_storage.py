@@ -3,7 +3,9 @@
 
 if True:
     import sys, os
+    import urllib.parse
     import requests
+    from datetime import datetime, timezone
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
         if start_path is None:
@@ -111,7 +113,7 @@ class StorageBuckets:
             print(f"💥 發生異常: {e}")
             return None
 
-    def query_storage(self, category=None, search_title=None, search_summary=None, limit=200):
+    def query_storage(self, category=None, search_title=None, search_summary=None, content_type=None, limit=200):
         """
         查詢 rec_storage 資料表
         :param category: 篩選分類 (text)
@@ -126,12 +128,13 @@ class StorageBuckets:
             return []
 
         # 1. 構建基礎 URL (最新上傳優先)
-        fields = "id,title,summary,file_path,content_type,created_at"
+        # fields = "id,title,summary,file_path,content_type,created_at"
+        fields = "id,title,file_path,content_type,file_size,summary,created_at"
         db_url = f"{spwr_api_url}/rest/v1/rec_storage?select={fields}&order=created_at.desc&limit={limit}"
 
-        # 2. 加入分類篩選 (針對 Array 欄位)
-        # if category and category != "全部": # 假設 "全部" 是你不篩選的預設值
-        #     db_url += f"&category=cs.{{ {category} }}"
+        # 加入 content_type 精確篩選
+        if content_type:
+            db_url += f"&content_type=eq.{content_type}"
 
         # 3. 加入標題模糊搜尋 (ilike)
         if search_title:
@@ -163,6 +166,119 @@ class StorageBuckets:
             print(f"💥 查詢發生異常: {e}")
             return []
 
+    def update_storage(self, db_id, data):
+        """
+        更新 rec_storage 表格內容
+        :param db_id: UUID
+        :param data: dict, 例如 {"title": "新標題", "summary": "新摘要"}
+        """
+        auth_data = self.auth.load_local_data()
+        jwt = auth_data.get("jwt")
+        if not jwt:
+            print("❌ 錯誤: 找不到 JWT。請確認已登入。")
+            return None
+
+        data["updated_at"] = datetime.now(timezone.utc).isoformat()
+        headers = {
+            "Authorization": f"Bearer {jwt}",
+            "apikey": spwr_api_anon_key,
+            "Content-Type": "application/json",
+            "Prefer": "return=minimal"
+        }
+
+        try:
+            # 建立 PATCH 請求
+            # headers 應包含你的 API Key 與 Auth Token (假設你類別內已有定義)
+            url = f"{spwr_api_url}/rest/v1/rec_storage?id=eq.{db_id}"
+            response = requests.patch(url, headers=headers, json=data)
+
+            if response.status_code in [200, 201, 204]:
+                print(f"✅ 資料庫更新成功: {db_id}")
+                return True
+            else:
+                print(f"❌ 更新失敗: {response.status_code}, {response.text}")
+                return False
+        except Exception as e:
+            print(f"🔥 update_storage 發生異常: {e}")
+            return False
+
+    def delete_storage(self, db_id):
+        """
+        連動刪除：1. 先取得路徑 2. 刪除資料庫紀錄 3. 呼叫獨立函數刪除雲端檔案
+        """
+        # 獲取 Auth 資訊
+        auth_data = self.auth.load_local_data()
+        jwt = auth_data.get("jwt")
+        headers = {
+            "Authorization": f"Bearer {jwt}",
+            "apikey": spwr_api_anon_key,
+            "Content-Type": "application/json"
+        }
+
+        try:
+            # Step 1: 先查出該 ID 對應的 file_path
+            query_url = f"{spwr_api_url}/rest/v1/rec_storage?select=file_path&id=eq.{db_id}"
+            get_res = requests.get(query_url, headers=headers)
+
+            if get_res.status_code != 200 or not get_res.json():
+                print(f"❌ 找不到該筆資料 (ID: {db_id})，刪除終止")
+                return False
+
+            file_path = get_res.json()[0].get('file_path')
+            print('file_path:', file_path)
+            # Step 2: 刪除資料庫紀錄 (Table 'rec_storage')
+            del_db_url = f"{spwr_api_url}/rest/v1/rec_storage?id=eq.{db_id}"
+            db_res = requests.delete(del_db_url, headers=headers)
+
+            if db_res.status_code not in [200, 204]:
+                print(f"❌ 資料庫紀錄刪除失敗: {db_res.text}")
+                return False
+
+            # Step 3: 呼叫剛才測試成功的獨立函數刪除雲端檔案
+            # 即使雲端刪除失敗，因為 DB 已經刪了，我們通常還是對 UI 回傳 True
+            cloud_success = self.delete_assets_file(file_path)
+
+            if cloud_success:
+                print(f"🗑️ 資料庫與雲端檔案皆已刪除成功")
+            else:
+                print(f"⚠️ 資料庫已刪除，但雲端檔案實體刪除失敗 (請檢查後台)")
+
+            return True
+
+        except Exception as e:
+            print(f"🔥 delete_storage 發生異常: {e}")
+            return False
+
+    def delete_assets_file(self, file_path):
+        auth_data = self.auth.load_local_data()
+        jwt = auth_data.get("jwt")
+
+        # 刪除 API 的 Endpoint 是 bucket 名稱結尾
+        url = f"{spwr_api_url}/storage/v1/object/assets"
+
+        headers = {
+            "Authorization": f"Bearer {jwt}",
+            "apikey": spwr_api_anon_key,
+            "Content-Type": "application/json" # 必須加這行
+        }
+
+        # 將路徑放入 prefixes 列表中
+        payload = {"prefixes": [file_path]}
+
+        try:
+            # print(f"📡 正在請求批次刪除: {file_path}")
+            res = requests.delete(url, headers=headers, json=payload)
+
+            if res.status_code in [200, 204]:
+                print(f"✅ 雲端檔案刪除成功: {file_path}")
+                return True
+            else:
+                print(f"❌ 錯誤內容: {res.json()}")
+                return False
+        except Exception as e:
+            print(f"🔥 異常: {e}")
+            return False
+
 def test1():
     print('test upload_file...')
     sb = StorageBuckets()
@@ -178,6 +294,27 @@ def test2():
     # for item in results:
     #     print(f"ID: {item['id']} | Title: {item['title']} | Path: {item['file_path']}")
 
+def test3():
+    print('test_update...')
+    sb = StorageBuckets()
+    uid = '3c1d0b29-7ecd-47e8-9616-69f033452255'
+    sb.update_storage(uid, {"title": "測試更新標題", "summary": "這是新的摘要"})
+
+def test4():
+    print('test_delete...')
+    sb = StorageBuckets()
+    uid = '6cecf5e2-aa6e-43c1-8827-2c92024edb26'
+    # images/zhyrebdn2icoobpk.jpg
+    sb.delete_storage(uid)
+
+def test5():
+    print('test_delete...')
+    sb = StorageBuckets()
+    test_path = "images/8awqy8gepnc2bily.jpg"
+    result = sb.delete_assets_file(test_path)
+    print(result)
+    print(f"測試結果: {'成功' if result else '失敗'}")
+
 if __name__ == '__main__':
     # test1()
-    test2()
+    test4()

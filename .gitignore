@@ -6,9 +6,6 @@ venv/
 # temp_options.py 是 admin 設定用
 temp_options.py
 
-# config
-config_web_local.py
-
 # private.json 是在建立時自動產生，用途是儲存local端的 登入、設定資料
 system/private.json
 
