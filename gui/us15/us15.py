@@ -166,6 +166,9 @@ class MainWindow(QMainWindow):
         self.ui.scrollArea.setAlignment(Qt.AlignCenter) # 圖片居中
         self.ui.scrollArea.setWidgetResizable(True) # 讓內部 widget 自動伸展
 
+        self.query_max = 100 # 查詢上限筆數
+
+
         self.us17 = None # 新增檔案子表單
         self.cache_dir = os.path.join(os.getenv('LOCALAPPDATA'), "ISPC_Maintain", "cache")
         if not os.path.exists(self.cache_dir):
@@ -260,7 +263,7 @@ class MainWindow(QMainWindow):
         self.ui.w_summary.setText('')
         self.ui.w_content_type.clear()
         self.ui.w_content_type.addItems(['全部', 'image/jpeg', 'application/pdf'])
-        self.ui.w_counts.setText('250')
+        self.ui.w_counts.setText(str(self.query_max))
 
     def init_filter_config(self):
         # 設定篩選下拉選單的值
@@ -288,9 +291,10 @@ class MainWindow(QMainWindow):
         summary_kw = self.ui.w_summary.text().strip()
         content_type = self.ui.w_content_type.currentText()
         try:
-            limit = int(self.ui.w_counts.text())
+            limit = min(int(self.ui.w_counts.text()), self.query_max)
+            print('limit:', limit)
         except:
-            limit = 200
+            limit = self.query_max
 
         query_params = {
             "title": title_kw,
@@ -364,7 +368,7 @@ class MainWindow(QMainWindow):
             params = {
                 "title": self.ui.w_title.text(),
                 "summary": self.ui.w_summary.text(),
-                "limit": self.ui.w_counts.text(),
+                "limit": str(min(int(self.ui.w_counts.text()), self.query_max)),
                 "content_type": self.ui.w_content_type.currentText(),
                 "f_title": self.ui.f_title.text(),
                 "f_summary": self.ui.f_summary.text(),
@@ -418,7 +422,9 @@ class MainWindow(QMainWindow):
              # --- 1. 還原雲端查詢參數 (w_) ---
             self.ui.w_title.setText(params.get("title", ""))
             self.ui.w_summary.setText(params.get("summary", ""))
-            self.ui.w_counts.setText(params.get("limit", "250"))
+            w_counts = params.get("limit", str(self.query_max))
+            w_counts = str(min(int(w_counts), self.query_max))
+            self.ui.w_counts.setText(w_counts)
 
             w_idx = self.ui.w_content_type.findText(params.get("content_type", "全部"))
             if w_idx >= 0: self.ui.w_content_type.setCurrentIndex(w_idx)
