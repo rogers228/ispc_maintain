@@ -24,11 +24,13 @@ from PyQt5.QtCore import (
 from PyQt5.QtGui import (
     QGuiApplication,
     QStandardItemModel, QStandardItem,
-    QFont, QIcon, QPixmap, QColor,
+    QFont, QIcon, QPixmap, QColor, QImage,
     QKeySequence, QKeyEvent,
     QClipboard, QBrush, QMovie,
     QDesktopServices
     )
+
+from PyQt5 import uic
 
 def test1():
     print('test1')
