@@ -2,13 +2,13 @@
 product_main_image = [
     '01sr_v_15.jpg',
     '01sr_v_25.jpg',
-    '01sr_v_main.jpg',    
+    '01sr_v_main.jpg',
 ]
-
+# images/aof8n6uflsn7exro.jpg
 # 基本描述，產品對普羅大眾的簡短敘述
 # 通常內容會是，xxx是什麼，簡短2句話以內
-basic_description_en = 'V series pump is a power device in the hydraulic system.' 
-basic_description_tw = 'V系列柱塞泵是一種液壓系統中的動力裝置。' 
+basic_description_en = 'V series pump is a power device in the hydraulic system.'
+basic_description_tw = 'V系列柱塞泵是一種液壓系統中的動力裝置。'
 
 # 產品說明 (makedown格式)
 product_information_en = '''
@@ -210,31 +210,31 @@ product_model_item_information = {
 
     '03ct_v_a_en' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_a_en.jpg)
-    
-    
+
+
     1. When system pressure increase and reach present pressure the flow decrease automatically and pressure to be constant.
     2. Pressure and flow can be adjusted manually.
     ''',
 
     '03ct_v_g_tw' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_g_tw.jpg)
-    
-    
+
+
     1. 同壓力補償"A"型式。
     2. 可做遙控調整壓力，並由遙控閥調整壓力範圍。
     ''',
 
     '03ct_v_g_en' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_g_en.jpg)
-    
-    
+
+
     1. The same function of "A" control type.
     2. Pressure can be adjusted remotely by the remote control valve.
     ''',
 
     '03ct_v_hla_tw' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_hl_tw.jpg)
-    
+
 
     1. 靠流量控制閥前後差壓一定值，控制油泵吐出量，與比例換向閥並用，能形成理想的系統省能源功能。
     2. 能控制負載壓力一定時，而流量依節流閥改變，油泵自動感應回饋系統吐出的恆定流量，能達到低油溫省能源功能。
@@ -242,47 +242,47 @@ product_model_item_information = {
 
     '03ct_v_hla_en' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_hl_en.jpg)
-    
-    
+
+
     1. HL valve with 2 different pressure, control displacement.
     2. The flow can be changed by HL valve, the sensing feedback can reach low oil temperature and energy saving.
     ''',
 
     '03ct_v_hlb_tw' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_hl_tw.jpg)
-    
-    
+
+
     1. 靠流量控制閥前後差壓一定值，控制油泵吐出量，與比例換向閥並用，能形成理想的系統省能源功能。
     2. 能控制負載壓力一定時，而流量依節流閥改變，油泵自動感應回饋系統吐出的恆定流量，能達到低油溫省能源功能。
     ''',
 
     '03ct_v_hlb_en' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_hl_en.jpg)
-    
-    
+
+
     1. HL valve with 2 different pressure, control displacement.
     2. The flow can be changed by HL valve, the sensing feedback can reach low oil temperature and energy saving.
     ''',
 
     '03ct_v_hlc_tw' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_hl_tw.jpg)
-    
-    
+
+
     1. 靠流量控制閥前後差壓一定值，控制油泵吐出量，與比例換向閥並用，能形成理想的系統省能源功能。
     2. 能控制負載壓力一定時，而流量依節流閥改變，油泵自動感應回饋系統吐出的恆定流量，能達到低油溫省能源功能。
     ''',
 
     '03ct_v_hlc_en' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_hl_en.jpg)
-    
-    
+
+
     1. HL valve with 2 different pressure, control displacement.
     2. The flow can be changed by HL valve, the sensing feedback can reach low oil temperature and energy saving.
     ''',
 
     '03ct_v_b_tw' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_b_tw.jpg)
-    
+
 
     1. 流量可從0調到最大，從最大調到最小，作多段變化，壓力保持設定壓。
     2. 使機械在上升、下降具有緩動使用，可防止衝撞、震動，適合專用機、升降起重機械。
@@ -290,17 +290,17 @@ product_model_item_information = {
 
     '03ct_v_b_en' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_b_en.jpg)
-    
-    
+
+
     1. Flow can be adjusted from 0 to maximum and pressure can be maintaining at preset pressure.
     2. Absorbing impact and vibration which are produced by up down motions.
     It is suitable for lifting equipment etc.
     ''',
 
-    '03ct_v_c_tw' : '''  
+    '03ct_v_c_tw' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_c_tw.jpg)
-    
-    
+
+
     1. 具低壓大流量，高壓小流量之高低壓泵功能，可選小功率之發動機。
     2. 系統壓力增高，接近預調的"PH"限壓時，泵的流量自動降到"QL"。
     3. 壓力"PH,PL"及流量"QH,QL"可分別任意調整。
@@ -309,8 +309,8 @@ product_model_item_information = {
 
     '03ct_v_c_en' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_c_en.jpg)
-    
-    
+
+
     1. 2-stage pressure to adjust PL to QH and : PH to QL.
     2. When pressure increase and reach preset pressure"PH",flow is reduced to "QL".
     3. Adapt for long dead head and short pressurizing machines, speedy and energy saving.
@@ -319,8 +319,8 @@ product_model_item_information = {
 
     '03ct_v_cg_tw' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_cg_tw.jpg)
-    
-    
+
+
     1. 同單泵兩段壓力，兩段量(自壓式)"C型"。
     2. 可做遙控調整壓力，並由遙控閥調整壓力範圍。
     3. 可配合油昇比例壓力閥，達成電控比例壓力控制。
@@ -328,8 +328,8 @@ product_model_item_information = {
 
     '03ct_v_cg_en' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_cg_en.jpg)
-    
-    
+
+
     1. The same function of "C" control type.
     2. The pressure and the range can be adjusted by remote control valve.
     3. Install YEOSHE solenoid control valve to reach good performance.
@@ -337,8 +337,8 @@ product_model_item_information = {
 
     '03ct_v_cr_tw' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_cr_tw.jpg)
-    
-    
+
+
     1. 依電磁換向閥，控制高低兩個不同的限壓壓力。
     2. 適用於起重機在恆定速度下，設定兩段工作壓力時使用。
     3. PL與PH閥可忍選一方作為高壓。
@@ -348,8 +348,8 @@ product_model_item_information = {
 
     '03ct_v_cr_en' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_cr_en.jpg)
-    
-    
+
+
     1. Insall YEOSHE solenoid valve, control 2-stage pressure.
     2. It is suitable for constant speed lifting equipments, and setting 2-stage working pressure.
     3. PL and PH, two opptions can be PH.
@@ -552,7 +552,7 @@ product_model_item_information = {
     '03ct_v_hqa_tw' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_hq_tw.jpg)
 
-    
+
     1. 此為HL型式泵浦所具備之特性外，再增加比例流量控制。
     2. 同比例流量閥控制，藉電信輸入以調節泵浦排量及電控模組之控制提供所需流量。
     ''',
@@ -560,7 +560,7 @@ product_model_item_information = {
     '03ct_v_hqa_en' : '''
     ![Control](https://selecter.org/product/image/ZFHxgESDRiG0/v_03ct_hq_en.jpg)
 
-    
+
     1. HQ control with load-sensing and proportional flow control.
     2. By electric input singnal to adjust pump displacement, and the flow is controlled by electric modular control.
     ''',
@@ -570,7 +570,7 @@ product_model_item_information = {
 
 
     1. 此為HL型式泵浦所具備之特性外，再增加比例流量控制。
-    2. 同比例流量閥控制，藉電信輸入以調節泵浦排量及電控模組之控制提供所需流量。 
+    2. 同比例流量閥控制，藉電信輸入以調節泵浦排量及電控模組之控制提供所需流量。
     ''',
 
     '03ct_v_hqb_en' : '''
@@ -586,7 +586,7 @@ product_model_item_information = {
 
 
     1. 此為HL型式泵浦所具備之特性外，再增加比例流量控制。
-    2. 同比例流量閥控制，藉電信輸入以調節泵浦排量及電控模組之控制提供所需流量。 
+    2. 同比例流量閥控制，藉電信輸入以調節泵浦排量及電控模組之控制提供所需流量。
     ''',
 
     '03ct_v_hqc_en' : '''

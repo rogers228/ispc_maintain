@@ -713,6 +713,7 @@ class MainWindow(QMainWindow):
         menu = QMenu()
         action_edit = menu.addAction(QIcon(), "編輯資料")
         menu.addSeparator()
+        action_open_browser = menu.addAction(QIcon(), "從瀏覽器開啟")
         action_copy = menu.addAction(QIcon(), "複製連結")
         action_copy_file_path = menu.addAction(QIcon(), "複製路徑")
         menu.addSeparator()
@@ -722,6 +723,8 @@ class MainWindow(QMainWindow):
 
         if action == action_edit:
             self.handle_edit_row(row)
+        elif action == action_open_browser:
+            self.handle_open_in_browser(row)
         elif action == action_copy:
             self.handle_copy_link(row)
         elif action == action_copy_file_path:
@@ -729,9 +732,19 @@ class MainWindow(QMainWindow):
         elif action == action_delete:
             self.handle_delete_row(row)
 
+    def handle_open_in_browser(self, row):
+        """取得 URL 並呼叫系統預設瀏覽器開啟"""
+        data = self.ui.treeView.item(row, 1).data(Qt.UserRole)
+        file_path = data.get('file_path', '')
+        if not file_path: return
+        url_string = f"{WEB_SPECIC_ASSETS_URL}/{file_path}"
+        QDesktopServices.openUrl(QUrl(url_string))
+        self.statusBar().showMessage(f"已在瀏覽器開啟", 2000)
+
     def handle_copy_link(self, row):
         data = self.ui.treeView.item(row, 1).data(Qt.UserRole)
         file_path = data.get('file_path', '')
+        if not file_path: return
         url = f"{WEB_SPECIC_ASSETS_URL}/{file_path}"
         clipboard = QApplication.clipboard()
         clipboard.setText(url)
@@ -740,38 +753,35 @@ class MainWindow(QMainWindow):
     def handle_copy_file_path(self, row):
         data = self.ui.treeView.item(row, 1).data(Qt.UserRole)
         file_path = data.get('file_path', '')
+        if not file_path: return
         clipboard = QApplication.clipboard()
         clipboard.setText(file_path)
         self.statusBar().showMessage(f"已複製路徑: {file_path}", 3000)
 
     def handle_edit_row(self, row):
-        # 1. 取得現有資料 (從 UserRole)
         item = self.ui.treeView.item(row, 1) # 假設標題在第 2 欄
         data = item.data(Qt.UserRole)
         db_id = data.get('id')
 
-        # 2. 開啟自訂對話框
         dialog = EditFileInfoDialog(data.get('title', ''), data.get('summary', ''), self)
 
         if dialog.exec_() == QDialog.Accepted:
             new_title, new_summary = dialog.get_values()
-            # 3. 呼叫後端更新
             update_data = {"title": new_title,"summary": new_summary}
 
             if self.sb.update_storage(db_id, update_data):
-
-                # 4. 同步更新 UI 表格顯示
+                # 同步更新 UI 表格顯示
                 self.ui.treeView.item(row, 1).setText(new_title)
                 self.ui.treeView.item(row, 2).setText(new_summary) # 假設摘要在第 3 欄
 
-                # 5. 更新快取資料，確保下次點擊時資料也是新的
-                # 有問題 未更新到 self.cache_dir
+                # 更新記憶體中的 data 物件
                 data['title'] = new_title
                 data['summary'] = new_summary
                 item.setData(Qt.UserRole, data)
 
+                # 立即同步到硬碟的 last_query.json
                 self.save_current_state_to_cache()
-                print(f"✅ 成功更新 ID: {db_id}")
+                self.statusBar().showMessage(f"資料已更新並同步快取", 3000)
             else:
                 QMessageBox.critical(self, "錯誤", "資料庫更新失敗，請檢查網路。")
 
