@@ -523,11 +523,11 @@ class MainWindow(QMainWindow):
         print(f"✅ 成功渲染 {len(data_list)} 筆資料，背景下載任務啟動：{total_images} 筆")
 
     def update_full_img_status(self, current, total, file_name):
-        self.statusBar().showMessage(f"🖼️ 背景預載圖片中... ({current}/{total})")
+        self.statusBar().showMessage(f"背景預載圖片中... ({current}/{total})")
 
     def on_all_downloads_finished(self):
         """下載完成後維持 3 秒提示再消失"""
-        self.statusBar().showMessage("✅ 所有大圖快取完成", 3000)
+        self.statusBar().showMessage("所有大圖快取完成", 3000)
 
     def update_row_icon(self, row, icon):
         # 1. 先取得該儲存格原本的 Item
@@ -602,7 +602,7 @@ class MainWindow(QMainWindow):
                     # 順利載入快取，直接顯示並結束
                     # print(f"self.set_pixmap_to_label(pixmap)")
                     self.set_pixmap_to_label(pixmap)
-                    self.statusBar().showMessage("✅ 讀取自本地快取", 2000)
+                    self.statusBar().showMessage("讀取本地快取", 2000)
                     return
 
             # 3. 如果快取不存在，則進行連網下載
@@ -610,7 +610,7 @@ class MainWindow(QMainWindow):
             base = WEB_SPECIC_ASSETS_URL.rstrip('/')
             url = f"{base}/{clean_path}"
             # print(f"雲端下載大圖: {url}")
-            self.statusBar().showMessage("📡 正在從雲端載入原圖...")
+            self.statusBar().showMessage("正在從雲端載入原圖...")
 
             # 執行下載 (增加 timeout 防止網路中斷時程式卡死)
             response = requests.get(url, timeout=10)
@@ -625,7 +625,7 @@ class MainWindow(QMainWindow):
                     # 寫入快取供下次使用
                     with open(local_full_path, 'wb') as f:
                         f.write(img_data)
-                    self.statusBar().showMessage("✅ 圖片載入完成並已快取", 2000)
+                    self.statusBar().showMessage("圖片載入完成並已快取", 2000)
                 else:
                     self.clear_preview("圖片格式錯誤")
             else:
@@ -681,7 +681,7 @@ class MainWindow(QMainWindow):
             label.clear()       # 清除圖片
             label.setText(message)
             label.adjustSize()  # 重置大小
-        self.statusBar().showMessage(f"❌ {message}", 3000)
+        self.statusBar().showMessage(f"{message}", 3000)
 
     def clear_preview(self, message=""):
         """清除預覽並將提示文字手動置中"""
@@ -712,7 +712,9 @@ class MainWindow(QMainWindow):
 
         menu = QMenu()
         action_edit = menu.addAction(QIcon(), "編輯資料")
+        menu.addSeparator()
         action_copy = menu.addAction(QIcon(), "複製連結")
+        action_copy_file_path = menu.addAction(QIcon(), "複製路徑")
         menu.addSeparator()
         action_delete = menu.addAction(QIcon(), "刪除檔案")
         # 顯示選單並取得點擊項目
@@ -722,6 +724,8 @@ class MainWindow(QMainWindow):
             self.handle_edit_row(row)
         elif action == action_copy:
             self.handle_copy_link(row)
+        elif action == action_copy_file_path:
+            self.handle_copy_file_path(row)
         elif action == action_delete:
             self.handle_delete_row(row)
 
@@ -732,6 +736,13 @@ class MainWindow(QMainWindow):
         clipboard = QApplication.clipboard()
         clipboard.setText(url)
         self.statusBar().showMessage(f"已複製連結: {url}", 3000)
+
+    def handle_copy_file_path(self, row):
+        data = self.ui.treeView.item(row, 1).data(Qt.UserRole)
+        file_path = data.get('file_path', '')
+        clipboard = QApplication.clipboard()
+        clipboard.setText(file_path)
+        self.statusBar().showMessage(f"已複製路徑: {file_path}", 3000)
 
     def handle_edit_row(self, row):
         # 1. 取得現有資料 (從 UserRole)
