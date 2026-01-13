@@ -133,7 +133,6 @@ class EditFileInfoDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle("編輯")
         self.setFixedWidth(400)
-
         layout = QVBoxLayout(self)
         form = QFormLayout()
 

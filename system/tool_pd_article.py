@@ -30,8 +30,6 @@ class ProductArticle:
         self.table_url = f"{spwr_api_url}/rest/v1/rec_article"
 
     def _get_headers(self):
-        """獲取請求標頭，自動檢查並刷新 Token"""
-        # 檢查 Token 是否有效，無效則刷新
         if not self.auth.is_token_valid():
             print("Token 已過期，嘗試自動刷新...")
             self.auth.refresh_session()
@@ -129,47 +127,35 @@ class ProductArticle:
             print(f"Delete Exception: {e}")
             return False
 
-# --- 獨立測試區 ---
-
-def test_select():
+def test1():
+    print('test1')
     pa = ProductArticle()
     articles = pa.select_multiple()
     print("文章列表:", json.dumps(articles, indent=2, ensure_ascii=False))
 
-def test_insert():
+def test2():
     pa = ProductArticle()
     res = pa.insert(
-        custom_index="test-001",
-        title="測試文章",
-        content="# Hello Markdown",
+        custom_index="test-002",
+        title="測試文章2",
+        content="# Hello Markdown 2",
         html_snapshot="<h1>Hello Markdown</h1>",
         category="Maintenance"
     )
     if res:
         print("新增成功:", res)
 
-def test_update():
+def test3():
     pa = ProductArticle()
     success = pa.update("test-001", {"title": "修改後的標題"})
     if success:
-        print("更新成功")
+        print("更新成功", success)
 
-def test_delete():
+def test4():
     pa = ProductArticle()
     success = pa.delete("test-001")
     if success:
         print("刪除完成")
-
 if __name__ == '__main__':
-    # 測試流程：請先確保 tool_auth 已經登入成功產出 private.json
-    print("--- 開始測試 Select ---")
-    test_select()
+    test2()
 
-    # print("\n--- 開始測試 Insert ---")
-    # test_insert()
-
-    # print("\n--- 開始測試 Update ---")
-    # test_update()
-
-    # print("\n--- 開始測試 Delete ---")
-    # test_delete()
