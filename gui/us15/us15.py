@@ -27,6 +27,7 @@ if True:
 
     ROOT_DIR = find_project_root() # 專案 root
     sys.path.append(os.path.join(ROOT_DIR, "system"))
+    from config import ISPC_MAINTAIN_CACHE_DIR
     from config_web import WEB_SPECIC_ASSETS_URL
     from share_qt5 import *
     from tool_storage import StorageBuckets
@@ -49,7 +50,7 @@ class ThumbWorker(QRunnable):
         self.row_index = row_index
         self.file_path = file_path
         self.signals = self.Signals()
-        self.cache_dir = os.path.join(os.getenv('LOCALAPPDATA'), "ISPC_Maintain", "cache")
+        self.cache_dir = ISPC_MAINTAIN_CACHE_DIR
 
     @pyqtSlot()
     def run(self):
@@ -88,7 +89,7 @@ class FullImageDownloader(QRunnable):
         self.current_idx = current_idx
         self.total_count = total_count
         self.signals = self.Signals()
-        self.cache_dir = os.path.join(os.getenv('LOCALAPPDATA'), "ISPC_Maintain", "cache")
+        self.cache_dir = ISPC_MAINTAIN_CACHE_DIR
 
     @pyqtSlot()
     def run(self):
@@ -170,7 +171,7 @@ class MainWindow(QMainWindow):
 
 
         self.us17 = None # 新增檔案子表單
-        self.cache_dir = os.path.join(os.getenv('LOCALAPPDATA'), "ISPC_Maintain", "cache")
+        self.cache_dir = ISPC_MAINTAIN_CACHE_DIR
         if not os.path.exists(self.cache_dir):
             os.makedirs(self.cache_dir)
 
@@ -586,13 +587,7 @@ class MainWindow(QMainWindow):
 
             # 僅針對相對路徑做雜湊，避免因為 Base URL 不同導致檔名不同
             name_hash = hashlib.md5(clean_path.encode()).hexdigest()
-
-            # 定義快取資料夾與完整路徑
-            cache_dir = os.path.join(os.getenv('LOCALAPPDATA'), "ISPC_Maintain", "cache")
-            if not os.path.exists(cache_dir):
-                os.makedirs(cache_dir)
-
-            local_full_path = os.path.join(cache_dir, f"full_{name_hash}{ext}")
+            local_full_path = os.path.join(self.cache_dir, f"full_{name_hash}{ext}")
             # print('local_full_path:', local_full_path)
             # 2. 策略：優先從硬碟讀取快取
             if os.path.exists(local_full_path):
@@ -810,10 +805,8 @@ class MainWindow(QMainWindow):
         """根據路徑雜湊值，精準刪除硬碟上的快取檔"""
         name_hash = hashlib.md5(file_path.encode()).hexdigest()
         ext = os.path.splitext(file_path)[1]
-        cache_dir = os.path.join(os.getenv('LOCALAPPDATA'), "ISPC_Maintain", "cache")
-
         for prefix in ["thumb_", "full_"]:
-            target = os.path.join(cache_dir, f"{prefix}{name_hash}{ext}")
+            target = os.path.join(self.cache_dir, f"{prefix}{name_hash}{ext}")
             if os.path.exists(target):
                 os.remove(target)
                 print(f"🧹 已清理本地快取: {target}")

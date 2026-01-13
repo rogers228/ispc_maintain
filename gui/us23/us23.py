@@ -23,6 +23,7 @@ if True:
 
     ROOT_DIR = find_project_root() # 專案 root
     sys.path.append(os.path.join(ROOT_DIR, "system"))
+    from config import ISPC_MAINTAIN_CACHE_DIR
     from share_qt5 import * # 所有 qt5
 
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us23'))
@@ -37,9 +38,7 @@ def get_local_cache_path(file_path, prefix="full_"):
     clean_path = file_path.lstrip('/')
     ext = os.path.splitext(clean_path)[1].lower()
     name_hash = hashlib.md5(clean_path.encode()).hexdigest()
-
-    cache_dir = os.path.join(os.getenv('LOCALAPPDATA'), "ISPC_Maintain", "cache")
-    return os.path.join(cache_dir, f"{prefix}{name_hash}{ext}")
+    return os.path.join(ISPC_MAINTAIN_CACHE_DIR, f"{prefix}{name_hash}{ext}")
 
 class LocalImageTreeprocessor(Treeprocessor):
     def run(self, root):
@@ -71,7 +70,7 @@ class MainWindow(QMainWindow):
         self.last_html_body = ""
 
         # 快取路徑
-        self.cache_dir = os.path.abspath(os.path.join(os.getenv('LOCALAPPDATA'), "ISPC_Maintain", "cache"))
+        self.cache_dir = ISPC_MAINTAIN_CACHE_DIR
         if not os.path.exists(self.cache_dir):
             os.makedirs(self.cache_dir, exist_ok=True)
 
