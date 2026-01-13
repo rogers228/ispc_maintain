@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>1074</width>
-    <height>743</height>
+    <height>502</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -25,9 +25,39 @@
     </property>
     <property name="font">
      <font>
-      <family>新細明體</family>
+      <family>Consolas,Monaco,Courier New,monospace</family>
       <pointsize>12</pointsize>
      </font>
+    </property>
+    <property name="styleSheet">
+     <string notr="true">QPlainTextEdit {
+    /* 強制白色背景 */
+    background-color: #ffffff;
+    
+    /* 加上明確的邊框，或是 border: none，這會打破系統原生樣式 */
+    border: 1px solid #e1e1e1; 
+    
+    color: #000000;
+    padding: 8px;
+    font-family: &quot;Consolas&quot;, &quot;Monaco&quot;, &quot;Courier New&quot;, monospace;
+    font-size: 12pt;
+}
+
+/* 確保在一般、聚焦、甚至停用狀態下的顏色都受控 */
+QPlainTextEdit:enabled {
+    background-color: #ffffff;
+}
+
+QPlainTextEdit:focus {
+    background-color: #ffffff; /* 如果你不想要灰灰的，這裡也要改回白色 */
+    border: 1px solid #0078D7; /* 聚焦時藍色邊框，這很有專業感 */
+}</string>
+    </property>
+    <property name="frameShape">
+     <enum>QFrame::StyledPanel</enum>
+    </property>
+    <property name="frameShadow">
+     <enum>QFrame::Sunken</enum>
     </property>
    </widget>
    <widget class="QTabWidget" name="tab_widget">
@@ -45,55 +75,167 @@
       <pointsize>12</pointsize>
      </font>
     </property>
+    <property name="styleSheet">
+     <string notr="true">/* 1. 設定分頁主體面板 (與下方 Tab 接合處) */
+QTabWidget::pane {
+    border: 1px solid #C4C4C3;
+    background-color: white;
+    /* 這裡如果是 Tab 在下方，面板的底邊框可以保留或微調 */
+}
+
+/* 2. 設定標籤列基礎樣式 */
+QTabBar::tab {
+    background: #f0f0f0;
+    border: 1px solid #C4C4C3;
+    border-top: none;             /* 關鍵：移除上邊框，讓它與上方內容接合 */
+    
+    /* 圓角設定在下方 */
+    border-bottom-left-radius: 8px;
+    border-bottom-right-radius: 8px;
+    
+    /* 寬度控制 */
+    min-width: 120px;            /* 設定最小寬度，不會縮成一團 */
+    padding: 8px 20px;           /* 左右內距讓標籤隨文字自動撐開 */
+    
+    margin-right: 4px;
+    color: #555;
+}
+
+/* 3. 當 Tab 被選中時 (Active) */
+QTabBar::tab:selected {
+    background: white;
+    color: #0078D7;              /* 選中時的文字顏色 */
+    font-weight: bold;
+    border-top: 2px solid #0078D7; /* 在接合處增加一條線，增加設計感 */
+    margin-top: -1px;            /* 往上移動 1px 覆蓋面板邊框 */
+}
+
+/* 4. 滑鼠懸停樣式 */
+QTabBar::tab:hover:!selected {
+    background: #e5e5e5;
+}</string>
+    </property>
     <property name="tabPosition">
      <enum>QTabWidget::South</enum>
     </property>
     <property name="currentIndex">
-     <number>1</number>
+     <number>0</number>
     </property>
     <widget class="QWidget" name="tab">
      <attribute name="title">
       <string>預覽</string>
      </attribute>
-     <widget class="QTextBrowser" name="preview_window">
-      <property name="geometry">
-       <rect>
-        <x>10</x>
-        <y>10</y>
-        <width>531</width>
-        <height>231</height>
-       </rect>
-      </property>
-     </widget>
     </widget>
     <widget class="QWidget" name="tab_2">
      <attribute name="title">
-      <string>html</string>
+      <string>Html</string>
      </attribute>
      <widget class="QPlainTextEdit" name="html_code_view">
       <property name="geometry">
        <rect>
         <x>20</x>
         <y>10</y>
-        <width>531</width>
-        <height>231</height>
+        <width>491</width>
+        <height>201</height>
        </rect>
+      </property>
+      <property name="font">
+       <font>
+        <family>Consolas,Monaco,Courier New,monospace</family>
+        <pointsize>12</pointsize>
+       </font>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPlainTextEdit {
+    /* 背景顏色：深灰色或淺灰色，這裡選用輕量感的淺灰 */
+    background-color: #f8f9fa;
+    
+    /* 文字顏色 */
+    color: #24292e;
+    
+    /* 邊距：讓程式碼不要貼邊 (上 右 下 左) */
+    padding: 15px;
+    
+    /* 移除邊框（因為 tab_widget 已經有框了） */
+    border: none;
+    
+    /* 寫程式專用字體：優先順序為 Consolas -&gt; Monaco -&gt; 等寬字型 */
+    font-family: &quot;Consolas&quot;, &quot;Monaco&quot;, &quot;Courier New&quot;, monospace;
+    
+    /* 字體大小 12pt */
+    font-size: 12pt;
+    
+}
+
+/* 選取文字時的顏色 */
+QPlainTextEdit:focus {
+    background-color: #f0f1f2;
+}</string>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Plain</enum>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
+      </property>
+     </widget>
+    </widget>
+    <widget class="QWidget" name="tab_3">
+     <attribute name="title">
+      <string>Style</string>
+     </attribute>
+     <widget class="QPlainTextEdit" name="style_code_view">
+      <property name="geometry">
+       <rect>
+        <x>50</x>
+        <y>80</y>
+        <width>461</width>
+        <height>71</height>
+       </rect>
+      </property>
+      <property name="styleSheet">
+       <string notr="true">QPlainTextEdit {
+    /* 背景顏色：深灰色或淺灰色，這裡選用輕量感的淺灰 */
+    background-color: #f8f9fa;
+    
+    /* 文字顏色 */
+    color: #24292e;
+    
+    /* 邊距：讓程式碼不要貼邊 (上 右 下 左) */
+    padding: 15px;
+    
+    /* 移除邊框（因為 tab_widget 已經有框了） */
+    border: none;
+    
+    /* 寫程式專用字體：優先順序為 Consolas -&gt; Monaco -&gt; 等寬字型 */
+    font-family: &quot;Consolas&quot;, &quot;Monaco&quot;, &quot;Courier New&quot;, monospace;
+    
+    /* 字體大小 12pt */
+    font-size: 12pt;
+    
+}
+
+/* 選取文字時的顏色 */
+QPlainTextEdit:focus {
+    background-color: #f0f1f2;
+}</string>
+      </property>
+      <property name="frameShape">
+       <enum>QFrame::NoFrame</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Plain</enum>
+      </property>
+      <property name="readOnly">
+       <bool>true</bool>
       </property>
      </widget>
     </widget>
    </widget>
   </widget>
-  <widget class="QMenuBar" name="menubar">
-   <property name="geometry">
-    <rect>
-     <x>0</x>
-     <y>0</y>
-     <width>1074</width>
-     <height>25</height>
-    </rect>
-   </property>
-  </widget>
-  <widget class="QStatusBar" name="statusbar"/>
  </widget>
  <resources/>
  <connections/>

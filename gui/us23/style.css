@@ -1,32 +1,41 @@
-/* style.css */
-
-/* 設定基礎字體與邊距 */
+/* --- 基礎版面與字體 --- */
 body {
     font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     line-height: 1.6;
     color: #24292e;
     background-color: #ffffff;
-    padding: 20px;
+    padding: 25px; /* 增加一點邊距，讓閱讀更舒適 */
+    margin: 0;     /* 移除瀏覽器預設邊距 */
 }
 
-/* 標題樣式，增加底部線條增加層次感 */
-h1, h2, h3 {
+/* --- 標題樣式 --- */
+h1, h2, h3, h4, h5, h6 {
     margin-top: 24px;
     margin-bottom: 16px;
     font-weight: 600;
     line-height: 1.25;
 }
 
-h1 { padding-bottom: 0.3em; border-bottom: 1px solid #eaecef; }
-h2 { padding-bottom: 0.3em; border-bottom: 1px solid #eaecef; }
+h1 { padding-bottom: 0.3em; border-bottom: 1px solid #eaecef; font-size: 2em; }
+h2 { padding-bottom: 0.3em; border-bottom: 1px solid #eaecef; font-size: 1.5em; }
 
-/* 連結顏色 */
+/* --- 連結 --- */
 a {
     color: #0366d6;
     text-decoration: none;
 }
 
-/* 程式碼區塊樣式 (Fenced Code Blocks) */
+/* --- 核心：圖片自適應與美化 --- */
+img {
+    max-width: 100%;       /* 關鍵：絕不超過視窗寬度 */
+    height: auto;          /* 保持比例 */
+    display: block;        /* 獨立成塊 */
+    margin: 20px auto;     /* 居中顯示，上下留白 */
+    border-radius: 6px;    /* 圓角 */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1); /* 現代感的輕微陰影 */
+}
+
+/* --- 程式碼區塊 --- */
 pre {
     padding: 16px;
     overflow: auto;
@@ -35,27 +44,27 @@ pre {
     background-color: #f6f8fa;
     border-radius: 6px;
     border: 1px solid #dfe1e5;
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
-/* 行內程式碼樣式 */
 code {
     padding: 0.2em 0.4em;
     margin: 0;
     font-size: 85%;
     background-color: rgba(27,31,35,0.05);
     border-radius: 3px;
-    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    font-family: inherit;
 }
 
-/* 引用區塊樣式 */
+/* --- 引用區塊 --- */
 blockquote {
     padding: 0 1em;
     color: #6a737d;
     border-left: 0.25em solid #dfe1e5;
-    margin: 0;
+    margin: 0 0 16px 0;
 }
 
-/* 表格樣式 */
+/* --- 表格 --- */
 table {
     border-collapse: collapse;
     width: 100%;
@@ -63,19 +72,10 @@ table {
 }
 
 table th, table td {
-    padding: 6px 13px;
+    padding: 8px 13px;
     border: 1px solid #dfe1e5;
 }
 
 table tr:nth-child(2n) {
     background-color: #f6f8fa;
-}
-
-
-img {
-    max-width: 100%;
-    height: auto;
-    display: inline-block; /* 讓圖片可以跟文字在同一行，或至少保持正確的先後順序 */
-    vertical-align: middle;
-    margin: 10px 0;
 }

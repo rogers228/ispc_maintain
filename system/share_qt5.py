@@ -32,8 +32,11 @@ from PyQt5.QtGui import (
 
 from PyQt5 import uic
 
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+
 def test1():
     print('test1')
 
 if __name__ == '__main__':
     test1()
+
