@@ -44,15 +44,23 @@ class ProductArticle:
             "Prefer": "return=representation"  # 讓 Insert/Update 回傳存檔後的資料
         }
 
-    def select_multiple(self, query_params=None):
+    def select_multiple(self, query_params=None, limit=100):
         """
         查詢多筆資料
         query_params: dict, 例如 {'custom_index': 'eq.manual-001'}
         """
         try:
             headers = self._get_headers()
-            # select=* 代表抓取所有欄位
-            res = requests.get(self.table_url, headers=headers, params=query_params)
+
+            params = query_params.copy() if query_params else {}
+            if 'select' not in params:
+                params['select'] = '*'
+
+            if 'order' not in params:
+                params['order'] = 'updated_at.desc'
+            params['limit'] = limit
+
+            res = requests.get(self.table_url, headers=headers, params=query_params, timeout=10)
             if res.status_code == 200:
                 return res.json()
             else:
@@ -62,46 +70,43 @@ class ProductArticle:
             print(f"Select Exception: {e}")
             return []
 
-    def insert(self, custom_index, title, content, html_snapshot=None, category=None):
-        """插入新文章"""
-        user_id = self.auth.get_user_id()
-        if not user_id:
-            print("無法新增：找不到 User ID")
-            return None
-
-        payload = {
-            "custom_index": custom_index,
-            "title": title,
-            "content": content,
-            "html_snapshot": html_snapshot,
-            "category": category,
-            "author_id": user_id  # 必須對應當前登入者
-        }
-
+    def insert(self, data):
+        """
+        新增文章
+        data: dict, 例如 {"custom_index": "A001", "title": "新文章", "content": "..."}
+        """
         try:
             headers = self._get_headers()
-            res = requests.post(self.table_url, headers=headers, json=payload)
-            if res.status_code in [201, 200]:
-                return res.json()
+            headers["Prefer"] = "return=representation" # 同樣要求回傳完整資料
+            res = requests.post(self.table_url, headers=headers, json=data)
+
+            if res.status_code in [201]: # 201 Created
+                data = res.json()
+                return data[0] if data else True
             else:
                 print(f"Insert Error: {res.status_code}, {res.text}")
-                return None
+                return False
         except Exception as e:
             print(f"Insert Exception: {e}")
-            return None
+            return False
 
     def update(self, custom_index, update_data):
         """
-        更新文章
-        custom_index: 標記要更新哪一筆
-        update_data: dict, 例如 {"title": "新標題", "content": "新內容"}
+        更新文章並回傳更新後的資料
         """
         try:
             headers = self._get_headers()
-            # 使用 custom_index 作為過濾器
+            # 關鍵：要求 API 回傳更新後的結果 (representation)
+            headers["Prefer"] = "return=representation"
+
             params = {"custom_index": f"eq.{custom_index}"}
             res = requests.patch(self.table_url, headers=headers, params=params, json=update_data)
-            if res.status_code in [200, 204]:
+
+            if res.status_code in [200, 201]:
+                # 成功且有回傳資料 (list 格式)
+                data = res.json()
+                return data[0] if data else True
+            elif res.status_code == 204:
                 return True
             else:
                 print(f"Update Error: {res.status_code}, {res.text}")
@@ -136,9 +141,9 @@ def test1():
 def test2():
     pa = ProductArticle()
     res = pa.insert(
-        custom_index="test-002",
-        title="測試文章2",
-        content="# Hello Markdown 2",
+        custom_index="ys_vdfds",
+        title="測試文章3",
+        content="# Hello Markdown 3",
         html_snapshot="<h1>Hello Markdown</h1>",
         category="Maintenance"
     )

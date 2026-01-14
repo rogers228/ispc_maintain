@@ -14,11 +14,11 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1074, 502)
+        MainWindow.resize(1102, 627)
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
         self.editor_input = QtWidgets.QPlainTextEdit(self.centralwidget)
-        self.editor_input.setGeometry(QtCore.QRect(3, 120, 361, 291))
+        self.editor_input.setGeometry(QtCore.QRect(330, 130, 361, 351))
         font = QtGui.QFont()
         font.setFamily("Consolas,Monaco,Courier New,monospace")
         font.setPointSize(12)
@@ -28,10 +28,10 @@ class Ui_MainWindow(object):
 "    background-color: #ffffff;\n"
 "    \n"
 "    /* 加上明確的邊框，或是 border: none，這會打破系統原生樣式 */\n"
-"    border: 1px solid #e1e1e1; \n"
+"    /* border: 1px solid #e1e1e1;  */\n"
 "    \n"
 "    color: #000000;\n"
-"    padding: 8px;\n"
+"    padding: 2px;\n"
 "    font-family: \"Consolas\", \"Monaco\", \"Courier New\", monospace;\n"
 "    font-size: 12pt;\n"
 "}\n"
@@ -49,7 +49,7 @@ class Ui_MainWindow(object):
         self.editor_input.setFrameShadow(QtWidgets.QFrame.Sunken)
         self.editor_input.setObjectName("editor_input")
         self.tab_widget = QtWidgets.QTabWidget(self.centralwidget)
-        self.tab_widget.setGeometry(QtCore.QRect(380, 129, 571, 281))
+        self.tab_widget.setGeometry(QtCore.QRect(700, 10, 381, 461))
         font = QtGui.QFont()
         font.setFamily("新細明體")
         font.setPointSize(12)
@@ -72,7 +72,7 @@ class Ui_MainWindow(object):
 "    border-bottom-right-radius: 8px;\n"
 "    \n"
 "    /* 寬度控制 */\n"
-"    min-width: 120px;            /* 設定最小寬度，不會縮成一團 */\n"
+"    min-width: 80px;            /* 設定最小寬度，不會縮成一團 */\n"
 "    padding: 8px 20px;           /* 左右內距讓標籤隨文字自動撐開 */\n"
 "    \n"
 "    margin-right: 4px;\n"
@@ -97,6 +97,39 @@ class Ui_MainWindow(object):
         self.tab = QtWidgets.QWidget()
         self.tab.setObjectName("tab")
         self.tab_widget.addTab(self.tab, "")
+        self.tab_4 = QtWidgets.QWidget()
+        self.tab_4.setObjectName("tab_4")
+        self.clean_html_view = QtWidgets.QPlainTextEdit(self.tab_4)
+        self.clean_html_view.setGeometry(QtCore.QRect(20, 20, 181, 161))
+        self.clean_html_view.setStyleSheet("QPlainTextEdit {\n"
+"    /* 背景顏色：深灰色或淺灰色，這裡選用輕量感的淺灰 */\n"
+"    background-color: #f8f9fa;\n"
+"    \n"
+"    /* 文字顏色 */\n"
+"    color: #24292e;\n"
+"    \n"
+"    /* 邊距：讓程式碼不要貼邊 (上 右 下 左) */\n"
+"    padding: 15px;\n"
+"    \n"
+"    /* 移除邊框（因為 tab_widget 已經有框了） */\n"
+"    border: none;\n"
+"    \n"
+"    /* 寫程式專用字體：優先順序為 Consolas -> Monaco -> 等寬字型 */\n"
+"    font-family: \"Consolas\", \"Monaco\", \"Courier New\", monospace;\n"
+"    \n"
+"    /* 字體大小 12pt */\n"
+"    font-size: 12pt;\n"
+"    \n"
+"}\n"
+"\n"
+"/* 選取文字時的顏色 */\n"
+"QPlainTextEdit:focus {\n"
+"    background-color: #f0f1f2;\n"
+"}")
+        self.clean_html_view.setFrameShape(QtWidgets.QFrame.NoFrame)
+        self.clean_html_view.setFrameShadow(QtWidgets.QFrame.Plain)
+        self.clean_html_view.setObjectName("clean_html_view")
+        self.tab_widget.addTab(self.tab_4, "")
         self.tab_2 = QtWidgets.QWidget()
         self.tab_2.setObjectName("tab_2")
         self.html_code_view = QtWidgets.QPlainTextEdit(self.tab_2)
@@ -169,15 +202,249 @@ class Ui_MainWindow(object):
         self.style_code_view.setReadOnly(True)
         self.style_code_view.setObjectName("style_code_view")
         self.tab_widget.addTab(self.tab_3, "")
+        self.article_table = QtWidgets.QTableWidget(self.centralwidget)
+        self.article_table.setEnabled(True)
+        self.article_table.setGeometry(QtCore.QRect(10, 190, 311, 291))
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding)
+        sizePolicy.setHorizontalStretch(1)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.article_table.sizePolicy().hasHeightForWidth())
+        self.article_table.setSizePolicy(sizePolicy)
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.article_table.setFont(font)
+        self.article_table.setStyleSheet("QTableWidget {\n"
+"    alternate-background-color: #f2f2f2; /* 隔行背景顏色 */\n"
+"    selection-background-color: #0078d7;  /* 選擇背景顏色 */\n"
+"}\n"
+"QHeaderView::section {\n"
+"    background-color: #f0f0f0; /* 表頭背景顏色 */\n"
+"}")
+        self.article_table.setAlternatingRowColors(True)
+        self.article_table.setColumnCount(0)
+        self.article_table.setObjectName("article_table")
+        self.article_table.setRowCount(0)
+        self.article_table.verticalHeader().setDefaultSectionSize(24)
+        self.f_title = QtWidgets.QLineEdit(self.centralwidget)
+        self.f_title.setGeometry(QtCore.QRect(90, 140, 231, 24))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.f_title.setFont(font)
+        self.f_title.setText("")
+        self.f_title.setObjectName("f_title")
+        self.w_title = QtWidgets.QLineEdit(self.centralwidget)
+        self.w_title.setGeometry(QtCore.QRect(90, 33, 231, 24))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.w_title.setFont(font)
+        self.w_title.setText("")
+        self.w_title.setObjectName("w_title")
+        self.label_w_title = QtWidgets.QLabel(self.centralwidget)
+        self.label_w_title.setGeometry(QtCore.QRect(10, 33, 81, 24))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.label_w_title.setFont(font)
+        self.label_w_title.setContextMenuPolicy(QtCore.Qt.PreventContextMenu)
+        self.label_w_title.setStyleSheet("QLabel {\n"
+"    border: 1px solid black; /* 邊框粗細與顏色 */\n"
+"    padding: 2px;           /* 內邊距 */\n"
+"}")
+        self.label_w_title.setScaledContents(False)
+        self.label_w_title.setObjectName("label_w_title")
+        self.f_content = QtWidgets.QLineEdit(self.centralwidget)
+        self.f_content.setGeometry(QtCore.QRect(90, 163, 231, 24))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.f_content.setFont(font)
+        self.f_content.setText("")
+        self.f_content.setObjectName("f_content")
+        self.label_w_content = QtWidgets.QLabel(self.centralwidget)
+        self.label_w_content.setGeometry(QtCore.QRect(10, 56, 81, 24))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.label_w_content.setFont(font)
+        self.label_w_content.setContextMenuPolicy(QtCore.Qt.PreventContextMenu)
+        self.label_w_content.setStyleSheet("QLabel {\n"
+"    border: 1px solid black; /* 邊框粗細與顏色 */\n"
+"    padding: 2px;           /* 內邊距 */\n"
+"}")
+        self.label_w_content.setScaledContents(False)
+        self.label_w_content.setObjectName("label_w_content")
+        self.w_custom_index = QtWidgets.QLineEdit(self.centralwidget)
+        self.w_custom_index.setGeometry(QtCore.QRect(90, 10, 231, 24))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.w_custom_index.setFont(font)
+        self.w_custom_index.setText("")
+        self.w_custom_index.setObjectName("w_custom_index")
+        self.w_counts = QtWidgets.QLineEdit(self.centralwidget)
+        self.w_counts.setGeometry(QtCore.QRect(280, 56, 41, 24))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.w_counts.setFont(font)
+        self.w_counts.setObjectName("w_counts")
+        self.label_w_custom_index = QtWidgets.QLabel(self.centralwidget)
+        self.label_w_custom_index.setGeometry(QtCore.QRect(10, 10, 81, 24))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.label_w_custom_index.setFont(font)
+        self.label_w_custom_index.setContextMenuPolicy(QtCore.Qt.PreventContextMenu)
+        self.label_w_custom_index.setStyleSheet("QLabel {\n"
+"    border: 1px solid black; /* 邊框粗細與顏色 */\n"
+"    padding: 2px;           /* 內邊距 */\n"
+"}")
+        self.label_w_custom_index.setScaledContents(False)
+        self.label_w_custom_index.setObjectName("label_w_custom_index")
+        self.f_custom_index = QtWidgets.QLineEdit(self.centralwidget)
+        self.f_custom_index.setGeometry(QtCore.QRect(90, 117, 231, 24))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.f_custom_index.setFont(font)
+        self.f_custom_index.setText("")
+        self.f_custom_index.setObjectName("f_custom_index")
+        self.w_content = QtWidgets.QLineEdit(self.centralwidget)
+        self.w_content.setGeometry(QtCore.QRect(90, 56, 191, 24))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.w_content.setFont(font)
+        self.w_content.setText("")
+        self.w_content.setObjectName("w_content")
+        self.btn_query = QtWidgets.QPushButton(self.centralwidget)
+        self.btn_query.setGeometry(QtCore.QRect(10, 80, 311, 31))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.btn_query.setFont(font)
+        self.btn_query.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.btn_query.setToolTip("")
+        self.btn_query.setObjectName("btn_query")
+        self.label_f_content = QtWidgets.QLabel(self.centralwidget)
+        self.label_f_content.setGeometry(QtCore.QRect(10, 163, 81, 24))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.label_f_content.setFont(font)
+        self.label_f_content.setContextMenuPolicy(QtCore.Qt.PreventContextMenu)
+        self.label_f_content.setStyleSheet("QLabel {\n"
+"    border: 1px solid black; /* 邊框粗細與顏色 */\n"
+"    padding: 2px;           /* 內邊距 */\n"
+"}")
+        self.label_f_content.setScaledContents(False)
+        self.label_f_content.setObjectName("label_f_content")
+        self.label_f_custom_index = QtWidgets.QLabel(self.centralwidget)
+        self.label_f_custom_index.setGeometry(QtCore.QRect(10, 117, 81, 24))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.label_f_custom_index.setFont(font)
+        self.label_f_custom_index.setContextMenuPolicy(QtCore.Qt.PreventContextMenu)
+        self.label_f_custom_index.setStyleSheet("QLabel {\n"
+"    border: 1px solid black; /* 邊框粗細與顏色 */\n"
+"    padding: 2px;           /* 內邊距 */\n"
+"}")
+        self.label_f_custom_index.setScaledContents(False)
+        self.label_f_custom_index.setObjectName("label_f_custom_index")
+        self.label_f_title = QtWidgets.QLabel(self.centralwidget)
+        self.label_f_title.setGeometry(QtCore.QRect(10, 140, 81, 24))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.label_f_title.setFont(font)
+        self.label_f_title.setContextMenuPolicy(QtCore.Qt.PreventContextMenu)
+        self.label_f_title.setStyleSheet("QLabel {\n"
+"    border: 1px solid black; /* 邊框粗細與顏色 */\n"
+"    padding: 2px;           /* 內邊距 */\n"
+"}")
+        self.label_f_title.setScaledContents(False)
+        self.label_f_title.setObjectName("label_f_title")
+        self.btn_save = QtWidgets.QPushButton(self.centralwidget)
+        self.btn_save.setGeometry(QtCore.QRect(450, 10, 121, 51))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.btn_save.setFont(font)
+        self.btn_save.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.btn_save.setToolTip("")
+        self.btn_save.setObjectName("btn_save")
+        self.editor_title = QtWidgets.QLineEdit(self.centralwidget)
+        self.editor_title.setGeometry(QtCore.QRect(330, 100, 361, 24))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.editor_title.setFont(font)
+        self.editor_title.setText("")
+        self.editor_title.setObjectName("editor_title")
+        self.btn_delete = QtWidgets.QPushButton(self.centralwidget)
+        self.btn_delete.setGeometry(QtCore.QRect(570, 10, 121, 51))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.btn_delete.setFont(font)
+        self.btn_delete.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.btn_delete.setToolTip("")
+        self.btn_delete.setObjectName("btn_delete")
+        self.btn_addnew = QtWidgets.QPushButton(self.centralwidget)
+        self.btn_addnew.setGeometry(QtCore.QRect(330, 10, 121, 51))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.btn_addnew.setFont(font)
+        self.btn_addnew.setFocusPolicy(QtCore.Qt.NoFocus)
+        self.btn_addnew.setToolTip("")
+        self.btn_addnew.setObjectName("btn_addnew")
+        self.editor_custom_index = QtWidgets.QLineEdit(self.centralwidget)
+        self.editor_custom_index.setGeometry(QtCore.QRect(330, 70, 361, 24))
+        font = QtGui.QFont()
+        font.setFamily("新細明體")
+        font.setPointSize(12)
+        self.editor_custom_index.setFont(font)
+        self.editor_custom_index.setText("")
+        self.editor_custom_index.setObjectName("editor_custom_index")
         MainWindow.setCentralWidget(self.centralwidget)
 
         self.retranslateUi(MainWindow)
         self.tab_widget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
+        MainWindow.setTabOrder(self.w_custom_index, self.w_title)
+        MainWindow.setTabOrder(self.w_title, self.w_content)
+        MainWindow.setTabOrder(self.w_content, self.w_counts)
+        MainWindow.setTabOrder(self.w_counts, self.f_custom_index)
+        MainWindow.setTabOrder(self.f_custom_index, self.f_title)
+        MainWindow.setTabOrder(self.f_title, self.f_content)
+        MainWindow.setTabOrder(self.f_content, self.article_table)
+        MainWindow.setTabOrder(self.article_table, self.editor_custom_index)
+        MainWindow.setTabOrder(self.editor_custom_index, self.editor_title)
+        MainWindow.setTabOrder(self.editor_title, self.editor_input)
+        MainWindow.setTabOrder(self.editor_input, self.tab_widget)
+        MainWindow.setTabOrder(self.tab_widget, self.html_code_view)
+        MainWindow.setTabOrder(self.html_code_view, self.style_code_view)
 
     def retranslateUi(self, MainWindow):
         _translate = QtCore.QCoreApplication.translate
         MainWindow.setWindowTitle(_translate("MainWindow", "MainWindow"))
         self.tab_widget.setTabText(self.tab_widget.indexOf(self.tab), _translate("MainWindow", "預覽"))
-        self.tab_widget.setTabText(self.tab_widget.indexOf(self.tab_2), _translate("MainWindow", "Html"))
+        self.tab_widget.setTabText(self.tab_widget.indexOf(self.tab_4), _translate("MainWindow", "Clean Html"))
+        self.tab_widget.setTabText(self.tab_widget.indexOf(self.tab_2), _translate("MainWindow", "Local Html"))
         self.tab_widget.setTabText(self.tab_widget.indexOf(self.tab_3), _translate("MainWindow", "Style"))
+        self.label_w_title.setText(_translate("MainWindow", "標題"))
+        self.label_w_content.setText(_translate("MainWindow", "內容"))
+        self.w_counts.setText(_translate("MainWindow", "200"))
+        self.label_w_custom_index.setText(_translate("MainWindow", "自訂ID"))
+        self.btn_query.setText(_translate("MainWindow", "查詢"))
+        self.label_f_content.setText(_translate("MainWindow", "內容"))
+        self.label_f_custom_index.setText(_translate("MainWindow", "自訂ID"))
+        self.label_f_title.setText(_translate("MainWindow", "標題"))
+        self.btn_save.setText(_translate("MainWindow", "儲存"))
+        self.btn_delete.setText(_translate("MainWindow", "刪除"))
+        self.btn_addnew.setText(_translate("MainWindow", "新增"))
