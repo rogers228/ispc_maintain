@@ -20,7 +20,7 @@ if True:
 
     ROOT_DIR = find_project_root()
     sys.path.append(os.path.join(ROOT_DIR, "system"))
-    from config_web import spwr_api_url, spwr_api_anon_key
+    from config_web import spwr_api_url, spwr_api_anon_key, CLOUDFLARE_ZONE_ID, CLOUDFLARE_PURAGE_CACHE_TOKEN
     from tool_auth import AuthManager
 
 class ProductArticle:
@@ -130,6 +130,37 @@ class ProductArticle:
                 return False
         except Exception as e:
             print(f"Delete Exception: {e}")
+            return False
+
+    def cloudflare_purge_snippet(self, custom_index):
+        # 通知 Cloudflare 刪除特定的 HTML 片段快取
+        zone_id = CLOUDFLARE_ZONE_ID
+        api_token = CLOUDFLARE_PURAGE_CACHE_TOKEN
+        target_url = f"https://assets.specic.store/snippets/{custom_index}"
+        purge_api = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/purge_cache"
+        headers = {
+            "Authorization": f"Bearer {api_token}",
+            "Content-Type": "application/json",
+        }
+
+        # files 陣列代表你要精準刪除的網址
+        data = {
+            "files": [target_url]
+        }
+
+        try:
+            response = requests.post(purge_api, headers=headers, data=json.dumps(data))
+            result = response.json()
+
+            if result.get("success"):
+                print(f"🚀 Cloudflare 快取已成功重新整理: {custom_index}")
+                return True
+            else:
+                print(f"❌ 快取清除失敗: {result.get('errors')}")
+                return False
+
+        except Exception as e:
+            print(f"⚠️ 呼叫 Cloudflare API 發生錯誤: {e}")
             return False
 
 def test1():

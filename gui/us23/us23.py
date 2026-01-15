@@ -246,6 +246,9 @@ class MainWindow(QMainWindow):
 
             # 4. 處理結果
             if result:
+                # 無論新增或更新，只要有 custom_index，就通知 Cloudflare 清除快取
+                self.pa.cloudflare_purge_snippet(current_id)
+
                 # 更新本地記憶體 all_data
                 if is_update_mode:
                     # 找到舊資料並替換

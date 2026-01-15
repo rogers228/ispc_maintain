@@ -426,7 +426,8 @@ class MainWindow(QMainWindow):
         if not jwt:
             QMessageBox.warning(self, '尚未登入', '請先登入')
             return
-
+        os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--disable-gpu --disable-software-rasterizer"
+        os.environ["QT_QUICK_BACKEND"] = "software"
         self.us23 = MainWindow_us23() # 文章
         self.us23.show()
 
