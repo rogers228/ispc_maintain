@@ -20,11 +20,12 @@ if True:
     ROOT_DIR = find_project_root()
     sys.path.append(os.path.join(ROOT_DIR, "system"))
     # from config import spwr_api_url, spwr_api_anon_key
-    from config_web import spwr_api_url, spwr_api_anon_key
+    from config_web import spwr_api_url, spwr_api_anon_key, WEB_SPECIC_ASSETS_URL, CLOUDFLARE_ZONE_ID, CLOUDFLARE_PURAGE_CACHE_TOKEN_DATAJSON
     from tool_auth import AuthManager
     from tool_time import get_local_time
     from tool_str import get_str_hash, generate_random_char_lower
     from tool_pd_jogging import ProductCheck
+
 
 class ProductStorage:
     STORAGE_PATH = os.path.join(ROOT_DIR, 'tempstorage')
@@ -228,7 +229,6 @@ class ProductStorage:
                 'message': storage['message'],
                 'result': None,
             }
-
         # 驗證成功
         data = {
             'data_original': storage['data_original'],
@@ -241,6 +241,37 @@ class ProductStorage:
             'message': '',
             'result': result,
         }
+
+    def purge_cloudflare_cache_datajson_preview(self, pdno):
+        # 清除 Cloudflare 快取
+        zone_id = CLOUDFLARE_ZONE_ID
+        api_token = CLOUDFLARE_PURAGE_CACHE_TOKEN_DATAJSON
+        base_url = WEB_SPECIC_ASSETS_URL
+
+        urls_to_purge = [f"{base_url}/api/preview/{pdno}"]
+        # Cloudflare API 端點
+        api_endpoint = f"https://api.cloudflare.com/client/v4/zones/{zone_id}/purge_cache"
+        headers = {
+            "Authorization": f"Bearer {api_token}",
+            "Content-Type": "application/json"
+        }
+        payload = {"files": urls_to_purge}
+        try:
+            response = requests.post(api_endpoint, json=payload, headers=headers, timeout=10)
+            result = response.json()
+            if result.get("success"):
+                print(f"✅ [Cloudflare] 成功清除預覽快取: {pdno}")
+                return True
+            else:
+                error_info = result.get('errors')
+                print(f"❌ [Cloudflare] 清除失敗 (pdno: {pdno}): {error_info}")
+                return False
+        except requests.exceptions.Timeout:
+            print(f"⚠️ [Cloudflare] 請求逾時 (pdno: {pdno})")
+            return False
+        except Exception as e:
+            print(f"⚠️ [Cloudflare] 發生未知錯誤: {e}")
+            return False
 
 def test1():
     # 新增一筆，完成後請至 temp_options.py 添加使用者權限

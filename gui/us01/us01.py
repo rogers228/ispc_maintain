@@ -472,8 +472,9 @@ class MainWindow(QMainWindow):
 
     def handle_pd_upload(self):
         # 上傳前 先檢查
-
         selected_uid = self._get_selected_product_uid()
+        pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], selected_uid)
+        # print('pdno:', pdno)
         if selected_uid:
             reply = QMessageBox.question(self, "上傳", f"{self.product_sheet[selected_uid]}\n\n您確定要從本地上傳資料嗎？，這動作將會覆蓋雲端資料\n", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
@@ -483,6 +484,7 @@ class MainWindow(QMainWindow):
                         # 未設定 Policies
                         QMessageBox.warning(self, "上傳", f"{self.product_sheet[selected_uid]}\n\n上傳失敗!\n\n未設定 Policies!")
                     else:
+                        self.ps.purge_cloudflare_cache_datajson_preview(pdno) # 清除 cloudflare 代理快取 預覽版
                         QMessageBox.information(self, "上傳", f'{self.product_sheet[selected_uid]}\n\n上傳成功。\n')
 
                 else:
@@ -498,6 +500,8 @@ class MainWindow(QMainWindow):
     def handle_pd_release(self):
         # print('handle_pd_release')
         selected_uid = self._get_selected_product_uid()
+        pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], selected_uid)
+        # print('pdno:', pdno)
         if selected_uid:
             reply = QMessageBox.question(self, "發布", f"{self.product_sheet[selected_uid]}\n\n您確定要發布為正式版嗎？\n", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
@@ -506,6 +510,7 @@ class MainWindow(QMainWindow):
                 if result['is_error']:
                     QMessageBox.warning(self, "發布", result['message'])
                 else:
+                    self.pr.purge_cloudflare_cache_datajson_product(pdno) # 清除 cloudflare 代理快取 正式版
                     QMessageBox.information(self, "發布", result['message'])
 
     def _get_uid_users(self, uid):
