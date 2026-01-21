@@ -622,7 +622,7 @@ class ProductCheck:
         }
 
 def test1():
-    uid = 'dbdcedbe-7bde-4b2c-8cfb-b21e8ccde68d'
+    uid = '4b87a39d-a0e4-4f73-8945-ebc54994e112'
     pc = ProductCheck(uid)
     result = pc.get_detaile()
     # print(result)
@@ -632,7 +632,7 @@ def test1():
         # print(json.dumps(result['specification'], indent=4, ensure_ascii=False))
         # print(json.dumps(result['friendly'], indent=4, ensure_ascii=False))
         # print(result['fruit'])
-        # print(result['data_json'])
+        print(result['data_json'])
 
     else:
         print(result['message'])
