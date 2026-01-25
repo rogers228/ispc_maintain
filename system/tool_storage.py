@@ -46,15 +46,49 @@ class StorageBuckets:
         final_title = title if title else file_name # title
 
         extension = os.path.splitext(file_name)[1].lower() # 附檔名
-        if extension == '.pdf':
+
+        # --- 擴充資料夾與 Content-Type 對應邏輯 ---
+        if extension in ['.jpg', '.jpeg', '.png', '.webp', '.gif', '.ico']:
+            folder = "images"
+            # 針對不同圖片格式給予精確 MIME Type
+            mime_map = {'.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.png': 'image/png',
+                        '.webp': 'image/webp', '.gif': 'image/gif', '.ico': 'image/x-icon'}
+            content_type = mime_map.get(extension, "image/jpeg")
+
+        elif extension == '.pdf':
             folder = "pdfs"
             content_type = "application/pdf"
-        elif extension in ['.jpg', '.jpeg', '.png', '.webp']:
-            folder = "images"
-            content_type = "image/jpeg" # 或根據副檔名精確判斷
+
+        elif extension == '.md':
+            folder = "markdowns"
+            content_type = "text/markdown"
+
+        elif extension == '.css':
+            folder = "css"
+            content_type = "text/css"
+
+        elif extension == '.js':
+            folder = "js"
+            content_type = "text/javascript"
+
+        elif extension == '.svg':
+            folder = "images" # SVG 通常歸類在圖片
+            content_type = "image/svg+xml"
+
+        elif extension in ['.woff', '.woff2', '.ttf', '.otf']:
+            folder = "fonts"
+            mime_map = {'.woff': 'font/woff', '.woff2': 'font/woff2',
+                        '.ttf': 'font/ttf', '.otf': 'font/otf'}
+            content_type = mime_map.get(extension, "font/woff2")
+
+        elif extension in ['.zip', '.rar', '.7z']:
+            folder = "archives"
+            content_type = "application/zip"
+
         else:
             folder = "others"
             content_type = "application/octet-stream"
+
 
         dest_path = f"{folder}/{generate_random_char_lower(length=16)}{extension}"
 
@@ -282,7 +316,8 @@ class StorageBuckets:
 def test1():
     print('test upload_file...')
     sb = StorageBuckets()
-    file = r'C:\Users\user\Desktop\temp\pump.jpg'
+    # file = r'C:\Users\user\Desktop\temp\pump.jpg'
+    file = r'C:\Users\USER\Documents\ispc_portal\web_lab\public\mock\test.md'
     result = sb.upload_file(file)
     print(result)
 
@@ -316,5 +351,5 @@ def test5():
     print(f"測試結果: {'成功' if result else '失敗'}")
 
 if __name__ == '__main__':
-    # test1()
-    test4()
+    test1()
+    # test4()

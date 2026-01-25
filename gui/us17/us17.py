@@ -58,10 +58,16 @@ class MainWindow(QMainWindow):
 
         # 定義合法的附檔名 (全部小寫方便後續比對)
         self.LEGAL_EXTENSIONS = {
-            '.jpg', '.jpeg', '.png', '.webp', # 圖片
-            '.pdf',                          # 文件
-            '.zip', '.rar',                  # 壓縮檔
-            '.svg'                           # 向量圖
+            # 圖片與圖示
+            '.jpg', '.jpeg', '.png', '.webp', '.svg', '.ico',
+            # 樣式與腳本
+            '.css', '.js',
+            # 文件
+            '.pdf', '.md', '.txt',
+            # 字體 (官網若要自訂字型必備)
+            '.woff2', '.woff', '.ttf',
+            # 壓縮檔
+            '.zip', '.rar', '.7z'
         }
 
     def resizeEvent(self, event):
