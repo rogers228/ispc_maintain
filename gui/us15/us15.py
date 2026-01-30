@@ -492,7 +492,7 @@ class MainWindow(QMainWindow):
             # F. 檔案處理 (縮圖與背景大圖)
             file_path = item.get('file_path', '')
             content_type = item.get('content_type', '')
-            print('content_type:', content_type)
+            # print('content_type:', content_type)
             if "image" in content_type:
                 # 任務 A: 縮圖 (這會更新 UI)
                 worker = ThumbWorker(row, file_path)
@@ -516,13 +516,22 @@ class MainWindow(QMainWindow):
             #     icon_pdf = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'pdf.png'))
             #     self.ui.treeView.setItem(row, 0, QTableWidgetItem(icon_pdf, ""))
 
-            icon_map = {'application/pdf': 'pdf.png',
-                'text/css': 'css.png',
-                'text/markdown': 'markdown.png',
-                'image/svg+xml': 'svg.png',
+            icon_pdf = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'pdf.png'))
+            icon_css = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'css.png'))
+            icon_js = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'js.png'))
+            icon_markdown = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'markdown.png'))
+            icon_svg = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'svg.png'))
+            icon_map = {
+                'application/pdf': icon_pdf,
+                'text/css':        icon_css,
+                'text/javascript': icon_js,
+                'text/markdown':   icon_markdown,
+                'image/svg+xml':   icon_svg,
             }
+
+            # icon_map[content_type]
             if content_type in icon_map.keys():
-                self.ui.treeView.setItem(row, 0, QTableWidgetItem(QIcon(os.path.join(ROOT_DIR, 'system', 'icons', icon_map[content_type])), ""))
+                self.ui.treeView.setItem(row, 0, QTableWidgetItem(icon_map[content_type], ""))
 
         # 設定行高
         for i in range(len(data_list)):
