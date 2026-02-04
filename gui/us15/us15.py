@@ -259,16 +259,23 @@ class MainWindow(QMainWindow):
         event.accept()
 
     def init_query_params(self):
+        self.content_type = ["全部",
+            "image/jpeg", "image/png", "image/webp", "image/x-icon", "image/svg+xml",
+            "application/pdf" ,"application/xml",
+            "text/markdown", "text/css", "text/javascript", "text/plain",
+            "font/woff2",
+            ]
+
         self.ui.w_title.setText('')
         self.ui.w_summary.setText('')
         self.ui.w_content_type.clear()
-        self.ui.w_content_type.addItems(['全部', 'image/jpeg', 'application/pdf'])
+        self.ui.w_content_type.addItems(self.content_type)
         self.ui.w_counts.setText(str(self.query_max))
 
     def init_filter_config(self):
         # 設定篩選下拉選單的值
         self.ui.f_content_type.clear()
-        self.ui.f_content_type.addItems(["全部", "image/jpeg", "image/png", "application/pdf"])
+        self.ui.f_content_type.addItems(self.content_type)
 
         # 連結篩選事件：當文字改變或選單切換時即時篩選
         self.ui.f_title.textChanged.connect(self.apply_local_filter)
@@ -512,24 +519,23 @@ class MainWindow(QMainWindow):
 
                 self.threadpool.start(worker_full)
 
-            # elif "pdf" in content_type:
-            #     icon_pdf = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'pdf.png'))
-            #     self.ui.treeView.setItem(row, 0, QTableWidgetItem(icon_pdf, ""))
-
             icon_pdf = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'pdf.png'))
             icon_css = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'css.png'))
             icon_js = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'js.png'))
+            icon_xml = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'xml.png'))
+            icon_txt = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'txt.png'))
             icon_markdown = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'markdown.png'))
             icon_svg = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'svg.png'))
             icon_map = {
                 'application/pdf': icon_pdf,
+                'application/xml': icon_xml,
                 'text/css':        icon_css,
+                'text/plain':      icon_txt,
                 'text/javascript': icon_js,
                 'text/markdown':   icon_markdown,
                 'image/svg+xml':   icon_svg,
             }
 
-            # icon_map[content_type]
             if content_type in icon_map.keys():
                 self.ui.treeView.setItem(row, 0, QTableWidgetItem(icon_map[content_type], ""))
 
