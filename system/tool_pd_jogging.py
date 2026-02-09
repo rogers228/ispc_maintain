@@ -22,6 +22,8 @@ if True:
 
     ROOT_DIR = find_project_root()
     sys.path.append(os.path.join(ROOT_DIR, "system"))
+    from tool_auth import AuthManager
+    from tool_options import Options
     from tool_parser import LineParser, BuildingWorker
     from tool_list import is_all_include, other_itmes
 
@@ -40,6 +42,16 @@ class ProductCheck:
         self.fruit = {}         # 最終合併後的結果 dict
         self.message = '' # 檢查訊息
         self.is_verify = None # 是否驗證通過
+
+        self.auth = AuthManager()
+        data = self.auth.load_local_data()
+        self.email = data.get("email", "") # 使用者 email
+        # print(self.email)
+        self.opt = Options()
+        self.options = self.opt.get_options_auto()
+        # print(self.options)
+        self.pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], self.uid)
+        # print(self.pdno)
 
         self.bw = BuildingWorker() # 建構者
         self.merger = Merger([(list, ["append"]), (dict, ["merge"])],["override"], ["override"]) # 合併者的策略
@@ -65,6 +77,16 @@ class ProductCheck:
 
         if self.is_verify is True: # 將 specification, friendly 合併為最終的結果 fruit
             self._merge_fruit()
+
+    def _find_pdno_by_uid(self, permissions_user, target_uid):
+        # permissions_user 是 self.option[permissions][email]
+        for item in permissions_user:
+            # 每個 item 是一個只有一個 key 的 dict，例如 {"ys_v_dev": {...}}
+            for _, info in item.items():
+                # info 就是內層 dict
+                if info.get("uid") == target_uid:
+                    return info.get("pdno")
+        return None
 
     def _toggle_human(self, flag):
         # 切換 -s | -u
@@ -127,6 +149,7 @@ class ProductCheck:
     def _add_specification_required(self): # 添加 specification 必需的
         dic_default = { # 預設值
             'uid': self.uid,
+            'pdno': self.pdno,
             'option_item_count': len(self.specification.get('models_order', [])),
         }
         self.specification.update(dic_default)
@@ -148,6 +171,7 @@ class ProductCheck:
         self.is_verify = False # 是否驗證通過
         schema = {
             'uid': {'type': 'string', 'required': True}, # required 必填
+            'pdno': {'type': 'string', 'required': True}, # 自動
             'name': {'type': 'string', 'required': True},
             'name_en': {'type': 'string', 'required': True},
             'name_tw': {'type': 'string', 'required': True},

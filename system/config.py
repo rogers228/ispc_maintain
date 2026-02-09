@@ -1,5 +1,5 @@
 import os
-ISPC_MAINTAIN_VERSION = '0.85' # 供識別的大版號
+ISPC_MAINTAIN_VERSION = '0.86' # 供識別的大版號
 ISPC_MAINTAIN_CACHE_DIR = os.path.abspath(os.path.join(os.getenv('LOCALAPPDATA'), "ISPC_Maintain", "cache"))
 
 def test1():
