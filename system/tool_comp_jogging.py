@@ -140,6 +140,7 @@ class CompanyCheck:
             'TikTok': {'type': 'string', 'required': True},
 
             'website': {'type': 'string', 'required': True},
+            'introduction_id': {'type': 'string', 'required': True},
             'company_image_url': {'type': 'string', 'required': True},
             'logo_url': {'type': 'string', 'required': True},
             'google_map_url': {'type': 'string', 'required': True},
