@@ -13,4 +13,6 @@ rem 切換到本檔案位置
 cd /d "%~dp0"
 
 rem 使用命令視窗，方便除錯 可帶引數執行
-%PYTHON_EXE% us07.py dbdcedbe-7bde-4b2c-8cfb-b21e8ccde68d
+%PYTHON_EXE% us07.py 4b87a39d-a0e4-4f73-8945-ebc54994e112
+
+rem %PYTHON_EXE% us07.py ee080167-e20e-45bf-84ce-f5516022331c

@@ -32,6 +32,8 @@ if True:
     from tool_pd_storage import ProductStorage
     from tool_pd_jogging import ProductCheck
     from tool_pd_release import ProductRelease
+    from tool_company import Company
+    from tool_comp_jogging import CompanyCheck
     from tool_msgbox import error, warning
 
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us01'))
@@ -65,6 +67,7 @@ class MainWindow(QMainWindow):
         self.auth = AuthManager()
         self.opt = Options()
         self.ps = ProductStorage()
+        self.comp = Company()
         self.pr = pr = ProductRelease()
 
         self.us05 = None    # 子表單 登入
@@ -72,9 +75,12 @@ class MainWindow(QMainWindow):
         self.us09 = None    # 子表單 設定
         self.us15 = None    # 子表單 檔案
         self.us23 = None    # 子表單 文章
-        self.options = None # options 參數設定
+
+        self.options = self.opt.get_options_auto() # 讀取 option 依據設定 自動判斷抓取來源
+
         self.tree_data = {} # 選單資料 dict
         self.product_sheet = {} # 產品小抄 {uid: name}
+        self.company_sheet = {} # 公司小抄 {uid: name}
 
         # 狀態列
         data = self.auth.load_local_data()
@@ -91,6 +97,7 @@ class MainWindow(QMainWindow):
         self.model.setHorizontalHeaderLabels(["選擇作業"]) # root
         self.load_tree_system()  # 讀取系統選單
         self.load_tree_product() # 讀取產品選單
+        self.load_tree_company() # 讀取公司選單
         self.display_tree(self.tree_data, self.model.invisibleRootItem()) # 展示選單
         self.ui.treeView.activated.connect(self.handle_tree_activated) # 連接 activated 信號到處理函式 (當項目被點擊或啟動時觸發)
         self.ui.treeView.setModel(self.model)  # 綁定model 到 TreeView
@@ -178,14 +185,7 @@ class MainWindow(QMainWindow):
             print('尚未登入無法讀取產品資料')
             return
 
-        data = self.auth.load_local_data()
-        user = data.get("email")
-        self.options = self.opt.get_options_auto() # 讀取 option 依據設定 自動判斷抓取來源
-        # print(json.dumps(self.options, indent=4, ensure_ascii=False))
-        # 依登入 uses, options, 轉換為僅顯示有權限的產品資料至選單
-
-        # permissions = options['permissions'][user] # # 抓取權限 可在 temp_options.py 測試
-        permissions = self.options['permissions'].get(user, None) # 抓取權限 可在 temp_options.py 測試
+        permissions = self.options['permissions'].get(self.email, None) # 抓取權限 可在 temp_options.py 測試
         # print(json.dumps(permissions, indent=4, ensure_ascii=False))
 
         if permissions:
@@ -208,6 +208,30 @@ class MainWindow(QMainWindow):
             # }
         else:
             warning("讀取產品選單失敗", "未設定權限!請洽管理員", detail=f"option中無法讀取到 user: {user} 的權限設定")
+
+    def load_tree_company(self):
+        # 讀取公司選單
+        print('load product...')
+        self.tree_data.pop('公司資料', 0) # clean
+        if not self.auth.is_token_valid():
+            print('尚未登入無法讀取產品資料')
+            return
+
+        garden = self.options['garden'].get(self.email, None) # 抓取權限 可在 temp_options.py 測試
+        # print(json.dumps(garden, indent=4, ensure_ascii=False))
+
+        if garden:
+            dic_p = {}
+            for e in garden:
+                company = next(iter(e.keys()))
+                attt = next(iter(e.values()))
+                # print(company)
+                # print(attt.get('name'))
+                # print(attt.get('uid'))
+                dic_p[attt.get('name')] = {'action': self.action_test, 'uid': attt.get('uid')}
+                self.company_sheet[attt.get('uid')] = attt.get('name') # 公司小抄 {uid: name}
+
+            self.tree_data['公司資料']  = dic_p
 
     def display_tree(self, data_dict, parent):
         # 展示選單
@@ -345,19 +369,30 @@ class MainWindow(QMainWindow):
 
     def handle_tree_selection_changed(self, current_index, previous_index):
         index = current_index
-        is_enable = False # 預設為禁用
+        # 預設禁用
+        self.ui.pd_download.setEnabled(False)
+        self.ui.pd_edit.setEnabled(False)
+        self.ui.pd_check.setEnabled(False)
+        self.ui.pd_upload.setEnabled(False)
+        self.ui.pd_preview.setEnabled(False)
+        self.ui.pd_release.setEnabled(False)
+
         if index.isValid():
             parent_index = index.parent()
             if parent_index.isValid() and parent_index != self.model.invisibleRootItem().index(): # 確保有父節點且不是隱藏的根節點
                 parent_text = parent_index.data(Qt.DisplayRole)
                 if parent_text == '產品資料':
-                    is_enable = True
-        self.ui.pd_download.setEnabled(is_enable)
-        self.ui.pd_edit.setEnabled(is_enable)
-        self.ui.pd_check.setEnabled(is_enable)
-        self.ui.pd_upload.setEnabled(is_enable)
-        self.ui.pd_preview.setEnabled(is_enable)
-        self.ui.pd_release.setEnabled(is_enable)
+                    self.ui.pd_download.setEnabled(True)
+                    self.ui.pd_edit.setEnabled(True)
+                    self.ui.pd_check.setEnabled(True)
+                    self.ui.pd_upload.setEnabled(True)
+                    self.ui.pd_preview.setEnabled(True)
+                    self.ui.pd_release.setEnabled(True)
+                elif parent_text == '公司資料':
+                    self.ui.pd_download.setEnabled(True)
+                    self.ui.pd_edit.setEnabled(True)
+                    self.ui.pd_check.setEnabled(True)
+                    self.ui.pd_upload.setEnabled(True)
 
     def handle_tree_activated(self, index):
         item = self.model.itemFromIndex(index)
@@ -400,14 +435,41 @@ class MainWindow(QMainWindow):
 
         return item_uid
 
+    def _get_selected(self):
+        # 獲取 產品資料 下的 uid
+        index = self.ui.treeView.selectionModel().currentIndex()
+        if not index.isValid():
+            return None # 1. 無效的選取
+
+        parent_index = index.parent()
+        if not parent_index.isValid() or parent_index == self.model.invisibleRootItem().index():
+            return None # 2. 不是子節點
+
+        parent_text = parent_index.data(Qt.DisplayRole)
+        item_uid = index.data(ITEM_UID_ROLE)
+        return {
+            'parent_text': parent_text,
+            'uid': item_uid
+        }
+
     def _find_pdno_by_uid(self, permissions_user, target_uid):
         # permissions_user 是 self.option[permissions][email]
-        for item in permissions_user:
+        for item in garden_user:
             # 每個 item 是一個只有一個 key 的 dict，例如 {"ys_v_dev": {...}}
             for _, info in item.items():
                 # info 就是內層 dict
                 if info.get("uid") == target_uid:
                     return info.get("pdno")
+        return None
+
+    def _find_cono_by_uid(self, garden_user, target_uid):
+        # permissions_user 是 self.option[permissions][email]
+        for item in garden_user:
+            # 每個 item 是一個只有一個 key 的 dict，例如 {"ys_v_dev": {...}}
+            for _, info in item.items():
+                # info 就是內層 dict
+                if info.get("uid") == target_uid:
+                    return info.get("cono")
         return None
 
     def handle_file(self):
@@ -437,34 +499,41 @@ class MainWindow(QMainWindow):
             "您確定要從雲端下載資料嗎？，這動作將會覆蓋本地資料\n\n若您不確定，建議您先選擇否，手動備份後再行下載。\n",
             QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
         if reply == QMessageBox.Yes:
-            selected_uid = self._get_selected_product_uid()
-            if selected_uid:
-                result = self.ps.pull_data_original(selected_uid) # 下載
+            sel = self._get_selected()
+            if sel['parent_text'] == '產品資料':
+                result = self.ps.pull_data_original(sel['uid']) # 下載
+                if not result['is_error']:
+                    QMessageBox.information(self, "下載成功", result['message'])
+            elif sel['parent_text'] == '公司資料':
+                result = self.comp.pull_data_original(sel['uid']) # 下載
                 if not result['is_error']:
                     QMessageBox.information(self, "下載成功", result['message'])
 
     def handle_pd_edit(self):
         # 編輯 以編輯器開啟
-        selected_uid = self._get_selected_product_uid()
-        if selected_uid:
-            result = self.ps.edit(selected_uid) # 以編輯器開啟
-            if result['is_error']:
-                QMessageBox.warning(self, "錯誤", result['message'])
+        sel = self._get_selected()
+        result = self.ps.edit(sel['uid']) # 以編輯器開啟
+        if result['is_error']:
+            QMessageBox.warning(self, "錯誤", result['message'])
 
     def handle_pd_check(self):
         # print('handle_pd_check')
-
         self.ui.pd_check.setEnabled(False) # 目前無效，因為主線程gui凍結
         # time.sleep(3)
-
-        selected_uid = self._get_selected_product_uid()
-        # print('selected_uid:', selected_uid)
-        if selected_uid:
-            pc = ProductCheck(selected_uid)
+        sel = self._get_selected()
+        if sel['parent_text'] == '產品資料':
+            pc = ProductCheck(sel['uid'])
             result = pc.get_detaile() # 檢查
-            # print(result)
             if result['is_verify'] is True:
-                QMessageBox.information(self, "檢查", f'{self.product_sheet[selected_uid]}\n\n恭喜你，沒有發現錯誤。\n')
+                QMessageBox.information(self, "檢查", f'{self.product_sheet[sel['uid']]}\n\n恭喜你，沒有發現錯誤。\n')
+            else:
+                QMessageBox.warning(self, "檢查", result['message'])
+
+        elif sel['parent_text'] == '公司資料':
+            cc = CompanyCheck(sel['uid'])
+            result = cc.get_detaile() # 檢查
+            if result['is_verify'] is True:
+                QMessageBox.information(self, "檢查", f'{self.company_sheet[sel['uid']]}\n\n恭喜你，沒有發現錯誤。\n')
             else:
                 QMessageBox.warning(self, "檢查", result['message'])
 
@@ -472,23 +541,38 @@ class MainWindow(QMainWindow):
 
     def handle_pd_upload(self):
         # 上傳前 先檢查
-        selected_uid = self._get_selected_product_uid()
-        pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], selected_uid)
-        # print('pdno:', pdno)
-        if selected_uid:
-            reply = QMessageBox.question(self, "上傳", f"{self.product_sheet[selected_uid]}\n\n您確定要從本地上傳資料嗎？，這動作將會覆蓋雲端資料\n", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+        sel = self._get_selected()
+        if sel['parent_text'] == '產品資料':
+            reply = QMessageBox.question(self, "上傳", f"{self.product_sheet[sel['uid']]}\n\n您確定要從本地上傳資料嗎？，這動作將會覆蓋雲端資料\n", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
-                result = self.ps.upload(selected_uid) # 執行上傳程序  會先檢查 驗證失敗將停止
+                result = self.ps.upload(sel['uid']) # 執行上傳程序  會先檢查 驗證失敗將停止
                 if result['is_verify'] is True:
                     if result['result'] is None:
                         # 未設定 Policies
-                        QMessageBox.warning(self, "上傳", f"{self.product_sheet[selected_uid]}\n\n上傳失敗!\n\n未設定 Policies!")
+                        QMessageBox.warning(self, "上傳", f"{self.product_sheet[sel['uid']]}\n\n上傳失敗!\n\n未設定 Policies!")
                     else:
+                        pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], sel['uid'])
+                        # print('pdno:', pdno)
                         self.ps.purge_cloudflare_cache_datajson_preview(pdno) # 清除 cloudflare 代理快取 預覽版
-                        QMessageBox.information(self, "上傳", f'{self.product_sheet[selected_uid]}\n\n上傳成功。\n')
-
+                        QMessageBox.information(self, "上傳", f'{self.product_sheet[sel['uid']]}\n\n上傳成功。\n')
                 else:
-                    QMessageBox.warning(self, "上傳", f"{self.product_sheet[selected_uid]}\n\n驗證失敗!")
+                    QMessageBox.warning(self, "上傳", f"{self.product_sheet[sel['uid']]}\n\n驗證失敗!")
+
+        elif sel['parent_text'] == '公司資料':
+            reply = QMessageBox.question(self, "上傳", f"{self.company_sheet[sel['uid']]}\n\n您確定要從本地上傳資料嗎？，這動作將會覆蓋雲端資料\n", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+            if reply == QMessageBox.Yes:
+                result = self.comp.upload(sel['uid']) # 執行上傳程序  會先檢查 驗證失敗將停止
+                if result['is_verify'] is True:
+                    if result['result'] is None:
+                        # 未設定 Policies
+                        QMessageBox.warning(self, "上傳", f"{self.company_sheet[sel['uid']]}\n\n上傳失敗!\n\n未設定 Policies!")
+                    else:
+                        cono = self._find_cono_by_uid(self.options['garden'][self.email], sel['uid'] )
+                        print('cono:', cono)
+                        self.comp.purge_cloudflare_cache_datajson_company(cono) # 清除 cloudflare 代理快取
+                        QMessageBox.information(self, "上傳", f'{self.company_sheet[sel['uid']]}\n\n上傳成功。\n')
+                else:
+                    QMessageBox.warning(self, "上傳", f"{self.company_sheet[sel['uid']]}\n\n驗證失敗!")
 
     def handle_pd_preview(self):
         # print('handle_pd_preview')
