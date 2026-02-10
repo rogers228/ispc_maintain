@@ -186,7 +186,7 @@ class MainWindow(QMainWindow):
 
         # permissions = options['permissions'][user] # # 抓取權限 可在 temp_options.py 測試
         permissions = self.options['permissions'].get(user, None) # 抓取權限 可在 temp_options.py 測試
-        # print('permissions:', permissions)
+        # print(json.dumps(permissions, indent=4, ensure_ascii=False))
 
         if permissions:
             dic_p = {}

@@ -182,7 +182,9 @@ class ProductCheck:
             'main_model': {'type': 'string', 'required': True, 'allowed': self.specification['models_order']},
             'select_way': {'type': 'integer', 'required': True, 'allowed': [1, 2]},
             'models': {'type': 'dict', 'required': True},
-            'description': {'type': 'string', 'required': True, 'maxlength': 500},
+            'description_en': {'type': 'string', 'required': True, 'maxlength': 500},
+            'description_tw': {'type': 'string', 'required': True, 'maxlength': 500},
+            'description_zh': {'type': 'string', 'required': True, 'maxlength': 500},
             'introduction_id': {'type': 'string', 'required': True},
             'photo_album': {'type': 'list', 'required': True, 'schema': {'type': 'string'}},
             'og_image': {'type': 'string', 'required': True},
@@ -661,7 +663,7 @@ def test1():
         # print(json.dumps(result['specification'], indent=4, ensure_ascii=False))
         # print(json.dumps(result['friendly'], indent=4, ensure_ascii=False))
         # print(result['fruit'])
-        print(result['data_json'])
+        # print(result['data_json'])
 
     else:
         print(result['message'])
