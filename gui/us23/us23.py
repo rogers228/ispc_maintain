@@ -95,6 +95,9 @@ class MainWindow(QMainWindow):
         table.setSelectionBehavior(QAbstractItemView.SelectRows)
         table.setAlternatingRowColors(True)
 
+        table.setSortingEnabled(True) # 允許排序
+        header.setSectionsClickable(True) # 確保表頭可點擊
+
         # 瀏覽器設定
         self.browser = QWebEngineView(self.ui.tab_widget.widget(0))
 
@@ -330,6 +333,7 @@ class MainWindow(QMainWindow):
 
     def render_table(self, data_list):
         """執行過濾並填充表格 UI"""
+        # 取得過濾條件
         f_id = self.ui.f_custom_index.text().lower()
         f_title = self.ui.f_title.text().lower()
         f_content = self.ui.f_content.text().lower()
@@ -341,13 +345,17 @@ class MainWindow(QMainWindow):
             and f_content in str(item.get('content', '')).lower()
         ]
 
-        self.ui.article_table.blockSignals(True) # 渲染時暫時擋住訊號，防止誤發 load_selected
+        self.ui.article_table.blockSignals(True)
+        self.ui.article_table.setSortingEnabled(False)
+
         self.ui.article_table.setRowCount(len(filtered))
         for row, item in enumerate(filtered):
             self.ui.article_table.setItem(row, 0, QTableWidgetItem(str(item.get('custom_index', ''))))
             self.ui.article_table.setItem(row, 1, QTableWidgetItem(str(item.get('title', ''))))
             updated_at = format_to_local_time(item.get('updated_at', ''))
             self.ui.article_table.setItem(row, 2, QTableWidgetItem(updated_at))
+
+        self.ui.article_table.setSortingEnabled(True)
         self.ui.article_table.blockSignals(False)
 
     def load_selected_article(self):
@@ -574,7 +582,7 @@ class MainWindow(QMainWindow):
         # --- 基礎參數設定 ---
         margin = 10        # 視窗邊距
         spacing = 10       # 組件間距
-        left_w = 420       # 左側欄固定寬度
+        left_w = 560       # 左側欄固定寬度
         title_h = 24       # 輸入框高度 (ID 與 標題共用)
 
         # 計算剩餘給「編輯」與「預覽」的寬度

@@ -152,7 +152,7 @@ class EditFileInfoDialog(QDialog):
 
     def get_values(self):
         return self.title_input.text().strip(), self.summary_input.toPlainText().strip()
-
+# us15.py
 class MainWindow(QMainWindow):
 
     def __init__(self):
@@ -199,6 +199,11 @@ class MainWindow(QMainWindow):
         """初始化表格欄位與樣式"""
         table = self.ui.treeView # 根據你的註解，此處為 QTableWidget
         table.selectionModel().selectionChanged.connect(self.on_selection_changed)
+
+        # 開啟自動排序功能
+        table.setSortingEnabled(True)
+        # 確保標題列是可以點擊觸發行為的
+        table.horizontalHeader().setSectionsClickable(True)
 
         table.setColumnCount(5)
         table.setHorizontalHeaderLabels(['縮圖', '標題', '摘要', '類型', '上傳時間'])
@@ -455,6 +460,10 @@ class MainWindow(QMainWindow):
     def render_table(self, data_list):
         self.threadpool.clear() # ✅ 渲染新資料前，取消所有還在排隊的下載任務
         table = self.ui.treeView
+
+        # 關鍵：填充資料前暫停排序訊號
+        table.setSortingEnabled(False)
+
         table.setRowCount(0) # 清空現有內容
 
         if not data_list: return
@@ -543,6 +552,8 @@ class MainWindow(QMainWindow):
         for i in range(len(data_list)):
             table.setRowHeight(i, 60)
 
+        # 填充完畢，恢復排序功能
+        table.setSortingEnabled(True)
         print(f"✅ 成功渲染 {len(data_list)} 筆資料，背景下載任務啟動：{total_images} 筆")
 
     def update_full_img_status(self, current, total, file_name):

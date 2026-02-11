@@ -1,3 +1,4 @@
+# tool_comp_jogging.py
 if True:
     import sys, os
     import json
@@ -34,8 +35,11 @@ class CompanyCheck:
         self.uid = uid
         self.data_original = '' # 原始檔案內容 (整個py文字檔)
         self.specification = {} # 主要規格 dict
+        self.fruit = {}         # 最終合併後的結果 dict
         self.message = '' # 檢查訊息
         self.is_verify = None # 是否驗證通過
+
+        self.merger = Merger([(list, ["append"]), (dict, ["merge"])],["override"], ["override"]) # 合併者的策略
 
         self.auth = AuthManager()
         data = self.auth.load_local_data()
@@ -43,7 +47,7 @@ class CompanyCheck:
         # print(self.email)
         self.opt = Options()
         self.options = self.opt.get_options_auto()
-        # print(self.options)
+        # print(json.dumps(self.options, indent=4, ensure_ascii=False))
         self.cono = self._find_cono_by_uid(self.options['garden'][self.email], self.uid)
         # print(self.cono)
         self._load_content()                # 動態讀取 python content
@@ -53,6 +57,19 @@ class CompanyCheck:
 
         if self.is_verify is True:
             self._check_root()    # 檢查 specification 根層
+
+        if self.is_verify is True: # 將 specification, friendly 合併為最終的結果 fruit
+            self._merge_fruit()
+
+    def _find_pdno_by_uid(self, permissions_user, target_uid):
+        # permissions_user 是 self.option[permissions][email]
+        for item in permissions_user:
+            # 每個 item 是一個只有一個 key 的 dict，例如 {"ys_v_dev": {...}}
+            for _, info in item.items():
+                # info 就是內層 dict
+                if info.get("uid") == target_uid:
+                    return info.get("pdno")
+        return None
 
     def _find_cono_by_uid(self, garden_user, target_uid):
         # garden_user 是 self.option[garden][email]
@@ -144,6 +161,8 @@ class CompanyCheck:
             'company_image_url': {'type': 'string', 'required': True},
             'logo_url': {'type': 'string', 'required': True},
             'google_map_url': {'type': 'string', 'required': True},
+            'products': {'type': 'list', 'required': True, 'schema': {'type': 'string'}},
+            'articles': {'type': 'list', 'required': True, 'schema': {'type': 'string'}},
         }
 
         vr = Validator(schema)
@@ -156,6 +175,17 @@ class CompanyCheck:
             # print("首層 檢查通過")
             self.is_verify = True
             self.message = ''
+
+    def _merge_fruit(self):
+        # 將 specification, friendly 合併為最終的結果 fruit
+        fruit = copy.deepcopy(self.specification)
+
+        dic_products = {'extend_products': self._extend_products()}
+        print(json.dumps(dic_products, indent=4, ensure_ascii=False))
+
+        self.merger.merge(fruit, dic_products) # 合併至 fruit
+
+        self.fruit = fruit
 
     def _dict_to_json(self, data):
         # 將 data(dict) 轉換為 json
@@ -171,14 +201,39 @@ class CompanyCheck:
 
         return data_json
 
+    def _extend_products(self):
+        # print(self.specification['products'])
+        result = []
+        for uid in self.specification['products']:
+            pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], uid)
+            path = os.path.join(self.STORAGE_PATH, f"{uid}.py")
+            if not os.path.exists(path): continue
+
+            try:
+                # 讀取並執行產品配置檔
+                with open(path, 'r', encoding='utf-8') as f:
+                    local_v = {}
+                    exec(f.read(), {}, local_v)
+                    s = local_v.get('specification', {})
+                    # 組裝結果
+                    result.append({
+                        'pdno': pdno,
+                        'name_en': s.get('name_en', ''),
+                        'name_tw': s.get('name_tw', ''),
+                        'name_zh': s.get('name_zh', '')
+                    })
+            except Exception as e: print(f"❌ 讀取產品 {uid} 失敗: {e}")
+        return result
+
     def get_detaile(self):
         # 將 fruit 轉換為 json
-        json_result = self._dict_to_json(self.specification)
+        json_result = self._dict_to_json(self.fruit)
         data_json = json_result if json_result is not None else ""
 
         return {
             'data_original': self.data_original, # 原始檔案內容 (整個py文字檔) string
             'specification': self.specification, # 規格      使用者輸入     dict
+            'fruit':         self.fruit,         # 最終結果  輸出           dict
             'data_json':     data_json,          # 最終結果  輸出   json string
             'message':       self.message,       # 錯誤訊息         string
             'is_verify':     self.is_verify,     # 檢查輸入是否合法  boolean
@@ -193,9 +248,12 @@ def test1():
         print('驗證成功')
         # print(result['data_original'])
         # print(result['data_json'])
+        print(result['fruit'])
 
     else:
         print(result['message'])
 
+    # result = cc._extend_products()
+    # print(json.dumps(result, indent=4, ensure_ascii=False))
 if __name__ == '__main__':
     test1()

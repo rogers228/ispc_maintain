@@ -26,27 +26,21 @@ if True:
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us07'))
     from form_us07 import Ui_MainWindow
     from tool_pd_jogging import ProductCheck
-    from tool_comp_jogging import CompanyCheck
+
 
 class MainWindow(QMainWindow):
 
-    def __init__(self, source, uid):
+    def __init__(self, uid):
         super(MainWindow, self).__init__()
         self.ui = Ui_MainWindow();
         self.ui.setupUi(self) # 載入ui
         self.setWindowTitle(f'檢視')
         self.resize(962, 650)  # 設定視窗大小
         self.uid = uid
-        self.source = source # product | company
         self.tree = None # treeview 資料來源
         self.list_expand_keys = ['fast_model'] # 展開 list的欄位
         self._load_data()
         self._load_treeview()
-
-        # 啟用右鍵選單並連結事件
-        self.ui.treeView.setContextMenuPolicy(Qt.CustomContextMenu)
-        self.ui.treeView.customContextMenuRequested.connect(self._show_context_menu)
-
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
@@ -56,25 +50,13 @@ class MainWindow(QMainWindow):
         self.ui.treeView.setGeometry(0, 0, width, height)
 
     def _load_data(self):
-        print(self.source)
-        print(self.uid)
-        if self.source == 'product':
-            pc = ProductCheck(self.uid) # 檢查
+        pc = ProductCheck(self.uid) # 檢查
+        result = pc.get_detaile()
+        if result['is_verify'] is True:
             result = pc.get_detaile()
-            if result['is_verify'] is True:
-                result = pc.get_detaile()
-                self.tree = result['fruit'] # dict
-            else:
-                self.tree = {}
-
-        elif self.source == 'company':
-            cc = CompanyCheck(self.uid)
-            result = cc.get_detaile()
-            if result['is_verify'] is True:
-                result = cc.get_detaile()
-                self.tree = result['fruit'] # dict
-            else:
-                self.tree = {}
+            self.tree = result['fruit'] # dict
+        else:
+            self.tree = {}
 
     def _populate_json_tree(self,
                             data: dict or List,
@@ -183,28 +165,11 @@ class MainWindow(QMainWindow):
         self.ui.treeView.resizeColumnToContents(0) # 自動調整欄寬
         self.ui.treeView.setHeaderHidden(True) # 隱藏root
 
-    def _show_context_menu(self, position):
-        # 取得選取的項目
-        index = self.ui.treeView.indexAt(position)
-        if not index.isValid(): return
-
-        menu = QMenu()
-        copy_action = menu.addAction("複製文字")
-
-        # 顯示選單並取得執行動作
-        action = menu.exec_(self.ui.treeView.viewport().mapToGlobal(position))
-
-        if action == copy_action:
-            # 將文字存入剪貼簿
-            clipboard = QApplication.clipboard()
-            clipboard.setText(index.data())
-
 def main():
     app = QApplication(sys.argv)
     argv1 = sys.argv[1] if len(sys.argv) > 1 else "no argv" # 預留參數接口
-    argv2 = sys.argv[2] if len(sys.argv) > 2 else "no argv" # 預留參數接口
     print('argv1:', argv1)
-    window = MainWindow(argv1, argv2)
+    window = MainWindow(argv1)
     window.show()
     sys.exit(app.exec_())
 

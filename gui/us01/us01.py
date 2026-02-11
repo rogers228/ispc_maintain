@@ -1,3 +1,4 @@
+# us01.py
 if True:
     import sys
     import os
@@ -288,22 +289,34 @@ class MainWindow(QMainWindow):
             parent_text = parent_index.data(Qt.DisplayRole)
 
             # 判斷上階項目是否為 '產品資料'
-            if parent_text == '產品資料':
+            if parent_text in ['產品資料', '公司資料']:
                 item_text = index.data(Qt.DisplayRole)
                 item_uid = index.data(ITEM_UID_ROLE)
 
                 # 建立選單
                 menu = QMenu()
-                action_preview = menu.addAction("開啟預覽版")
-                action_official = menu.addAction("開啟正式版")
+                # 只有產品資料才顯示預覽/正式版功能
+                if parent_text == '產品資料':
+                    action_preview = menu.addAction("開啟預覽版")
+                    action_official = menu.addAction("開啟正式版")
+                    menu.addSeparator() # 分隔線
 
-                # 顯示選單並取得使用者點擊的動作
+                action_copy_uid = menu.addAction("複製 UID")
+
                 action = menu.exec_(self.ui.treeView.viewport().mapToGlobal(position))
 
-                if action == action_preview:
-                    self.open_preview_version(item_text, item_uid)
-                elif action == action_official:
-                    self.open_official_version(item_text, item_uid)
+                if parent_text == '產品資料':
+                    if action == action_preview:
+                        self.open_preview_version(item_text, item_uid)
+                    elif action == action_official:
+                        self.open_official_version(item_text, item_uid)
+
+                # 處理複製 UID 邏輯
+                if action == action_copy_uid:
+                    if item_uid:
+                        QApplication.clipboard().setText(item_uid)
+                        # 在狀態列顯示提示 (選配)
+                        self.ui.statusbar.showMessage(f"已複製 UID: {item_uid}", 2000)
 
     def open_preview_version(self, name, uid):
         #  開啟預覽版
@@ -393,6 +406,7 @@ class MainWindow(QMainWindow):
                     self.ui.pd_edit.setEnabled(True)
                     self.ui.pd_check.setEnabled(True)
                     self.ui.pd_upload.setEnabled(True)
+                    self.ui.pd_preview.setEnabled(True)
 
     def handle_tree_activated(self, index):
         item = self.model.itemFromIndex(index)
@@ -454,7 +468,7 @@ class MainWindow(QMainWindow):
 
     def _find_pdno_by_uid(self, permissions_user, target_uid):
         # permissions_user 是 self.option[permissions][email]
-        for item in garden_user:
+        for item in permissions_user:
             # 每個 item 是一個只有一個 key 的 dict，例如 {"ys_v_dev": {...}}
             for _, info in item.items():
                 # info 就是內層 dict
@@ -576,9 +590,13 @@ class MainWindow(QMainWindow):
 
     def handle_pd_preview(self):
         # print('handle_pd_preview')
-        selected_uid = self._get_selected_product_uid()
-        if selected_uid:
-            self.us07 = MainWindow_us07(selected_uid) # 檢視
+        sel = self._get_selected()
+        if sel['parent_text'] == '產品資料':
+            self.us07 = MainWindow_us07('product', sel['uid']) # 檢視
+            self.us07.show()
+
+        elif sel['parent_text'] == '公司資料':
+            self.us07 = MainWindow_us07('company', sel['uid']) # 檢視
             self.us07.show()
 
     def handle_pd_release(self):
