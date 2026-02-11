@@ -23,10 +23,12 @@ if True:
 
     ROOT_DIR = find_project_root()
     sys.path.append(os.path.join(ROOT_DIR, "system"))
+    from config import ISPC_MAINTAIN_CACHE_DIR
     from tool_auth import AuthManager
     from tool_options import Options
     # from tool_parser import LineParser, BuildingWorker
     from tool_list import is_all_include, other_itmes
+    from tool_msgbox import error
 
 class CompanyCheck:
     STORAGE_PATH = os.path.join(ROOT_DIR, 'tempstorage')
@@ -40,6 +42,7 @@ class CompanyCheck:
         self.is_verify = None # 是否驗證通過
 
         self.merger = Merger([(list, ["append"]), (dict, ["merge"])],["override"], ["override"]) # 合併者的策略
+        self.article_cache_file = os.path.join(ISPC_MAINTAIN_CACHE_DIR, "last_article_query.json") # 本地 article 查詢結果
 
         self.auth = AuthManager()
         data = self.auth.load_local_data()
@@ -181,10 +184,11 @@ class CompanyCheck:
         fruit = copy.deepcopy(self.specification)
 
         dic_products = {'extend_products': self._extend_products()}
-        print(json.dumps(dic_products, indent=4, ensure_ascii=False))
+        dic_articles = {'extend_articles': self._extend_articles()}
+        # print(json.dumps(dic_products, indent=4, ensure_ascii=False))
 
         self.merger.merge(fruit, dic_products) # 合併至 fruit
-
+        self.merger.merge(fruit, dic_articles)
         self.fruit = fruit
 
     def _dict_to_json(self, data):
@@ -207,7 +211,10 @@ class CompanyCheck:
         for uid in self.specification['products']:
             pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], uid)
             path = os.path.join(self.STORAGE_PATH, f"{uid}.py")
-            if not os.path.exists(path): continue
+            if not os.path.exists(path):
+                self.is_verify = False
+                self.message = f"❌ {uid}.py 不存在，請先下載"
+                return
 
             try:
                 # 讀取並執行產品配置檔
@@ -223,6 +230,35 @@ class CompanyCheck:
                         'name_zh': s.get('name_zh', '')
                     })
             except Exception as e: print(f"❌ 讀取產品 {uid} 失敗: {e}")
+        return result
+
+    def _find_html_title(self, content):
+        # 尋找第一個 <h1> 或 <h2> 標籤內的文字
+        match = re.search(r'<(h1|h2)[^>]*>(.*?)</\1>', content, re.IGNORECASE | re.DOTALL)
+        return match.group(2).strip() if match else ""
+
+    def _extend_articles(self):
+        result = {'articles_en': [], 'articles_tw': [], 'articles_zh': []}
+        if not os.path.exists(self.article_cache_file): return result
+
+        try:
+            with open(self.article_cache_file, 'r', encoding='utf-8') as f:
+                cache_data = json.load(f).get("results", [])
+
+            cache_map = {a.get('custom_index'): a for a in cache_data if a.get('custom_index')}
+
+            langs = ['en', 'tw', 'zh']
+            for l in langs:
+                for idx in self.specification.get('articles', []):
+                    target_id = f"{idx}_{l}"
+                    print('target_id:', target_id)
+                    if target_id in cache_map:
+                        a = cache_map[target_id]
+                        result[f'articles_{l}'].append({
+                            "custom_index": a.get("custom_index"),
+                            "title": self._find_html_title(a.get("html_snapshot", "")),
+                        })
+        except Exception as e: print(f"❌ 解析文章快取失敗: {e}")
         return result
 
     def get_detaile(self):
@@ -248,12 +284,11 @@ def test1():
         print('驗證成功')
         # print(result['data_original'])
         # print(result['data_json'])
-        print(result['fruit'])
+        # print(result['fruit'])
 
+        print(json.dumps(result['fruit'], indent=4, ensure_ascii=False))
     else:
         print(result['message'])
 
-    # result = cc._extend_products()
-    # print(json.dumps(result, indent=4, ensure_ascii=False))
 if __name__ == '__main__':
     test1()
