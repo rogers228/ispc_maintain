@@ -44,6 +44,8 @@ class CompanyCheck:
         self.merger = Merger([(list, ["append"]), (dict, ["merge"])],["override"], ["override"]) # 合併者的策略
         self.article_cache_file = os.path.join(ISPC_MAINTAIN_CACHE_DIR, "last_article_query.json") # 本地 article 查詢結果
 
+        self.lis_safe_origin = ['https://assets.specic.store'] # 合法靜態資源主機
+
         self.auth = AuthManager()
         data = self.auth.load_local_data()
         self.email = data.get("email", "") # 使用者 email
@@ -130,6 +132,23 @@ class CompanyCheck:
         }
         self.specification.update(dic_default)
 
+    def _is_img_verify(self, target_url):
+        # 若為空字串，視為合法 (由 _check_root 的邏輯決定是否跳過)
+        if not target_url: return True
+
+        img_exts = {'.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg', '.ico'}
+        # 取得副檔名 (含點，轉小寫)
+        ext = os.path.splitext(target_url.split('?')[0])[1].lower()
+        if ext not in img_exts: return False
+
+        # 情況 A: 完整 URL 檢查
+        if target_url.startswith('http'):
+            return any(target_url.startswith(origin) for origin in self.lis_safe_origin)
+
+        # 情況 B: 相對路徑檢查 (必須以 images/ 開頭)
+        # 使用 regex 確保格式為 images/檔名.副檔名
+        return bool(re.match(r'^images/[\w\.-]+$', target_url))
+
     def _check_root(self): # 檢查 specification 根層
         self.is_verify = False # 是否驗證通過
         schema = {
@@ -161,7 +180,6 @@ class CompanyCheck:
 
             'website': {'type': 'string', 'required': True},
             'introduction_id': {'type': 'string', 'required': True},
-            'company_image_url': {'type': 'string', 'required': True},
             'logo_url': {'type': 'string', 'required': True},
             'google_map_url': {'type': 'string', 'required': True},
             'products': {'type': 'list', 'required': True, 'schema': {'type': 'string'}},
@@ -174,10 +192,20 @@ class CompanyCheck:
             # print(f"❌ 第一層檢查失敗： {vr.errors}")
             self.is_verify = False
             self.message = f"❌ 第一層檢查失敗： {vr.errors}"
-        else:
-            # print("首層 檢查通過")
-            self.is_verify = True
-            self.message = ''
+            return
+
+        # 針對圖片欄位進行深度檢查
+        for field in ['logo_url']:
+            val = self.specification.get(field, "")
+            if val == '':
+                continue
+            if not self._is_img_verify(val):
+                self.message = f"❌ {field} 格式錯誤或來源不合法"
+                return
+
+        # print("首層 檢查通過")
+        self.is_verify = True
+        self.message = ''
 
     def _merge_fruit(self):
         # 將 specification, friendly 合併為最終的結果 fruit
