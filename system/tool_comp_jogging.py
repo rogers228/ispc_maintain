@@ -274,12 +274,11 @@ class CompanyCheck:
                 cache_data = json.load(f).get("results", [])
 
             cache_map = {a.get('custom_index'): a for a in cache_data if a.get('custom_index')}
-
             langs = ['en', 'tw', 'zh']
             for l in langs:
                 for idx in self.specification.get('articles', []):
-                    target_id = f"{idx}_{l}"
-                    print('target_id:', target_id)
+                    target_id = f"{self.cono}_article_{idx}_{l}"
+                    # print('target_id:', target_id)
                     if target_id in cache_map:
                         a = cache_map[target_id]
                         result[f'articles_{l}'].append({
