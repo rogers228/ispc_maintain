@@ -255,7 +255,12 @@ class CompanyCheck:
                         'pdno': pdno,
                         'name_en': s.get('name_en', ''),
                         'name_tw': s.get('name_tw', ''),
-                        'name_zh': s.get('name_zh', '')
+                        'name_zh': s.get('name_zh', ''),
+                        'description_en': s.get('description_en', ''),
+                        'description_tw': s.get('description_tw', ''),
+                        'description_zh': s.get('description_zh', ''),
+                        'introduction_id': s.get('introduction_id', ''),
+                        'photo_album': s.get('photo_album', []),
                     })
             except Exception as e: print(f"❌ 讀取產品 {uid} 失敗: {e}")
         return result
