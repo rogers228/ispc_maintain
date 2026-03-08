@@ -658,7 +658,7 @@ class ProductCheck:
             'zh': 'zh-TW'
         }
 
-        dic_ld = {}
+        dic_ld = {} # dict
 
         for lang, f_lang in dic_langs.items():
             # 構造基本產品資料
@@ -699,14 +699,14 @@ class ProductCheck:
                 }
             }
 
-            # // 如果有規格才放入
+            # 如果有規格才放入
             if properties:
                 ld_data["additionalProperty"] = properties
 
-            # // 5. 轉為字串存入字典 (ensure_ascii=False 確保中文不變亂碼)
-            dic_ld[lang] = json.dumps(ld_data, ensure_ascii=False)
+            dic_ld[lang] = ld_data # 最後才會序列畫
 
         spec['json_ld'] = dic_ld
+
     def _dict_to_json(self, data):
         # 將 data(dict) 轉換為 json
         try:
