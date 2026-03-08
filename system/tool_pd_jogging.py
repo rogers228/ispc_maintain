@@ -22,6 +22,7 @@ if True:
 
     ROOT_DIR = find_project_root()
     sys.path.append(os.path.join(ROOT_DIR, "system"))
+    from config_web import SPECIC_DOMAIN, WEB_SPECIC_ASSETS_URL
     from tool_auth import AuthManager
     from tool_options import Options
     from tool_parser import LineParser, BuildingWorker
@@ -75,6 +76,10 @@ class ProductCheck:
         if self.is_verify is True:
             self._insert_opposite()             # 添加對向規則
 
+        if self.is_verify is True:              # 添加 head_part
+            self._insert_head_part()
+            self._insert_json_ld()
+
         if self.is_verify is True: # 將 specification, friendly 合併為最終的結果 fruit
             self._merge_fruit()
 
@@ -86,6 +91,17 @@ class ProductCheck:
                 # info 就是內層 dict
                 if info.get("uid") == target_uid:
                     return info.get("pdno")
+        return None
+
+    def _find_comp_by_uid_option(self, garden_user, target_company):
+        # 從 option 獲取公司資料
+        # garden_user 是 self.option[garden][email]
+        for item in garden_user:
+            # 每個 item 是一個只有一個 key 的 dict，例如 {"ys_v_dev": {...}}
+            for key_company, value_dic in item.items():
+                # info 就是內層 dict
+                if key_company == target_company:
+                    return value_dic
         return None
 
     def _toggle_human(self, flag):
@@ -146,6 +162,7 @@ class ProductCheck:
 
         self.is_verify = True
 
+
     def _add_specification_required(self): # 添加 specification 必需的
         dic_default = { # 預設值
             'uid': self.uid,
@@ -173,6 +190,7 @@ class ProductCheck:
             'uid': {'type': 'string', 'required': True}, # required 必填
             'pdno': {'type': 'string', 'required': True}, # 自動
             'name': {'type': 'string', 'required': True},
+            'company': {'type': 'string', 'required': True},
             'name_en': {'type': 'string', 'required': True},
             'name_tw': {'type': 'string', 'required': True},
             'name_zh': {'type': 'string'},
@@ -572,6 +590,123 @@ class ProductCheck:
             self.friendly['runtime_disable'].extend(opposite_records) # 添加入主規則
             # print(json.dumps(self.friendly['runtime_disable'], indent=4, ensure_ascii=False))
 
+    def _insert_head_part(self): # 添加seo head 屬性部分
+        spec = self.specification
+        comp = self._find_comp_by_uid_option(self.options['garden'][self.email], spec['company']) # 從option獲取公司資料
+        # print(comp)
+
+        dic_langs = {
+            'en': {'url_path': 'en', 'hreflang': 'en'},
+            'tw': {'url_path': 'zh-TW', 'hreflang': 'zh-Hant'},
+            'zh': {'url_path': 'zh-TW', 'hreflang': 'zh-Hans'} # // 若 zh 指向簡體，建議改為 zh-Hans
+        }
+
+        dic_s = {}
+
+        for lang, info in dic_langs.items():
+            name = spec.get(f"name_{lang}", "")
+            description = spec.get(f"description_{lang}", "")
+            f_lang = info['url_path'] # 前端語系
+            current_url = f"{SPECIC_DOMAIN}/{f_lang}/app/v/{comp['vendor_path']}/p/{spec['pdno']}"
+
+            placeholder = 'images/hu5vyx6ge2k9sv5q.jpg';
+            og_image_path = spec.get("og_image") or placeholder
+            og_image = f"{WEB_SPECIC_ASSETS_URL}/{og_image_path}"
+
+            # 基礎 Meta 標籤
+            lines = [
+                f"<title>{name}</title>",
+                f"<meta property='og:type' content='product'>",
+                f"<meta property='og:title' content='{name}'>",
+                f"<meta property='og:description' content='{description}'>",
+                f"<meta property='og:url' content='{current_url}'>",
+                f"<meta property='og:image' content='{og_image}'>",
+                f"<meta property='og:site_name' content='Specic'>",
+                f"<link rel='canonical' href='{current_url}'>",
+            ]
+
+            # 注入所有語系的 alternate 連結 (包含自己)
+            for alt_lang, alt_info in dic_langs.items():
+                alt_url = f"{SPECIC_DOMAIN}/{alt_info['url_path']}/app/v/{comp['vendor_path']}/p/{spec['pdno']}"
+                lines.append(f"<link rel='alternate' hreflang='{alt_info['hreflang']}' href='{alt_url}'>")
+
+            # 添加 x-default (通常指向英文版作為預設語系)
+            default_url = f"{SPECIC_DOMAIN}/en/app/v/{comp['vendor_path']}/p/{spec['pdno']}"
+            lines.append(f"<link rel='alternate' hreflang='x-default' href='{default_url}'>")
+
+            dic_s[lang] = '\n'.join(lines)
+        spec['head_part'] = dic_s
+
+    def _insert_json_ld(self): # 添加 seo json_ld 部分
+        spec = self.specification
+        # // 獲取公司/供應商資料（用於 brand 連結或名稱）
+        option_comp = self._find_comp_by_uid_option(self.options['garden'][self.email], spec['company'])
+        file_path = os.path.join(ProductCheck.STORAGE_PATH, f"{option_comp['uid']}.py")
+        # print('file_path:', file_path)
+        with open(file_path, 'r', encoding='utf-8') as file:
+            content_py = file.read() # 讀取整個檔案內容
+
+        local_vars = {}
+        exec(content_py, {}, local_vars) #動態讀取
+        comp = local_vars.get('specification', None)
+        # print('comp:', comp)
+
+        # // 語系定義（與 head_part 保持一致，用於構造網址）
+        dic_langs = {
+            'en': 'en',
+            'tw': 'zh-TW',
+            'zh': 'zh-TW'
+        }
+
+        dic_ld = {}
+
+        for lang, f_lang in dic_langs.items():
+            # 構造基本產品資料
+            current_url = f"{SPECIC_DOMAIN}/{f_lang}/app/v/{option_comp['vendor_path']}/p/{spec['pdno']}"
+            name = spec.get(f"name_{lang}", "")
+            description = spec.get(f"description_{lang}", "")
+
+            # 處理圖片 (JSON-LD 建議使用陣列)
+            images = []
+            if spec.get("photo_album"):
+                images = [f"{WEB_SPECIC_ASSETS_URL}/{img}" for img in spec["photo_album"]]
+            else:
+                images = [f"{WEB_SPECIC_ASSETS_URL}/images/hu5vyx6ge2k9sv5q.jpg"]
+
+            # 構造規格參數 (additionalProperty)
+            # 假設你的規格存在 spec['additional_properties'] 裡
+            properties = []
+            # raw_props = spec.get("additional_properties", [])
+            # for prop in raw_props:
+            #     properties.append({
+            #         "@type": "PropertyValue",
+            #         "name": prop.get(f"name_{lang}", prop.get("name_en", "")),
+            #         "value": prop.get("value", "")
+            #     })
+
+            # 建立 JSON-LD 結構
+            ld_data = {
+                "@context": "https://schema.org/",
+                "@type": "Product",
+                "name": name,
+                "image": images,
+                "description": description,
+                "sku": spec.get("pdno", ""),
+                "url": current_url,
+                "brand": {
+                    "@type": "Brand",
+                    "name": comp.get("company_name", "Specic") # 品牌
+                }
+            }
+
+            # // 如果有規格才放入
+            if properties:
+                ld_data["additionalProperty"] = properties
+
+            # // 5. 轉為字串存入字典 (ensure_ascii=False 確保中文不變亂碼)
+            dic_ld[lang] = json.dumps(ld_data, ensure_ascii=False)
+
+        spec['json_ld'] = dic_ld
     def _dict_to_json(self, data):
         # 將 data(dict) 轉換為 json
         try:
@@ -663,7 +798,12 @@ def test1():
         # print(json.dumps(result['specification'], indent=4, ensure_ascii=False))
         # print(json.dumps(result['friendly'], indent=4, ensure_ascii=False))
         # print(result['fruit'])
-        # print(result['data_json'])
+        print(result['data_json'])
+
+        # print(result['fruit']['head_part'])
+        # for lang, html in result['fruit']['head_part'].items():
+        #     print(f"--- {lang} ---")
+        #     print(html)
 
     else:
         print(result['message'])
