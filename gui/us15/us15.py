@@ -605,10 +605,11 @@ class MainWindow(QMainWindow):
 
         file_path = data.get('file_path')
         content_type = data.get('content_type', '')
+        # print('file_path:', file_path)
         if "image" in content_type and file_path:
             self.show_image_preview(file_path)
         else:
-            self.clear_preview("僅支援圖片預覽")
+            self.clear_preview(f"{file_path} 僅支援圖片預覽")
 
     def show_image_preview(self, file_path):
         if not file_path: return
@@ -630,7 +631,8 @@ class MainWindow(QMainWindow):
                     # 順利載入快取，直接顯示並結束
                     # print(f"self.set_pixmap_to_label(pixmap)")
                     self.set_pixmap_to_label(pixmap)
-                    self.statusBar().showMessage("讀取本地快取", 2000)
+                    self.statusBar().showMessage(f"{file_path} 讀取本地快取")
+
                     return
 
             # 3. 如果快取不存在，則進行連網下載
@@ -638,7 +640,7 @@ class MainWindow(QMainWindow):
             base = WEB_SPECIC_ASSETS_URL.rstrip('/')
             url = f"{base}/{clean_path}"
             # print(f"雲端下載大圖: {url}")
-            self.statusBar().showMessage("正在從雲端載入原圖...")
+            self.statusBar().showMessage(f"{file_path} 正在從雲端載入原圖...")
 
             # 執行下載 (增加 timeout 防止網路中斷時程式卡死)
             response = requests.get(url, timeout=10)
@@ -653,11 +655,12 @@ class MainWindow(QMainWindow):
                     # 寫入快取供下次使用
                     with open(local_full_path, 'wb') as f:
                         f.write(img_data)
-                    self.statusBar().showMessage("圖片載入完成並已快取", 2000)
+                    self.statusBar().showMessage(f"{file_path} 圖片載入完成並已快取")
+
                 else:
-                    self.clear_preview("圖片格式錯誤")
+                    self.clear_preview(f"{file_path} 圖片格式錯誤")
             else:
-                self.clear_preview(f"下載失敗 ({response.status_code})")
+                self.clear_preview(f"{file_path} 下載失敗 ({response.status_code})")
 
         except requests.exceptions.RequestException as e:
             self.clear_preview("網路連線異常")
