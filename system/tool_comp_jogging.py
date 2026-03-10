@@ -23,12 +23,13 @@ if True:
 
     ROOT_DIR = find_project_root()
     sys.path.append(os.path.join(ROOT_DIR, "system"))
-    from config import ISPC_MAINTAIN_CACHE_DIR
+    # from config import ISPC_MAINTAIN_CACHE_DIR
     from tool_auth import AuthManager
     from tool_options import Options
     # from tool_parser import LineParser, BuildingWorker
     from tool_list import is_all_include, other_itmes
     from tool_msgbox import error
+    from tool_cache import Cache_article
 
 class CompanyCheck:
     STORAGE_PATH = os.path.join(ROOT_DIR, 'tempstorage')
@@ -42,8 +43,8 @@ class CompanyCheck:
         self.is_verify = None # 是否驗證通過
 
         self.merger = Merger([(list, ["append"]), (dict, ["merge"])],["override"], ["override"]) # 合併者的策略
-        self.article_cache_file = os.path.join(ISPC_MAINTAIN_CACHE_DIR, "last_article_query.json") # 本地 article 查詢結果
-
+        # self.article_cache_file = os.path.join(ISPC_MAINTAIN_CACHE_DIR, "last_article_query.json") # 本地 article 查詢結果
+        self.cha = Cache_article() # 本地快取檢查
         self.lis_safe_origin = ['https://assets.specic.store'] # 合法靜態資源主機
 
         self.auth = AuthManager()
@@ -133,6 +134,7 @@ class CompanyCheck:
         self.specification.update(dic_default)
 
     def _is_img_verify(self, target_url):
+        print('target_url:', target_url)
         # 若為空字串，視為合法 (由 _check_root 的邏輯決定是否跳過)
         if not target_url: return True
 
@@ -193,15 +195,30 @@ class CompanyCheck:
             self.is_verify = False
             self.message = f"❌ 第一層檢查失敗： {vr.errors}"
             return
-
         # 針對圖片欄位進行深度檢查
         for field in ['logo_url']:
             val = self.specification.get(field, "")
             if val == '':
                 continue
             if not self._is_img_verify(val):
+                self.is_verify = False
                 self.message = f"❌ {field} 格式錯誤或來源不合法"
                 return
+
+        # 針對文章 進行檢查 是否有本地 文章
+        introduction_id = self.specification.get('introduction_id', '') # 公司介紹
+        articles = self.specification.get('articles', []) # 精選文章
+        articles.append(introduction_id)
+        # print('articles:', articles)
+        # 暫無zh
+        langs = ['en', 'tw']
+        for lang in langs:
+            for idx in articles:
+                custom_index = f"{self.cono}_article_{idx}_{lang}"
+                if not self.cha.is_article_verify(custom_index): # 檢查是否存在
+                    self.is_verify = False
+                    self.message = f"❌ 文章 {custom_index} 不存在!"
+                    return
 
         # print("首層 檢查通過")
         self.is_verify = True
@@ -271,33 +288,18 @@ class CompanyCheck:
         return match.group(2).strip() if match else ""
 
     def _extend_articles(self):
-        # print('_extend_articles')
-        result = {'articles_en': [], 'articles_tw': [], 'articles_zh': []}
-        if not os.path.exists(self.article_cache_file): return result
+        # 暫無zh
+        result = {'articles_en': [], 'articles_tw': []}
+        langs = ['en', 'tw']
+        for lang in langs:
+            for idx in self.specification.get('articles', []):
+                custom_index = f"{self.cono}_article_{idx}_{lang}"
+                art = self.cha.get_article(custom_index)
+                result[f'articles_{lang}'].append({
+                    "custom_index": art.get("custom_index"),
+                    "title": self._find_html_title(art.get("html_snapshot", "")),
+                })
 
-        try:
-            with open(self.article_cache_file, 'r', encoding='utf-8') as f:
-                cache_data = json.load(f).get("results", [])
-
-            cache_map = {a.get('custom_index'): a for a in cache_data if a.get('custom_index')}
-            # print(cache_map)
-            langs = ['en', 'tw'] # 暫無zh
-            for l in langs:
-                for idx in self.specification.get('articles', []):
-                    target_id = f"{self.cono}_article_{idx}_{l}"
-                    # print('target_id:', target_id)
-                    if target_id in cache_map:
-                        a = cache_map[target_id]
-                        result[f'articles_{l}'].append({
-                            "custom_index": a.get("custom_index"),
-                            "title": self._find_html_title(a.get("html_snapshot", "")),
-                        })
-                    else:
-                        self.is_verify = False
-                        self.message = f"❌ 文章 {target_id} 不存在!"
-                        return
-
-        except Exception as e: print(f"❌ 解析文章快取失敗: {e}")
         return result
 
     def get_detaile(self):
