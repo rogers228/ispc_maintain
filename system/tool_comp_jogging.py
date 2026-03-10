@@ -271,6 +271,7 @@ class CompanyCheck:
         return match.group(2).strip() if match else ""
 
     def _extend_articles(self):
+        # print('_extend_articles')
         result = {'articles_en': [], 'articles_tw': [], 'articles_zh': []}
         if not os.path.exists(self.article_cache_file): return result
 
@@ -279,7 +280,8 @@ class CompanyCheck:
                 cache_data = json.load(f).get("results", [])
 
             cache_map = {a.get('custom_index'): a for a in cache_data if a.get('custom_index')}
-            langs = ['en', 'tw', 'zh']
+            # print(cache_map)
+            langs = ['en', 'tw'] # 暫無zh
             for l in langs:
                 for idx in self.specification.get('articles', []):
                     target_id = f"{self.cono}_article_{idx}_{l}"
@@ -290,6 +292,11 @@ class CompanyCheck:
                             "custom_index": a.get("custom_index"),
                             "title": self._find_html_title(a.get("html_snapshot", "")),
                         })
+                    else:
+                        self.is_verify = False
+                        self.message = f"❌ 文章 {target_id} 不存在!"
+                        return
+
         except Exception as e: print(f"❌ 解析文章快取失敗: {e}")
         return result
 
