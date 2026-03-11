@@ -27,6 +27,7 @@ if True:
     from tool_options import Options
     from tool_parser import LineParser, BuildingWorker
     from tool_list import is_all_include, other_itmes
+    from tool_cache import Cache_article, Cache_file
 
 class ProductCheck:
     # 檢查文件，使用者輸入的文件  並產出結果
@@ -54,6 +55,10 @@ class ProductCheck:
         self.pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], self.uid)
         # print(self.pdno)
 
+        self.cha = Cache_article() # 本地快取 檢查 article
+        self.chf = Cache_file()    # 本地快取 檢查 file
+        self.option_comp = None    # 後續取得
+
         self.bw = BuildingWorker() # 建構者
         self.merger = Merger([(list, ["append"]), (dict, ["merge"])],["override"], ["override"]) # 合併者的策略
         self._load_content()                # 動態讀取 python content
@@ -63,6 +68,9 @@ class ProductCheck:
 
         if self.is_verify is True:
             self._check_specification_root()    # 檢查 specification 根層
+
+        if self.is_verify is True:              # 檢查 本地暫存資料
+            self._check_cache()
 
         if self.is_verify is True:
             self._check_specification_a()       # 檢查 specification 第a層 models
@@ -160,8 +168,8 @@ class ProductCheck:
             self.message = f"❌ friendly 類型錯誤"
             return
 
+        self.option_comp = self._find_comp_by_uid_option(self.options['garden'][self.email], self.specification['company'])
         self.is_verify = True
-
 
     def _add_specification_required(self): # 添加 specification 必需的
         dic_default = { # 預設值
@@ -219,6 +227,44 @@ class ProductCheck:
             # print("首層 檢查通過")
             self.is_verify = True
             self.message = ''
+
+    def _check_cache(self): # 檢查 本地暫存資料
+
+        cono = self.option_comp.get('cono', '') # 公司代號
+
+        articles = []
+        introduction_id = self.specification.get('introduction_id', '') # 公司介紹
+        if introduction_id:
+            articles.append(introduction_id)
+        # 暫無zh
+        langs = ['en', 'tw']
+        for lang in langs:
+            for idx in articles:
+                custom_index = f"{cono}_article_{idx}_{lang}"
+                if not self.cha.is_article_verify(custom_index): # 檢查是否存在
+                    self.is_verify = False
+                    self.message = f"❌ 文章 {custom_index} 不存在! 或請重新讀取文章。"
+                    return
+
+        files = []
+        photo_album = self.specification.get('photo_album', [])
+        if photo_album:
+            files.extend(photo_album)
+
+        og_image = self.specification.get('og_image', '') # 公司介紹
+        if og_image:
+            files.append(og_image)
+
+        for file_path in files:
+            # print('file_path:', file_path)
+            if not self.chf.is_file_verify(file_path): # 檢查是否存在
+                self.is_verify = False
+                self.message = f"❌ 找不到 {file_path} 不存在，或請重新讀取檔案。"
+                return
+
+        # print("檢查通過")
+        self.is_verify = True
+        self.message = ''
 
     def _check_specification_c(self, model, item): # 檢查 specification 第c層 item
         # print(f'_check_specification_c {model} model_items: {item}')
@@ -592,8 +638,7 @@ class ProductCheck:
 
     def _insert_head_part(self): # 添加seo head 屬性部分
         spec = self.specification
-        comp = self._find_comp_by_uid_option(self.options['garden'][self.email], spec['company']) # 從option獲取公司資料
-        # print(comp)
+        vendor_path = self.option_comp.get('vendor_path', '')
 
         dic_langs = {
             'en': {'url_path': 'en', 'hreflang': 'en'},
@@ -607,7 +652,7 @@ class ProductCheck:
             name = spec.get(f"name_{lang}", "")
             description = spec.get(f"description_{lang}", "")
             f_lang = info['url_path'] # 前端語系
-            current_url = f"{SPECIC_DOMAIN}/{f_lang}/app/v/{comp['vendor_path']}/p/{spec['pdno']}"
+            current_url = f"{SPECIC_DOMAIN}/{f_lang}/app/v/{vendor_path}/p/{spec['pdno']}"
 
             placeholder = 'images/hu5vyx6ge2k9sv5q.jpg';
             og_image_path = spec.get("og_image") or placeholder
@@ -627,11 +672,11 @@ class ProductCheck:
 
             # 注入所有語系的 alternate 連結 (包含自己)
             for alt_lang, alt_info in dic_langs.items():
-                alt_url = f"{SPECIC_DOMAIN}/{alt_info['url_path']}/app/v/{comp['vendor_path']}/p/{spec['pdno']}"
+                alt_url = f"{SPECIC_DOMAIN}/{alt_info['url_path']}/app/v/{vendor_path}/p/{spec['pdno']}"
                 lines.append(f"<link rel='alternate' hreflang='{alt_info['hreflang']}' href='{alt_url}'>")
 
             # 添加 x-default (通常指向英文版作為預設語系)
-            default_url = f"{SPECIC_DOMAIN}/en/app/v/{comp['vendor_path']}/p/{spec['pdno']}"
+            default_url = f"{SPECIC_DOMAIN}/en/app/v/{vendor_path}/p/{spec['pdno']}"
             lines.append(f"<link rel='alternate' hreflang='x-default' href='{default_url}'>")
 
             dic_s[lang] = '\n'.join(lines)
@@ -640,16 +685,19 @@ class ProductCheck:
     def _insert_json_ld(self): # 添加 seo json_ld 部分
         spec = self.specification
         # // 獲取公司/供應商資料（用於 brand 連結或名稱）
-        option_comp = self._find_comp_by_uid_option(self.options['garden'][self.email], spec['company'])
-        file_path = os.path.join(ProductCheck.STORAGE_PATH, f"{option_comp['uid']}.py")
+        # option_comp = self._find_comp_by_uid_option(self.options['garden'][self.email], spec['company'])
+        vendor_path = self.option_comp.get('vendor_path', '')
+        comp_uid = self.option_comp.get('uid', '')
+
+        file_path = os.path.join(ProductCheck.STORAGE_PATH, f"{comp_uid}.py")
         # print('file_path:', file_path)
         with open(file_path, 'r', encoding='utf-8') as file:
             content_py = file.read() # 讀取整個檔案內容
 
         local_vars = {}
         exec(content_py, {}, local_vars) #動態讀取
-        comp = local_vars.get('specification', None)
-        # print('comp:', comp)
+        comp_spec = local_vars.get('specification', None)
+        # print('comp_spec:', comp_spec)
 
         # // 語系定義（與 head_part 保持一致，用於構造網址）
         dic_langs = {
@@ -662,7 +710,8 @@ class ProductCheck:
 
         for lang, f_lang in dic_langs.items():
             # 構造基本產品資料
-            current_url = f"{SPECIC_DOMAIN}/{f_lang}/app/v/{option_comp['vendor_path']}/p/{spec['pdno']}"
+            current_url = f"{SPECIC_DOMAIN}/{f_lang}/app/v/{vendor_path}/p/{spec['pdno']}"
+
             name = spec.get(f"name_{lang}", "")
             description = spec.get(f"description_{lang}", "")
 
@@ -695,7 +744,7 @@ class ProductCheck:
                 "url": current_url,
                 "brand": {
                     "@type": "Brand",
-                    "name": comp.get("company_name", "Specic") # 品牌
+                    "name": comp_spec.get("company_name", "Specic") # 品牌
                 }
             }
 

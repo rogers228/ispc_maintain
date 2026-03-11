@@ -23,13 +23,13 @@ if True:
 
     ROOT_DIR = find_project_root()
     sys.path.append(os.path.join(ROOT_DIR, "system"))
-    # from config import ISPC_MAINTAIN_CACHE_DIR
+    from config_web import SPECIC_DOMAIN, WEB_SPECIC_ASSETS_URL
     from tool_auth import AuthManager
     from tool_options import Options
     # from tool_parser import LineParser, BuildingWorker
     from tool_list import is_all_include, other_itmes
     from tool_msgbox import error
-    from tool_cache import Cache_article
+    from tool_cache import Cache_article, Cache_file
 
 class CompanyCheck:
     STORAGE_PATH = os.path.join(ROOT_DIR, 'tempstorage')
@@ -43,8 +43,10 @@ class CompanyCheck:
         self.is_verify = None # 是否驗證通過
 
         self.merger = Merger([(list, ["append"]), (dict, ["merge"])],["override"], ["override"]) # 合併者的策略
-        # self.article_cache_file = os.path.join(ISPC_MAINTAIN_CACHE_DIR, "last_article_query.json") # 本地 article 查詢結果
-        self.cha = Cache_article() # 本地快取檢查
+
+        self.cha = Cache_article() # 本地快取 檢查 article
+        self.chf = Cache_file()    # 本地快取 檢查 file
+
         self.lis_safe_origin = ['https://assets.specic.store'] # 合法靜態資源主機
 
         self.auth = AuthManager()
@@ -54,8 +56,7 @@ class CompanyCheck:
         self.opt = Options()
         self.options = self.opt.get_options_auto()
         # print(json.dumps(self.options, indent=4, ensure_ascii=False))
-        self.cono = self._find_cono_by_uid(self.options['garden'][self.email], self.uid)
-        # print(self.cono)
+        self.option_comp = None # 後續取得
         self._load_content()                # 動態讀取 python content
 
         if self.is_verify is True:
@@ -63,6 +64,10 @@ class CompanyCheck:
 
         if self.is_verify is True:
             self._check_root()    # 檢查 specification 根層
+
+        if self.is_verify is True:              # 添加 head_part
+            self._insert_head_part()
+            self._insert_json_ld()
 
         if self.is_verify is True: # 將 specification, friendly 合併為最終的結果 fruit
             self._merge_fruit()
@@ -85,6 +90,17 @@ class CompanyCheck:
                 # info 就是內層 dict
                 if info.get("uid") == target_uid:
                     return info.get("cono")
+        return None
+
+    def _find_comp_by_uid_option(self, garden_user, target_uid):
+        # 從 option 獲取公司資料
+        # garden_user 是 self.option[garden][email]
+        for item in garden_user:
+            # 每個 item 是一個只有一個 key 的 dict，例如 {"ys_v_dev": {...}}
+            for key_company, value_dic in item.items():
+                # info 就是內層 dict
+                if value_dic.get("uid") == target_uid:
+                    return value_dic
         return None
 
     def _load_content(self): # 動態讀取 python content
@@ -124,12 +140,13 @@ class CompanyCheck:
             self.message = f"❌ specification 類型錯誤"
             return
 
+        self.option_comp = self._find_comp_by_uid_option(self.options['garden'][self.email], self.uid)
         self.is_verify = True
 
     def _add_specification_required(self): # 添加 specification 必需的
         dic_default = { # 預設值
             'uid': self.uid,
-            'cono': self.cono,
+            'cono': self.option_comp.get('cono', ''),
         }
         self.specification.update(dic_default)
 
@@ -184,6 +201,7 @@ class CompanyCheck:
             'introduction_id': {'type': 'string', 'required': True},
             'logo_url': {'type': 'string', 'required': True},
             'google_map_url': {'type': 'string', 'required': True},
+            'og_image': {'type': 'string', 'required': True},
             'products': {'type': 'list', 'required': True, 'schema': {'type': 'string'}},
             'articles': {'type': 'list', 'required': True, 'schema': {'type': 'string'}},
         }
@@ -195,17 +213,31 @@ class CompanyCheck:
             self.is_verify = False
             self.message = f"❌ 第一層檢查失敗： {vr.errors}"
             return
+
         # 針對圖片欄位進行深度檢查
-        for field in ['logo_url']:
-            val = self.specification.get(field, "")
-            if val == '':
-                continue
+        files = []
+        og_image = self.specification.get('og_image', '') # 公司介紹
+        if og_image:
+            files.append(og_image)
+
+        logo_url = self.specification.get('logo_url', '')
+        if logo_url:
+            files.append(logo_url)
+
+        for file_path in files:
+
+            if not self.chf.is_file_verify(file_path): # 檢查是否存在
+                self.is_verify = False
+                self.message = f"❌ 找不到 {file_path} 不存在，或請重新讀取檔案。"
+                return
+
             if not self._is_img_verify(val):
                 self.is_verify = False
                 self.message = f"❌ {field} 格式錯誤或來源不合法"
                 return
 
         # 針對文章 進行檢查 是否有本地 文章
+        cono = self.option_comp.get('cono', '')
         introduction_id = self.specification.get('introduction_id', '') # 公司介紹
         articles = self.specification.get('articles', []) # 精選文章
         articles.append(introduction_id)
@@ -214,7 +246,7 @@ class CompanyCheck:
         langs = ['en', 'tw']
         for lang in langs:
             for idx in articles:
-                custom_index = f"{self.cono}_article_{idx}_{lang}"
+                custom_index = f"{cono}_article_{idx}_{lang}"
                 if not self.cha.is_article_verify(custom_index): # 檢查是否存在
                     self.is_verify = False
                     self.message = f"❌ 文章 {custom_index} 不存在!"
@@ -267,19 +299,31 @@ class CompanyCheck:
                     local_v = {}
                     exec(f.read(), {}, local_v)
                     s = local_v.get('specification', {})
-                    # 組裝結果
-                    result.append({
-                        'pdno': pdno,
-                        'name_en': s.get('name_en', ''),
-                        'name_tw': s.get('name_tw', ''),
-                        'name_zh': s.get('name_zh', ''),
-                        'description_en': s.get('description_en', ''),
-                        'description_tw': s.get('description_tw', ''),
-                        'description_zh': s.get('description_zh', ''),
-                        'introduction_id': s.get('introduction_id', ''),
-                        'photo_album': s.get('photo_album', []),
-                    })
-            except Exception as e: print(f"❌ 讀取產品 {uid} 失敗: {e}")
+            except Exception as e:
+                self.is_verify = False
+                self.message = f"❌ 讀取產品 {uid} 失敗: {e}"
+
+            # check images
+            name = s.get('name', '')
+            photo_album = s.get('photo_album', [])
+            for file_path in photo_album:
+                if not self.chf.is_file_verify(file_path):
+                    self.is_verify = False
+                    self.message = f"❌ {name} 的欄位 photo_album 資料 '{file_path}'，找不到實際檔案"
+
+            # 組裝結果
+            result.append({
+                'pdno': pdno,
+                'name_en': s.get('name_en', ''),
+                'name_tw': s.get('name_tw', ''),
+                'name_zh': s.get('name_zh', ''),
+                'description_en': s.get('description_en', ''),
+                'description_tw': s.get('description_tw', ''),
+                'description_zh': s.get('description_zh', ''),
+                'introduction_id': s.get('introduction_id', ''),
+                'photo_album': photo_album,
+            })
+
         return result
 
     def _find_html_title(self, content):
@@ -289,11 +333,12 @@ class CompanyCheck:
 
     def _extend_articles(self):
         # 暫無zh
+        cono = self.option_comp.get('cono', '')
         result = {'articles_en': [], 'articles_tw': []}
         langs = ['en', 'tw']
         for lang in langs:
             for idx in self.specification.get('articles', []):
-                custom_index = f"{self.cono}_article_{idx}_{lang}"
+                custom_index = f"{cono}_article_{idx}_{lang}"
                 art = self.cha.get_article(custom_index)
                 result[f'articles_{lang}'].append({
                     "custom_index": art.get("custom_index"),
@@ -301,6 +346,88 @@ class CompanyCheck:
                 })
 
         return result
+
+    def _insert_head_part(self): # 添加seo head 屬性部分
+        spec = self.specification
+        vendor_path = self.option_comp.get('vendor_path', '')
+        # print(self.option_comp)
+
+        dic_langs = {
+            'en': {'url_path': 'en', 'hreflang': 'en'},
+            'tw': {'url_path': 'zh-TW', 'hreflang': 'zh-Hant'},
+            'zh': {'url_path': 'zh-TW', 'hreflang': 'zh-Hans'} # // 若 zh 指向簡體，建議改為 zh-Hans
+        }
+
+        dic_s = {}
+        for lang, info in dic_langs.items():
+            name = spec.get(f"company_name_{lang}", "")
+            description = spec.get(f"description_{lang}", "")
+            f_lang = info['url_path'] # 前端語系
+            current_url = f"{SPECIC_DOMAIN}/{f_lang}/app/v/{vendor_path}"
+
+            placeholder = 'images/hu5vyx6ge2k9sv5q.jpg';
+            og_image_path = spec.get("og_image") or placeholder
+            og_image = f"{WEB_SPECIC_ASSETS_URL}/{og_image_path}"
+
+           # 基礎 Meta 標籤
+            lines = [
+                f"<title>{name}</title>",
+                f"<meta property='og:type' content='product'>",
+                f"<meta property='og:title' content='{name}'>",
+                f"<meta property='og:description' content='{description}'>",
+                f"<meta property='og:url' content='{current_url}'>",
+                f"<meta property='og:image' content='{og_image}'>",
+                f"<meta property='og:site_name' content='Specic'>",
+                f"<link rel='canonical' href='{current_url}'>",
+            ]
+
+            # 注入所有語系的 alternate 連結 (包含自己)
+            for alt_lang, alt_info in dic_langs.items():
+                alt_url = f"{SPECIC_DOMAIN}/{alt_info['url_path']}/app/v/{vendor_path}"
+                lines.append(f"<link rel='alternate' hreflang='{alt_info['hreflang']}' href='{alt_url}'>")
+
+            # 添加 x-default (通常指向英文版作為預設語系)
+            default_url = f"{SPECIC_DOMAIN}/en/app/v/{vendor_path}"
+            lines.append(f"<link rel='alternate' hreflang='x-default' href='{default_url}'>")
+
+            dic_s[lang] = '\n'.join(lines)
+        spec['head_part'] = dic_s
+
+    def _insert_json_ld(self): # 添加 seo json_ld 部分
+        spec = self.specification
+        vendor_path = self.option_comp.get('vendor_path', '')
+
+        # // 語系定義（與 head_part 保持一致，用於構造網址）
+        dic_langs = {
+            'en': 'en',
+            'tw': 'zh-TW',
+            'zh': 'zh-TW'
+        }
+
+        dic_ld = {} # dict
+
+        for lang, f_lang in dic_langs.items():
+            # 構造基本產品資料
+            current_url = f"{SPECIC_DOMAIN}/{f_lang}/app/v/{vendor_path}"
+            brand = spec.get("company_name", "Specic") # 品牌
+            name = spec.get(f"company_name_{lang}", "")
+            description = spec.get(f"description_{lang}", "")
+
+            # 建立 JSON-LD 結構
+            ld_data = {
+                "@context": "https://schema.org/",
+                "@type": "Product",
+                "name": name,
+                "description": description,
+                "url": current_url,
+                "brand": {
+                    "@type": "Brand",
+                    "name": brand, # 品牌
+                }
+            }
+            dic_ld[lang] = ld_data # 最後才會序列畫
+
+        spec['json_ld'] = dic_ld
 
     def get_detaile(self):
         # 將 fruit 轉換為 json
