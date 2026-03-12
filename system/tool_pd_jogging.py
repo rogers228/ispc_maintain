@@ -45,6 +45,7 @@ class ProductCheck:
         self.message = '' # 檢查訊息
         self.is_verify = None # 是否驗證通過
 
+        self.placeholder = 'images/hu5vyx6ge2k9sv5q.jpg'; # 佔位圖片 無圖檔時使用
         self.auth = AuthManager()
         data = self.auth.load_local_data()
         self.email = data.get("email", "") # 使用者 email
@@ -654,8 +655,7 @@ class ProductCheck:
             f_lang = info['url_path'] # 前端語系
             current_url = f"{SPECIC_DOMAIN}/{f_lang}/app/v/{vendor_path}/p/{spec['pdno']}"
 
-            placeholder = 'images/hu5vyx6ge2k9sv5q.jpg';
-            og_image_path = spec.get("og_image") or placeholder
+            og_image_path = spec.get("og_image") or self.placeholder
             og_image = f"{WEB_SPECIC_ASSETS_URL}/{og_image_path}"
 
             # 基礎 Meta 標籤

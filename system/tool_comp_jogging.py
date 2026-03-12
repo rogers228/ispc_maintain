@@ -2,7 +2,6 @@
 if True:
     import sys, os
     import json
-    # import time
 
     from cerberus import Validator
     from deepmerge import Merger
@@ -26,7 +25,6 @@ if True:
     from config_web import SPECIC_DOMAIN, WEB_SPECIC_ASSETS_URL
     from tool_auth import AuthManager
     from tool_options import Options
-    # from tool_parser import LineParser, BuildingWorker
     from tool_list import is_all_include, other_itmes
     from tool_msgbox import error
     from tool_cache import Cache_article, Cache_file
@@ -48,6 +46,7 @@ class CompanyCheck:
         self.chf = Cache_file()    # 本地快取 檢查 file
 
         self.lis_safe_origin = ['https://assets.specic.store'] # 合法靜態資源主機
+        self.placeholder = 'images/hu5vyx6ge2k9sv5q.jpg'; # 佔位圖片 無圖檔時使用
 
         self.auth = AuthManager()
         data = self.auth.load_local_data()
@@ -238,14 +237,17 @@ class CompanyCheck:
 
         # 針對文章 進行檢查 是否有本地 文章
         cono = self.option_comp.get('cono', '')
+
+        all_articles = [] # 所有文章
         introduction_id = self.specification.get('introduction_id', '') # 公司介紹
         articles = self.specification.get('articles', []) # 精選文章
-        articles.append(introduction_id)
-        # print('articles:', articles)
+
+        all_articles = [*articles, introduction_id]
+
         # 暫無zh
         langs = ['en', 'tw']
         for lang in langs:
-            for idx in articles:
+            for idx in all_articles: # 檢查所有文章
                 custom_index = f"{cono}_article_{idx}_{lang}"
                 if not self.cha.is_article_verify(custom_index): # 檢查是否存在
                     self.is_verify = False
@@ -255,6 +257,8 @@ class CompanyCheck:
         # print("首層 檢查通過")
         self.is_verify = True
         self.message = ''
+
+
 
     def _merge_fruit(self):
         # 將 specification, friendly 合併為最終的結果 fruit
@@ -365,8 +369,7 @@ class CompanyCheck:
             f_lang = info['url_path'] # 前端語系
             current_url = f"{SPECIC_DOMAIN}/{f_lang}/app/v/{vendor_path}"
 
-            placeholder = 'images/hu5vyx6ge2k9sv5q.jpg';
-            og_image_path = spec.get("og_image") or placeholder
+            og_image_path = spec.get("og_image") or self.placeholder
             og_image = f"{WEB_SPECIC_ASSETS_URL}/{og_image_path}"
 
            # 基礎 Meta 標籤

@@ -23,6 +23,18 @@ def test1():
     print(spwr_api_url)
 
 
+def test2():
+    dic = {'a': 2, 'b': 5}
+    print(dic)
+
+    n = dic.get('b')
+    print(n)
+
+    n = 78
+    print(n)
+
+    print(dic.get('b'))
+
 class StorageBuckets:
 
     def __init__(self):
@@ -30,4 +42,4 @@ class StorageBuckets:
 
 
 if __name__ == '__main__':
-    test1()
+    test2()
