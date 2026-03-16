@@ -309,7 +309,7 @@ class ProductCheck:
             'name_zh': {'type': 'string', 'required': True},
             'postfix_symbol': {'type': 'string', 'required': True, 'allowed': ProductCheck.POSTFIX_SPMBOL_LIST},
             'default_value': {'type': 'string', 'required': True},
-            'control_type': {'type': 'string', 'required': True, 'allowed': ['button']}, # 前端 UI 控制項
+            'control_type': {'type': 'string', 'required': True, 'allowed': ['button', 'select', 'scroll-picker', 'grid']}, # 前端 UI 控制項
             'model_item_length': {'type': 'integer', 'required': True},
             'model_items': {'type': 'dict', 'required': True, 'schema': schema_items, 'keysrules': { # keys規則
                 'type': 'string', 'minlength': model_item_length, 'maxlength': model_item_length
