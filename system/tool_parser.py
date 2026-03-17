@@ -346,6 +346,30 @@ class BuildingWorker():
         return [''.join(e.values()) for e in records] if records else []
 
 
+    def build_button_image(self, records):
+        # // 1. 使用 defaultdict 建立巢狀結構
+        from collections import defaultdict
+        image_structure = defaultdict(lambda: {"model_items": defaultdict(dict)})
+
+        # // 2. 遍歷 records 進行重組
+        for record in records:
+            model = record["model"]
+            item = record["item"]
+            # // 使用 str() 確保賦值為獨立字串而非引用
+            image_path = str(record["image_path"])
+
+            # // 寫入對應的 button_image 欄位
+            image_structure[model]['model_items'][item]['button_image'] = image_path
+
+        # // 3. 將 defaultdict 轉換回普通 dict 以符合 JSON 序列化要求
+        final_models = {}
+        for model_key, model_value in image_structure.items():
+            # // 轉換內層的 model_items
+            model_value['model_items'] = dict(model_value['model_items'])
+            final_models[model_key] = model_value
+
+        return {"models": final_models}
+
 def test1(): # 以文字行 解析為 records
     # 測試
 
@@ -705,5 +729,28 @@ def test55():
     result = bw.build_disable(records)
     print(json.dumps(result, indent=4, ensure_ascii=False))
 
+def test56():
+    bw = BuildingWorker()
+    records = [
+        {'model': '05cr', 'item': 'R', 'image_path': 'images/moyb8typz89utpi8.jpg'},
+        {'model': '05cr', 'item': 'L', 'image_path': 'images/3z41v0kuexyc5t9a.jpg'}
+        ]
+    result = bw.build_button_image(records)
+    print(json.dumps(result, indent=4, ensure_ascii=False))
+    # {
+    #     "models": {
+    #         "05cr": {
+    #             "model_items": {
+    #                 "R": {
+    #                     "button_image": "images/moyb8typz89utpi8.jpg"
+    #                 },
+    #                 "L": {
+    #                     "button_image": "images/3z41v0kuexyc5t9a.jpg"
+    #                 }
+    #             }
+    #         }
+    #     }
+    # }
+
 if __name__ == "__main__":
-    test55()
+    test56()

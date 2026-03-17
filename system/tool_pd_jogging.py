@@ -446,12 +446,27 @@ class ProductCheck:
             new_records_fast_model = rd_fast_model.to_dict()
             # print(json.dumps(new_records_fast_model, indent=4, ensure_ascii=False))
 
+        if True: # items_button_image
+            rd_items_button_image = LineParser(lines = self.friendly['items_button_image'],
+                columns = ['model', 'item', 'image_path'],
+                text_fields=['model', 'item', 'image_path'])
+
+            result = rd_items_button_image.parse_info() # 解析結果
+            if result['is_error'] is True: # 解析錯誤
+                self.is_verify = False
+                self.message = f"❌ friendly['runtime_disable'] 解析失敗：{result['message']}"
+                return
+
+            new_records_items_button_image = rd_items_button_image.to_dict()
+            # print(json.dumps(new_records_items_button_image, indent=4, ensure_ascii=False))
+
         friendly_structured = { # 重新構造
-            'alias':           new_records_alias,
-            'runtime_supply':  new_records_runtime_supply,
-            'runtime_filter':  new_records_runtime_filter,
-            'runtime_disable': new_records_runtime_disable,
-            'fast_model':      new_records_fast_model,
+            'alias':              new_records_alias,
+            'runtime_supply':     new_records_runtime_supply,
+            'runtime_filter':     new_records_runtime_filter,
+            'runtime_disable':    new_records_runtime_disable,
+            'fast_model':         new_records_fast_model,
+            'items_button_image': new_records_items_button_image,
             }
 
         self.friendly.update(friendly_structured) # 更新
@@ -609,6 +624,38 @@ class ProductCheck:
                     # print("alias 檢查通過")
                     self.is_verify = True
                     self.message = ''
+
+        if True: # check items_button_image
+            print('check items_button_image')
+            for target in self.friendly['items_button_image']: # target = dict
+
+                # 提前檢查 target['model'] keyerror 避免 schema_alias 錯誤
+                if target['model'] not in self.specification['models']:
+                    self.is_verify = False
+                    self.message = f"❌ items_button_image 檢查失敗： model: {target['model']} keyerror!"
+                    return
+
+                schema_filter = {
+                    'model': {'type': 'string', 'required': True, 'allowed': self.specification['models']},
+                    'item': {'type': 'string', 'required': True, 'allowed': self.specification['models'][target['model']]['model_items_order']},
+                    'image_path': {'type': 'string', 'required': True},
+                }
+                vr = Validator(schema_filter)
+                if not vr.validate(target):
+                    # print(f"❌ runtime_supply 檢查失敗： {vr.errors},  model: {target['model']} pattern: {target['pattern']}")
+                    self.is_verify = False
+                    self.message = f"❌ items_button_image 檢查失敗： {vr.errors}, {target['model']} {target['item']}"
+                    return
+                else:
+                    # print("alias 檢查通過")
+                    self.is_verify = True
+                    self.message = ''
+
+                file_path = target['image_path']
+                if not self.chf.is_file_verify(file_path): # 檢查是否存在
+                    self.is_verify = False
+                    self.message = f"❌ items_button_image 檢查失敗：{target['model']} {target['item']} 找不到 {file_path} 請重新讀取檔案。"
+                    return
 
     def _insert_opposite(self): # 添加對向規則
         if True: # runtime_filter
@@ -818,6 +865,13 @@ class ProductCheck:
         if rd_fast_model:
             fruit.setdefault('fast_model', self.bw.build_fast_model(rd_fast_model)) # 添加 fast_model
 
+        # items_button_image
+        rd_items_button_image = self.friendly.get('items_button_image', [])
+        if rd_items_button_image:
+            # print(rd_items_button_image)
+            dic_items_button_image = self.bw.build_button_image(rd_items_button_image) # record 建構為 dict
+            self.merger.merge(fruit, dic_items_button_image) # 合併至 fruit
+
         # models_pattern
         fruit.setdefault('models_pattern', self._models_pattern_dict()) # 添加 models_pattern
 
@@ -847,9 +901,9 @@ def test1():
         print('驗證成功')
         # print(result['data_original'])
         # print(json.dumps(result['specification'], indent=4, ensure_ascii=False))
-        # print(json.dumps(result['friendly'], indent=4, ensure_ascii=False))
+        print(json.dumps(result['fruit'], indent=4, ensure_ascii=False))
         # print(result['fruit'])
-        print(result['data_json'])
+        # print(result['data_json'])
 
         # print(result['fruit']['head_part'])
         # for lang, html in result['fruit']['head_part'].items():
