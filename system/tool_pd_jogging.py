@@ -336,7 +336,14 @@ class ProductCheck:
             self.is_verify = True
             self.message = ''
 
-        # 尚未完成
+        # 獨立檢查
+        default_value =  target['default_value']
+        if default_value:
+            if default_value not in lis_mo:
+                self.is_verify = False
+                self.message = f"❌ model: {model} 的 default_value: {default_value} 錯誤! 應有 {','.join(lis_mo)}"
+                return
+
         for item in self.specification['models'][model]['model_items']:
             # print(f'check {model} model_items: {item}')
             if self.is_verify is False:
