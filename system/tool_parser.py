@@ -370,6 +370,29 @@ class BuildingWorker():
 
         return {"models": final_models}
 
+    def build_model_help(self, records):
+        # // 1. 檢查格式 (確保輸入合法)
+        if not self.is_records(records):
+            return {"models": {}}
+
+        from collections import defaultdict
+
+        # // 2. 建立初步結構，外層使用 dict 即可，因為這層不涉及 deeply nested 資料
+        final_models = {}
+
+        for record in records:
+            model = record["model"]
+            custom_index = record["custom_index"]
+
+            # // 將 custom_index 寫入 model_help 欄位
+            # // 結構為 models -> {model_id} -> model_help
+            final_models[model] = {
+                "model_help": str(custom_index)
+            }
+
+        # // 3. 返回符合要求的 dict 結構
+        return {"models": final_models}
+
 def test1(): # 以文字行 解析為 records
     # 測試
 
@@ -752,5 +775,25 @@ def test56():
     #     }
     # }
 
+def test57():
+    bw = BuildingWorker()
+    records = [
+        {'model': '03ct', 'custom_index': 'test_article'},
+        {'model': '05cr', 'custom_index': 'yeoshe_article_rotation'},
+        ]
+
+    result = bw.build_model_help(records)
+    print(json.dumps(result, indent=4, ensure_ascii=False))
+    # {
+    #     "models": {
+    #         "03ct": {
+    #             "model_help": "test_article"
+    #         },
+    #         "05cr": {
+    #             "model_help": "yeoshe_article_rotation"
+    #         }
+    #     }
+    # }
+
 if __name__ == "__main__":
-    test56()
+    test57()

@@ -453,6 +453,18 @@ class ProductCheck:
             new_records_fast_model = rd_fast_model.to_dict()
             # print(json.dumps(new_records_fast_model, indent=4, ensure_ascii=False))
 
+        if True: # model_help
+            rd_model_help = LineParser(lines = self.friendly['model_help'],
+                columns = ['model', 'custom_index'],
+                text_fields=['model', 'custom_index'])
+
+            result = rd_model_help.parse_info() # 解析結果
+            if result['is_error'] is True: # 解析錯誤
+                self.is_verify = False
+                self.message = f"❌ friendly['model_help'] 解析失敗：{result['message']}"
+                return
+            new_records_model_help = rd_model_help.to_dict()
+
         if True: # items_button_image
             rd_items_button_image = LineParser(lines = self.friendly['items_button_image'],
                 columns = ['model', 'item', 'image_path'],
@@ -461,7 +473,7 @@ class ProductCheck:
             result = rd_items_button_image.parse_info() # 解析結果
             if result['is_error'] is True: # 解析錯誤
                 self.is_verify = False
-                self.message = f"❌ friendly['runtime_disable'] 解析失敗：{result['message']}"
+                self.message = f"❌ friendly['rd_items_button_image'] 解析失敗：{result['message']}"
                 return
 
             new_records_items_button_image = rd_items_button_image.to_dict()
@@ -473,6 +485,7 @@ class ProductCheck:
             'runtime_filter':     new_records_runtime_filter,
             'runtime_disable':    new_records_runtime_disable,
             'fast_model':         new_records_fast_model,
+            'model_help':         new_records_model_help,
             'items_button_image': new_records_items_button_image,
             }
 
@@ -632,8 +645,42 @@ class ProductCheck:
                     self.is_verify = True
                     self.message = ''
 
+        if True: # check model_help
+            # print('check model_help')
+            for target in self.friendly['model_help']: # target = dict
+                # print(target)
+                # 提前檢查 target['model'] keyerror 避免 schema_alias 錯誤
+                if target['model'] not in self.specification['models']:
+                    self.is_verify = False
+                    self.message = f"❌ items_button_image 檢查失敗： model: {target['model']} keyerror!"
+                    return
+
+                schema_filter = {
+                    'model': {'type': 'string', 'required': True, 'allowed': self.specification['models']},
+                    'custom_index': {'type': 'string', 'required': True},
+                }
+
+                vr = Validator(schema_filter)
+                if not vr.validate(target):
+                    # print(f"❌ runtime_supply 檢查失敗： {vr.errors},  model: {target['model']} pattern: {target['pattern']}")
+                    self.is_verify = False
+                    self.message = f"❌ model_help 檢查失敗： {vr.errors}, {target['model']} {target['item']}"
+                    return
+                else:
+                    # print("alias 檢查通過")
+                    self.is_verify = True
+                    self.message = ''
+
+                langs = ['en', 'tw']
+                for lang in langs:
+                    custom_index = f"{target['custom_index']}_{lang}" # 添加語言
+                    if not self.cha.is_article_verify(custom_index): # 檢查是否存在
+                        self.is_verify = False
+                        self.message = f"❌ 文章 {custom_index} 不存在! 或請重新讀取文章。"
+                        return
+
         if True: # check items_button_image
-            print('check items_button_image')
+            # print('check items_button_image')
             for target in self.friendly['items_button_image']: # target = dict
 
                 # 提前檢查 target['model'] keyerror 避免 schema_alias 錯誤
@@ -871,6 +918,12 @@ class ProductCheck:
         rd_fast_model = self.friendly.get('fast_model', [])
         if rd_fast_model:
             fruit.setdefault('fast_model', self.bw.build_fast_model(rd_fast_model)) # 添加 fast_model
+
+        # model_help
+        rd_model_help = self.friendly.get('model_help', [])
+        if rd_model_help:
+            dic_model_help = self.bw.build_model_help(rd_model_help) # record 建構為 dict
+            self.merger.merge(fruit, dic_model_help) # 合併至 fruit
 
         # items_button_image
         rd_items_button_image = self.friendly.get('items_button_image', [])
