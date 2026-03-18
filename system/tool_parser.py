@@ -342,9 +342,36 @@ class BuildingWorker():
 
         return {"models": final_models}
 
-    def build_fast_model(self, records):
-        return [''.join(e.values()) for e in records] if records else []
+    # def build_fast_model(self, records):
+    #     return [''.join(e.values()) for e in records] if records else []
 
+    def build_fast_model(self, records):
+        if not records:
+            return []
+
+        from collections import defaultdict
+        # // 1. 使用 defaultdict(list) 來存放各分類的型號
+        category_map = defaultdict(list)
+
+        for record in records:
+            # // 2. 提取並排除 feature，拼接型號字串
+            # // 使用字典推導式排除 'feature' 鍵，並按順序拼接值
+            full_model_code = ''.join([str(v) for k, v in record.items() if k != 'feature'])
+
+            # // 3. 取得該記錄的特性列表 (預設為空列表避免 KeyError)
+            features = record.get('feature', [])
+
+            # // 4. 將型號分派到各個分類下
+            for feat in features:
+                category_map[feat].append(full_model_code)
+
+        # // 5. 轉換為前端預期的 [{category: ..., models: [...]}, ...] 格式
+        result = [
+            {"category": cat, "models": models}
+            for cat, models in category_map.items()
+        ]
+
+        return result
 
     def build_button_image(self, records):
         # // 1. 使用 defaultdict 建立巢狀結構
@@ -679,37 +706,147 @@ def test54():
     bw = BuildingWorker()
     records =[
         {
-            "index_0": "PA10V",
-            "index_1": "O",
-            "index_2": "018",
-            "index_3": "00DRG",
-            "index_4": "53",
-            "index_5": "R",
-            "index_6": "V",
-            "index_7": "S2",
-            "index_8": "A",
-            "index_9": "12",
-            "index_10": "N00",
-            "index_11": "0"
+            "index_0": "V",
+            "index_1": "15",
+            "index_2": "00A",
+            "index_3": "2",
+            "index_4": "R",
+            "index_5": "00",
+            "index_6": "00",
+            "index_7": "0",
+            "index_8": "10",
+            "index_9": "0",
+            "index_10": "0X",
+            "index_11": "00",
+            "index_12": "N",
+            "index_13": "0",
+            "feature": [
+                "ready_to_ship"
+            ]
         },
         {
-            "index_0": "PA10V",
-            "index_1": "O",
-            "index_2": "028",
-            "index_3": "00DRG",
-            "index_4": "53",
-            "index_5": "R",
-            "index_6": "V",
-            "index_7": "S3",
-            "index_8": "A",
-            "index_9": "12",
-            "index_10": "N00",
-            "index_11": "0"
+            "index_0": "V",
+            "index_1": "23",
+            "index_2": "00A",
+            "index_3": "4",
+            "index_4": "R",
+            "index_5": "00",
+            "index_6": "01",
+            "index_7": "0",
+            "index_8": "10",
+            "index_9": "0",
+            "index_10": "0X",
+            "index_11": "01",
+            "index_12": "N",
+            "index_13": "0",
+            "feature": [
+                "ready_to_ship"
+            ]
+        },
+        {
+            "index_0": "V",
+            "index_1": "38",
+            "index_2": "00A",
+            "index_3": "4",
+            "index_4": "R",
+            "index_5": "00",
+            "index_6": "02",
+            "index_7": "0",
+            "index_8": "10",
+            "index_9": "0",
+            "index_10": "0X",
+            "index_11": "01",
+            "index_12": "N",
+            "index_13": "0",
+            "feature": [
+                "ready_to_ship"
+            ]
+        },
+        {
+            "index_0": "V",
+            "index_1": "42",
+            "index_2": "0CR",
+            "index_3": "3",
+            "index_4": "R",
+            "index_5": "00",
+            "index_6": "02",
+            "index_7": "F",
+            "index_8": "10",
+            "index_9": "0",
+            "index_10": "0Z",
+            "index_11": "01",
+            "index_12": "N",
+            "index_13": "0",
+            "feature": [
+                "ready_to_ship"
+            ]
+        },
+        {
+            "index_0": "V",
+            "index_1": "50",
+            "index_2": "00C",
+            "index_3": "3",
+            "index_4": "R",
+            "index_5": "00",
+            "index_6": "03",
+            "index_7": "0",
+            "index_8": "10",
+            "index_9": "0",
+            "index_10": "0X",
+            "index_11": "01",
+            "index_12": "N",
+            "index_13": "0",
+            "feature": [
+                "ready_to_ship",
+                "professional"
+            ]
+        },
+        {
+            "index_0": "V",
+            "index_1": "70",
+            "index_2": "00A",
+            "index_3": "3",
+            "index_4": "R",
+            "index_5": "00",
+            "index_6": "03",
+            "index_7": "0",
+            "index_8": "10",
+            "index_9": "0",
+            "index_10": "0X",
+            "index_11": "01",
+            "index_12": "N",
+            "index_13": "0",
+            "feature": [
+                "ready_to_ship",
+                "professional"
+            ]
         }
     ]
 
     result = bw.build_fast_model(records)
-    print(result)
+    print(json.dumps(result, indent=4, ensure_ascii=False))
+
+    # [
+    #     {
+    #         "category": "ready_to_ship",
+    #         "models": [
+    #             "V1500A2R000001000X00N0",
+    #             "V2300A4R000101000X01N0",
+    #             "V3800A4R000201000X01N0",
+    #             "V420CR3R0002F1000Z01N0",
+    #             "V5000C3R000301000X01N0",
+    #             "V7000A3R000301000X01N0"
+    #         ]
+    #     },
+    #     {
+    #         "category": "professional",
+    #         "models": [
+    #             "V5000C3R000301000X01N0",
+    #             "V7000A3R000301000X01N0"
+    #         ]
+    #     }
+    # ]
+
 
 def test55():
     bw = BuildingWorker()
@@ -796,4 +933,4 @@ def test57():
     # }
 
 if __name__ == "__main__":
-    test57()
+    test54()

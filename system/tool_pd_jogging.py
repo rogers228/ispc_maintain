@@ -35,6 +35,8 @@ class ProductCheck:
     SUPPLY_ALLOWED_LIST = ['s', 'n', 'd'] # 供貨方式 s正常供貨, n不供貨, d特殊供貨
     HUMAN_EXPRESSION_LIST = ['-s', '-u'] # 人類表達方式以  -s向方式表達 與 -u反向方式表達
     POSTFIX_SPMBOL_LIST = ['', '-','/','\\'] # 後置符號 \\ 即 \
+    FASE_FEATURE_LIST = ['ready_to_ship', 'in_stock', 'best_seller', 'standard', 'essential',
+        'classic', 'professional', 'value_choice', 'high_performance', 'silent', 'heavy_duty', 'precision']
 
     def __init__(self, uid):
         self.uid = uid
@@ -439,10 +441,12 @@ class ProductCheck:
 
         if True: # fast_model
             lis_index = lambda count: [f'index_{i}' for i in range(count)] # 建立 lis_index 函數 回傳 ['index_0', 'index_1'...]
-            columns = lis_index(len(self.specification['models_order']))
+            columns_model = lis_index(len(self.specification['models_order']))
+            columns_all = [*columns_model, 'feature']
+            # print(columns_all)
             rd_fast_model = LineParser(lines = self.friendly['fast_model'],
-                columns = columns,
-                text_fields = columns)
+                columns = columns_all,
+                text_fields = columns_model)
 
             result = rd_fast_model.parse_info() # 解析結果
             if result['is_error'] is True: # 解析錯誤
@@ -617,21 +621,25 @@ class ProductCheck:
         if True: # check fast_model
             # print('check fast_model')
             for target in self.friendly['fast_model']: # target = dict
-                # print(target)
+
                 schema_fast_model = {}
                 for key, _ in target.items(): # key = 'index_8'
-                    index = key.split('_')[1]
-                    target_model = self.specification['models_order'][int(index)]
-                    # print('key:', key, 'index:', index, 'model:', target_model)
+                    if key == 'feature':
+                        schema_fast_model.setdefault(key, {'type': 'list', 'required': True,
+                            'allowed': ProductCheck.FASE_FEATURE_LIST})
+                    else:
+                        index = key.split('_')[1]
+                        target_model = self.specification['models_order'][int(index)]
+                        # print('key:', key, 'index:', index, 'model:', target_model)
 
-                    # 提前檢查 self.specification['models'] keyerror 避免 schema_fast_model 錯誤
-                    if target_model not in self.specification['models']:
-                        self.is_verify = False
-                        self.message = f"❌ fast_model 檢查失敗： model: {target_model} keyerror!"
-                        return
+                        # 提前檢查 self.specification['models'] keyerror 避免 schema_fast_model 錯誤
+                        if target_model not in self.specification['models']:
+                            self.is_verify = False
+                            self.message = f"❌ fast_model 檢查失敗： model: {target_model} keyerror!"
+                            return
 
-                    schema_fast_model.setdefault(key, {'type': 'string', 'required': True,
-                        'allowed': self.specification['models'][target_model]['model_items_order']})
+                        schema_fast_model.setdefault(key, {'type': 'string', 'required': True,
+                            'allowed': self.specification['models'][target_model]['model_items_order']})
 
                 # print(json.dumps(schema_fast_model, indent=4, ensure_ascii=False))
                 vr = Validator(schema_fast_model)
