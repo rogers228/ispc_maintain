@@ -67,6 +67,7 @@ class ProductRelease:
                 print(response.text)
                 return {"is_error": True, "message": f"DB 更新失敗: {response.text}"}
 
+            print('成功!')
             return {"is_error": False, "message": f"✅ 發佈成功"}
 
         except Exception as e:
