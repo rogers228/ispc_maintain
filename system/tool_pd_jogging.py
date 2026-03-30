@@ -72,6 +72,9 @@ class ProductCheck:
         if self.is_verify is True:
             self._check_specification_root()    # 檢查 specification 根層
 
+        if self.is_verify is True:
+            self.option_comp = self._find_comp_by_uid_option(self.options['garden'][self.email], self.specification['company']) # 讀取參數 在根層檢查之後
+
         if self.is_verify is True:              # 檢查 本地暫存資料
             self._check_cache()
 
@@ -171,7 +174,6 @@ class ProductCheck:
             self.message = f"❌ friendly 類型錯誤"
             return
 
-        self.option_comp = self._find_comp_by_uid_option(self.options['garden'][self.email], self.specification['company'])
         self.is_verify = True
 
     def _add_specification_required(self): # 添加 specification 必需的
@@ -961,7 +963,8 @@ class ProductCheck:
         }
 
 def test1():
-    uid = '4b87a39d-a0e4-4f73-8945-ebc54994e112'
+    # uid = '4b87a39d-a0e4-4f73-8945-ebc54994e112'
+    uid = '7daf1eda-4054-4eb8-88d0-f11671d02eaa'
     pc = ProductCheck(uid)
     result = pc.get_detaile()
     # print(result)
