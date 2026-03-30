@@ -82,6 +82,9 @@ class ProductCheck:
             self._check_specification_a()       # 檢查 specification 第a層 models
 
         if self.is_verify is True:
+            self._check_friendly_root()         # 檢查 friendly 根層
+
+        if self.is_verify is True:
             self._transform_friendly()          # 重新構造 friendly
 
         if self.is_verify is True:
@@ -227,7 +230,7 @@ class ProductCheck:
         if not vr.validate(target):
             # print(f"❌ 第一層檢查失敗： {vr.errors}")
             self.is_verify = False
-            self.message = f"❌ 第一層檢查失敗： {vr.errors}"
+            self.message = f"❌ 第一層 specification 檢查失敗： {vr.errors}"
         else:
             # print("首層 檢查通過")
             self.is_verify = True
@@ -379,6 +382,28 @@ class ProductCheck:
             if self.is_verify is False:
                 break
             self._check_specification_b(model) # 檢查 specification 第b層 model
+
+    def _check_friendly_root(self): # 檢查 friendly 根層
+        self.is_verify = False # 是否驗證通過
+        schema = {
+            'alias': {'type': 'string', 'required': True}, # required 必填
+            'fast_model': {'type': 'string', 'required': True},
+            'runtime_disable': {'type': 'string', 'required': True},
+            'runtime_supply': {'type': 'string', 'required': True},
+            'runtime_filter': {'type': 'string', 'required': True},
+            'model_help': {'type': 'string', 'required': True},
+            'items_button_image': {'type': 'string', 'required': True},
+        }
+        vr = Validator(schema)
+        target = self.friendly
+        if not vr.validate(target):
+            # print(f"❌ 第一層檢查失敗： {vr.errors}")
+            self.is_verify = False
+            self.message = f"❌ 第一層 friendly 檢查失敗： {vr.errors}"
+        else:
+            # print("首層 檢查通過")
+            self.is_verify = True
+            self.message = ''
 
     def _transform_friendly(self): # 重新構造 friendly
         # 僅能解析後，以使用者資料重新構造     若欲新增資料應在檢查後才能進行，否則會有錯誤
