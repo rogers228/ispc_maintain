@@ -256,6 +256,7 @@ class ProductCheck:
 
         files = []
         photo_album = self.specification.get('photo_album', [])
+        photo_album = list(filter(None, photo_album)) # 篩除空白
         if photo_album:
             files.extend(photo_album)
 
@@ -264,7 +265,6 @@ class ProductCheck:
             files.append(og_image)
 
         for file_path in files:
-            # print('file_path:', file_path)
             if not self.chf.is_file_verify(file_path): # 檢查是否存在
                 self.is_verify = False
                 self.message = f"❌ 找不到 {file_path} 不存在，或請重新讀取檔案。"
@@ -989,7 +989,8 @@ class ProductCheck:
 
 def test1():
     # uid = '4b87a39d-a0e4-4f73-8945-ebc54994e112'
-    uid = '7daf1eda-4054-4eb8-88d0-f11671d02eaa'
+    # uid = '7daf1eda-4054-4eb8-88d0-f11671d02eaa'
+    uid = 'fec8abcc-db26-4c0f-9464-a07535091e0d'
     pc = ProductCheck(uid)
     result = pc.get_detaile()
     # print(result)
