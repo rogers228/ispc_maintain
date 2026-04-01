@@ -278,9 +278,7 @@ def test1():
     ps = ProductStorage()
     data = {
         'pdno': generate_random_char_lower(),
-        'name': 'ys_AR系列柱塞泵_開發預覽版',
-        # 2025/12/24 廢除 use_type
-        # 'use_type': 1, # 1: 開發預覽版
+        'name': 'ys_PA10VSO系列柱塞泵_開發預覽版',
         'data_original': '',
         'data_json': '',
     }
@@ -333,4 +331,4 @@ def test6():
     print(spwr_api_anon_key)
 
 if __name__ == '__main__':
-    test6()
+    test1()

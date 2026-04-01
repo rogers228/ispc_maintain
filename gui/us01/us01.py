@@ -25,7 +25,7 @@ if True:
 
     sys.path.append(os.path.join(ROOT_DIR, "system"))
     from config import ISPC_MAINTAIN_VERSION
-    from config_web import WEB_ISCP_SVELTE_DOMAIN_URL
+    from config_web import SPECIC_DOMAIN
     from share_qt5 import *
     from tool_auth import AuthManager
     # from tool_launch import startup
@@ -321,13 +321,22 @@ class MainWindow(QMainWindow):
     def open_preview_version(self, name, uid):
         #  開啟預覽版
         pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], uid)
-        QDesktopServices.openUrl(QUrl(f'{WEB_ISCP_SVELTE_DOMAIN_URL}#/preview?pdno={pdno}'))
+        # print('pdno:', pdno)
+        cono = self._find_company_by_uid(self.options['permissions'][self.email], uid)
+        # print('cono:', cono)
+        url = f'{SPECIC_DOMAIN}/en/app/v/{cono}/preview/{pdno}'
+        # print('url:', url)
+        QDesktopServices.openUrl(QUrl(url))
 
     def open_official_version(self, name, uid):
         # 開啟正式版
         pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], uid)
-        # QDesktopServices.openUrl(QUrl(f'{WEB_ISCP_SVELTE_DOMAIN_URL}#/product?pdno={pdno}'))
-        QDesktopServices.openUrl(QUrl(f'{WEB_ISCP_SVELTE_DOMAIN_URL}/{pdno}'))
+        # print('pdno:', pdno)
+        cono = self._find_company_by_uid(self.options['permissions'][self.email], uid)
+        # print('cono:', cono)
+        url = f'{SPECIC_DOMAIN}/en/app/v/{cono}/p/{pdno}'
+        # print('url:', url)
+        QDesktopServices.openUrl(QUrl(url))
 
     def refresh_auth_status(self):
         """檢查是否過期，必要時刷新，並更新狀態列"""
@@ -466,6 +475,16 @@ class MainWindow(QMainWindow):
             'uid': item_uid
         }
 
+    def _find_company_by_uid(self, permissions_user, target_uid):
+        # permissions_user 是 self.option[permissions][email]
+        for item in permissions_user:
+            # 每個 item 是一個只有一個 key 的 dict，例如 {"ys_v_dev": {...}}
+            for _, info in item.items():
+                # info 就是內層 dict
+                if info.get("uid") == target_uid:
+                    return info.get("company")
+        return None
+
     def _find_pdno_by_uid(self, permissions_user, target_uid):
         # permissions_user 是 self.option[permissions][email]
         for item in permissions_user:
@@ -582,7 +601,7 @@ class MainWindow(QMainWindow):
                         QMessageBox.warning(self, "上傳", f"{self.company_sheet[sel['uid']]}\n\n上傳失敗!\n\n未設定 Policies!")
                     else:
                         cono = self._find_cono_by_uid(self.options['garden'][self.email], sel['uid'] )
-                        print('cono:', cono)
+                        # print('cono:', cono)
                         self.comp.purge_cloudflare_cache_datajson_company(cono) # 清除 cloudflare 代理快取
                         QMessageBox.information(self, "上傳", f'{self.company_sheet[sel['uid']]}\n\n上傳成功。\n')
                 else:
