@@ -21,3 +21,9 @@ requirements.txt  是更新使用者套件的，若有新增套件，
 ## main.bat
 
 正常主入口，桌面捷徑會執行 main.bat，會執行此檔案。
+
+
+## 開機錯誤 無法啟動
+
+更新套件後若其他工作站無法正常啟動，手動使用檔案總管移動至 ispc_maintain\bat 點兩下執行 cmd_install.bat
+它將手動更新套件。

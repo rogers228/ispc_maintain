@@ -36,6 +36,7 @@ if True:
     from tool_company import Company
     from tool_comp_jogging import CompanyCheck
     from tool_msgbox import error, warning
+    from tool_db_snapshot import SnapshotManager
 
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us01'))
     from form_us01 import Ui_MainWindow
@@ -69,7 +70,8 @@ class MainWindow(QMainWindow):
         self.opt = Options()
         self.ps = ProductStorage()
         self.comp = Company()
-        self.pr = pr = ProductRelease()
+        self.pr = ProductRelease()
+        self.sn = SnapshotManager()
 
         self.us05 = None    # 子表單 登入
         self.us07 = None    # 子表單 檢視
@@ -299,6 +301,7 @@ class MainWindow(QMainWindow):
                 if parent_text == '產品資料':
                     action_preview = menu.addAction("開啟預覽版")
                     action_official = menu.addAction("開啟正式版")
+                    # action_test = menu.addAction("測試")
                     menu.addSeparator() # 分隔線
 
                 action_copy_uid = menu.addAction("複製 UID")
@@ -310,6 +313,8 @@ class MainWindow(QMainWindow):
                         self.open_preview_version(item_text, item_uid)
                     elif action == action_official:
                         self.open_official_version(item_text, item_uid)
+                    # elif action == action_test:
+                    #     self.test()
 
                 # 處理複製 UID 邏輯
                 if action == action_copy_uid:
@@ -627,12 +632,41 @@ class MainWindow(QMainWindow):
             reply = QMessageBox.question(self, "發布", f"{self.product_sheet[selected_uid]}\n\n您確定要發布為正式版嗎？\n", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 result = self.pr.release(selected_uid)
+                self._need_snapshots() # 標記需要更新快照
 
                 if result['is_error']:
                     QMessageBox.warning(self, "發布", result['message'])
                 else:
                     self.pr.purge_cloudflare_cache_datajson_product(pdno) # 清除 cloudflare 代理快取 正式版
                     QMessageBox.information(self, "發布", result['message'])
+
+    def _need_snapshots(self): # 標記需要更新快照
+        selected_uid = self._get_selected_product_uid()
+        # print('selected_uid:', selected_uid)
+        # print('self.email:', self.email)
+        # print(self.options['permissions'][self.email])
+        # print(self.options['garden'][self.email])
+        pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], selected_uid)
+        if not pdno:
+            print('lost pdno!')
+            return
+        cono = self._find_company_by_uid(self.options['permissions'][self.email], selected_uid )
+        if not cono:
+            print('lost cono!')
+            return
+
+        for lang in ['en', 'zh-TW']:
+            path = f'/{lang}/app/v/{cono}/p/{pdno}'
+            target_path = self.sn._format_path(path)
+            # print('target_path:', target_path)
+            full_url = f'{SPECIC_DOMAIN}{target_path}'
+            # print('full_url:', full_url)
+            self.sn.upsert_path(target_path, full_url) # 標記後端 需要更新快照
+            print('成功標記後端 需要更新快照:', full_url)
+
+
+    def test(self):
+        print('test')
 
     def _get_uid_users(self, uid):
         result = []
