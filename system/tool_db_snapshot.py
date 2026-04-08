@@ -6,15 +6,29 @@
 # 快照管理員 專門建立快照，供 ssr 爬蟲讀取
 # 資料結構產參閱 ispc_blueprint cloudflare_database
 
-import sys, os
-import requests
-from datetime import datetime
-import json
-import boto3
-from botocore.client import Config
+if True:
+    import sys, os
+    import requests
+    from datetime import datetime
+    import json
+    import boto3
+    from botocore.client import Config
 
-sys.path.append(os.getenv('GRST_PATH'))
-from global_config import OPTION, current_base_path
+    def find_project_root(start_path=None, project_name="ispc_maintain"):
+        if start_path is None:
+            start_path = os.path.dirname(os.path.abspath(sys.argv[0]))
+        current = start_path
+        while True:
+            if os.path.basename(current) == project_name:
+                return current
+            parent = os.path.dirname(current)
+            if parent == current:
+                raise FileNotFoundError(f"找不到專案 root (資料夾名稱 {project_name})")
+            current = parent
+
+    ROOT_DIR = find_project_root()
+    sys.path.append(os.path.join(ROOT_DIR, "system"))
+    from config_web import D1_CLOUD_ACCOUNT_ID, D1_ISPC_MAIN_DB, D1_ISPC_API_TOKEN, R2_ISPC_SNAP_ENDPOINT_URL, R2_ISPC_SNAP_ACCESS_KEY_ID, R2_ISPC_SNAP_SECRET_ACCESS_KEY
 
 class SnapshotManager:
     """
@@ -23,18 +37,18 @@ class SnapshotManager:
     """
     def __init__(self):
         # --- D1 配置 ---
-        self.account_id = OPTION.get('cloud_account_id')
-        self.database_id = OPTION.get('ispc_main_db')
-        self.api_token = OPTION.get('ispc_span_api_token')
+        self.account_id = D1_CLOUD_ACCOUNT_ID
+        self.database_id = D1_ISPC_MAIN_DB
+        self.api_token = D1_ISPC_API_TOKEN
         self.api_url = f"https://api.cloudflare.com/client/v4/accounts/{self.account_id}/d1/database/{self.database_id}/query"
 
         # --- R2 配置 ---
         self.r2_bucket = "ispc-r2-db"
         self.s3_client = boto3.client(
             's3',
-            endpoint_url = OPTION.get('ispc_snap_r2_endpoint_url'),
-            aws_access_key_id = OPTION.get('ispc_snap_r2_access_key_id'),
-            aws_secret_access_key = OPTION.get('ispc_snap_r2_secret_access_key'),
+            endpoint_url = R2_ISPC_SNAP_ENDPOINT_URL,
+            aws_access_key_id = R2_ISPC_SNAP_ACCESS_KEY_ID,
+            aws_secret_access_key = R2_ISPC_SNAP_SECRET_ACCESS_KEY,
             config=Config(signature_version='s3v4'),
             region_name='auto'
         )
@@ -349,5 +363,6 @@ if __name__ == '__main__':
     # test5()
     # test7()
     test8()
+
 
 
