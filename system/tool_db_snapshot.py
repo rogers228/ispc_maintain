@@ -28,7 +28,7 @@ if True:
 
     ROOT_DIR = find_project_root()
     sys.path.append(os.path.join(ROOT_DIR, "system"))
-    from config_web import D1_CLOUD_ACCOUNT_ID, D1_ISPC_MAIN_DB, D1_ISPC_API_TOKEN, R2_ISPC_SNAP_ENDPOINT_URL, R2_ISPC_SNAP_ACCESS_KEY_ID, R2_ISPC_SNAP_SECRET_ACCESS_KEY
+    from config_web import SPECIC_DOMAIN, D1_CLOUD_ACCOUNT_ID, D1_ISPC_MAIN_DB, D1_ISPC_API_TOKEN, R2_ISPC_SNAP_ENDPOINT_URL, R2_ISPC_SNAP_ACCESS_KEY_ID, R2_ISPC_SNAP_SECRET_ACCESS_KEY
 
 class SnapshotManager:
     """
@@ -66,17 +66,18 @@ class SnapshotManager:
         # 然後我們在前面補上一個標準的 /
         return "/" + path.strip().strip("/")
 
-    def _path_to_key(self, path):
-        """將網頁路徑轉換為 R2 的物件 Key"""
+    def _path_to_key(self, path, device='desktop'):
+        """將路徑轉換為 R2 Key，格式：snapshots/{device}/{path}.html"""
         path = self._format_path(path)
         clean_path = path.strip('/')
-        if not clean_path: return "snapshots/index.html"
-        return f"snapshots/{clean_path}.html"
+        if not clean_path:
+            return f"snapshots/{device}/index.html"
+        return f"snapshots/{device}/{clean_path}.html"
 
-    def put_object(self, path, html_content):
-        """上傳 HTML 字串到 R2"""
+    def put_object(self, path, html_content, device='desktop'):
+        """上傳 HTML 到 R2 指定裝置目錄"""
         path = self._format_path(path)
-        r2_key = self._path_to_key(path)
+        r2_key = self._path_to_key(path, device)
         try:
             self.s3_client.put_object(
                 Bucket=self.r2_bucket,
@@ -84,25 +85,24 @@ class SnapshotManager:
                 Body=html_content,
                 ContentType='text/html'
             )
-            print(f"🚀 [R2] 上傳成功: {r2_key}")
+            print(f"🚀 [R2] 上傳成功 ({device}): {r2_key}")
             return r2_key
         except Exception as e:
-            print(f"❌ [R2] 上傳失敗: {str(e)}")
+            print(f"❌ [R2] 上傳失敗 ({device}): {str(e)}")
             return None
 
-    def get_object(self, path):
-        """依路徑從 R2 取得 HTML 字串"""
+    def get_object(self, path, device='desktop'):
+        """從 R2 取得指定裝置的快照"""
         path = self._format_path(path)
-        r2_key = self._path_to_key(path)
+        r2_key = self._path_to_key(path, device)
         try:
             response = self.s3_client.get_object(Bucket=self.r2_bucket, Key=r2_key)
-            # 將 StreamingBody 轉換為字串
             return response['Body'].read().decode('utf-8')
         except self.s3_client.exceptions.NoSuchKey:
-            print(f"⚠️ [R2] 找不到檔案: {r2_key}")
+            print(f"⚠️ [R2] 找不到檔案 ({device}): {r2_key}")
             return None
         except Exception as e:
-            print(f"❌ [R2] 讀取失敗: {str(e)}")
+            print(f"❌ [R2] 讀取失敗 ({device}): {str(e)}")
             return None
 
     # --- D1 原有方法 ---
@@ -116,25 +116,21 @@ class SnapshotManager:
         except Exception as e:
             return {"success": False, "errors": [str(e)]}
 
-    def upsert_path(self, path, full_url):
-        """
-        [內容更新]：新增或標記路徑需要更新快照。
-        會更新 data_updated_at，從而觸發快照工廠。
-        """
+    # 註：建議 D1 table `rec_snapshot` 的 PRIMARY KEY 改為 (path, device)
+    def upsert_path(self, path, full_url, device='desktop'):
+        """標記特定裝置的路徑需要更新快照"""
         path = self._format_path(path)
         sql = """
-        INSERT INTO rec_snapshot (path, full_url, data_updated_at, is_active)
-        VALUES (?, ?, CURRENT_TIMESTAMP, 1)
-        ON CONFLICT(path) DO UPDATE SET
+        INSERT INTO rec_snapshot (path, full_url, device, data_updated_at, is_active)
+        VALUES (?, ?, ?, CURRENT_TIMESTAMP, 1)
+        ON CONFLICT(path, device) DO UPDATE SET
             full_url = excluded.full_url,
             data_updated_at = CURRENT_TIMESTAMP,
             is_active = 1;
         """
-        result = self._execute_sql(sql, [path, full_url])
+        result = self._execute_sql(sql, [path, full_url, device])
         if result.get("success"):
-            print(f"✅ [Upsert] 成功標記需快照路徑: {path}")
-        else:
-            print(f"❌ [Upsert] 失敗: {result.get('errors')}")
+            print(f"✅ [Upsert] 成功標記 ({device}): {path}")
         return result
 
     def update_metadata(self, path, priority=None, changefreq=None, is_active=None):
@@ -163,206 +159,112 @@ class SnapshotManager:
             print(f"✅ [Metadata] 成功更新元數據: {path}")
         return result
 
-    def mark_snapshot_complete(self, path, r2_key, status=200):
-        """
-        [任務回報]：快照工廠拍完照後調用，同步時間戳以消掉待辦。
-        """
+    def mark_snapshot_complete(self, path, r2_key, status=200, device='desktop'):
+        """回報特定裝置的快照任務完成"""
         path = self._format_path(path)
         sql = """
         UPDATE rec_snapshot
         SET last_snapshot_at = CURRENT_TIMESTAMP,
             r2_key = ?,
             status = ?
-        WHERE path = ?
+        WHERE path = ? AND device = ?
         """
-        result = self._execute_sql(sql, [r2_key, status, path])
+        result = self._execute_sql(sql, [r2_key, status, path, device])
         if result.get("success"):
-            print(f"🎯 [Complete] 路徑快照已完成並同步: {path}")
+            print(f"🎯 [Complete] 快照已同步 ({device}): {path}")
         return result
 
+    def delete_snapshot(self, path, device=None):
+        """刪除快照。若 device 為 None，則刪除該路徑下所有裝置版本。"""
+        path = self._format_path(path)
+        devices_to_delete = [device] if device else ['desktop', 'mobile']
+        results = {"d1": True, "r2": True}
+
+        for d in devices_to_delete:
+            r2_key = self._path_to_key(path, d)
+            # 刪 R2
+            try:
+                self.s3_client.delete_object(Bucket=self.r2_bucket, Key=r2_key)
+                print(f"🗑️ [R2] 已刪除 ({d}): {r2_key}")
+            except Exception: pass
+
+            # 刪 D1
+            sql = "DELETE FROM rec_snapshot WHERE path = ? AND device = ?"
+            res = self._execute_sql(sql, [path, d])
+            if not res.get("success"): results["d1"] = False
+
+        return results
+
     def get_pending_tasks(self):
-        """
-        [工廠取貨]：獲取所有資料已變動、但快照尚未更新的路徑清單。
-        """
+        """獲取所有裝置版本中需要重拍的路徑"""
         sql = """
-        SELECT path, full_url FROM rec_snapshot
+        SELECT path, full_url, device FROM rec_snapshot
         WHERE is_active = 1
           AND (last_snapshot_at IS NULL OR data_updated_at > last_snapshot_at);
         """
         result = self._execute_sql(sql)
         if result.get("success") and result.get("result"):
+            # 注意：這裡會回傳包含 'device' 的 dict 列表
             return result["result"][0].get("results", [])
         return []
 
     def raw_query(self, sql, params=None):
-        """
-        [萬用查詢]：直接傳入 SQL 字串與參數進行查詢。
-        回傳原始的結果列表。
-        """
         result = self._execute_sql(sql, params)
         if result.get("success"):
-            # D1 的回傳結構通常在 result[0]['results']
             return result.get("result", [{}])[0].get("results", [])
+        return []
+
+    def danger_wipe_all(self):
+        # [危險操作] 刪除 R2 上的所有快照檔案並清空 D1 快照資料表。
+        print("⚠️  正在啟動全面清理流程...")
+
+        # 1. 清理 R2 (分批刪除 snapshots/ 下的所有物件)
+        try:
+            paginator = self.s3_client.get_paginator('list_objects_v2')
+            # 僅鎖定 snapshots/ 目錄，避免誤刪其他資源
+            pages = paginator.paginate(Bucket=self.r2_bucket, Prefix='snapshots/')
+
+            delete_count = 0
+            for page in pages:
+                if 'Contents' in page:
+                    objects_to_delete = [{'Key': obj['Key']} for obj in page['Contents']]
+                    self.s3_client.delete_objects(
+                        Bucket=self.r2_bucket,
+                        Delete={'Objects': objects_to_delete}
+                    )
+                    delete_count += len(objects_to_delete)
+            print(f"🗑️  [R2] 已從 Bucket 移除 {delete_count} 個快照檔案。")
+        except Exception as e:
+            print(f"❌ [R2] 清理失敗: {str(e)}")
+
+        # 2. 清理 D1
+        # 使用 DELETE 而非 TRUNCATE，因為 D1 主要是 SQLite 語法
+        sql = "DELETE FROM rec_snapshot;"
+        result = self._execute_sql(sql)
+
+        if result.get("success"):
+            print("✅ [D1] 快照紀錄資料表已清空。")
         else:
-            print(f"❌ SQL 執行出錯: {result.get('errors')}")
-            return []
+            print(f"❌ [D1] 清理失敗: {result.get('errors')}")
+
+        return result
+
 
 def test1():
     sn = SnapshotManager()
-    sn.upsert_path("/zh/about", "https://yourdomain.com/zh/about")
-
-def test2():
-    # 2. 調整 SEO 參數 (不重拍)
-    sn = SnapshotManager()
-    sn.update_metadata("/zh/about", priority=0.8)
-
-def test3():
-    sn = SnapshotManager()
-    # 取得待處理任務清單 (這是一個 list of dictionaries)
-    pending_tasks = sn.get_pending_tasks()
-
-    print(f"📊 偵測到 {len(pending_tasks)} 個待處理任務")
-
-    for task in pending_tasks:
-        # 這裡的 key 對應 D1 資料表的欄位名稱
-        path = task.get('path')
-        url = task.get('full_url')
-
-        print(f"---")
-        print(f"📍 待處理路徑: {path}")
-        print(f"🔗 目標網址: {url}")
-
-        # 💡 這裡就是你之後要呼叫 Playwright 拍照的地方
-
-def test4():
-    sn = SnapshotManager()
-    custom_sql = """
-        SELECT id, path, full_url, priority, changefreq, data_updated_at, last_snapshot_at, status
-        FROM rec_snapshot
-        WHERE is_active = 1 AND
-            (last_snapshot_at IS NULL OR data_updated_at > last_snapshot_at)
-        ORDER BY id DESC"""
-    rows = sn.raw_query(custom_sql)
-    if not rows:
-        print("no data!")
-        return
-    print(f"找到 {len(rows)} 筆符合條件的資料：")
-    print("=" * 60)
-
-    # 遍歷結果並印出
-    for row in rows:
-        # 印出一行簡短的資訊
-        print(f"ID: {row.get('id')} | Path: {row.get('path')}")
-        print(f"  - full_url: {row.get('full_url')}")
-        print(f"  - priority: {row.get('priority')}")
-        print(f"  - changefreq: {row.get('changefreq')}")
-        print(f"  - data_updated_at: {row.get('data_updated_at')}")
-        print(f"  - status: {row.get('status')}")
-        print(f"  - last_snapshot_at: {row.get('last_snapshot_at')}")
-        print("-" * 60)
-
-def test5():
-    # 上傳 R2 與 D1
-    sn = SnapshotManager()
-    path = "/zh/test-page"
-    full_url = "https://yourdomain.com/zh/test-page" # 模擬原始網址
-    content = "<html><body><h1>Hello World</h1><p>測試 R2 存取</p></body></html>"
-
-    print(f"--- 開始測試路徑: {path} ---")
-
-    # 1. 重要：先在 D1 建立/確保有這條路徑的紀錄 (Upsert)
-    # 如果沒這步，後面的 mark_snapshot_complete 就會更新失敗
-    print("1. 正在 D1 建立路徑紀錄...")
-    upsert_res = sn.upsert_path(path, full_url)
-
-    if not upsert_res.get("success"):
-        print(f"❌ D1 建立紀錄失敗: {upsert_res.get('errors')}")
-        return
-
-    # 2. 嘗試上傳到 R2
-    print("2. 正在嘗試上傳至 R2...")
-    r2_key = sn.put_object(path, content)
-
-    if r2_key:
-        # 3. 嘗試從 R2 讀取回傳以驗證檔案存在
-        print("3. 正在從 R2 驗證讀取...")
-        fetched_content = sn.get_object(path)
-        if fetched_content:
-            print(f"✅ R2 讀取成功，內容長度: {len(fetched_content)}")
-
-        # 4. 最關鍵：更新 D1 狀態 (填入 r2_key)
-        # status 讀取網頁的狀態碼，用來判斷快照是否健康
-        print("4. 正在更新 D1 狀態為 '已完成'...")
-        complete_res = sn.mark_snapshot_complete(path, r2_key, status=200)
-
-        if complete_res.get("success"):
-            print(f"🎉 [成功] {path} 已經完整同步至 D1 與 R2！")
-        else:
-            print(f"❌ D1 更新狀態失敗: {complete_res.get('errors')}")
-    else:
-        print("❌ R2 上傳失敗，流程中斷。")
-
-def test6():
-    # 直接讀取 path 的內容
-    sn = SnapshotManager()
-    path = "/zh/test-page"
-    html_content = sn.get_object(path)
-    if html_content:
-        print(f"📖 成功讀取快照內容！")
-        print("-" * 30)
-        print(html_content)  # 這就會印出 <html>...</html>
-        print("-" * 30)
-    else:
-        print("📭 R2 中找不到該路徑的快照。")
-
-def test7():
-    # 查詢是否有快照 讀取 path 的快照內容
-    # path = "/zh/test-page"
-    sn = SnapshotManager()
-    path = "zh/test-page" # 就算前方沒給斜線也沒關係
-    target_path = sn._format_path(path)
-
-    sql = "SELECT r2_key, last_snapshot_at, status FROM rec_snapshot WHERE path = ?"
-    rows = sn.raw_query(sql, [target_path])
-
-    if not rows:
-        print(f"❌ D1 找不到任何關於 {path} 的紀錄。")
-        return None
-
-    # 檢查是否有 r2_key
-    record = rows[0]
-    if not record.get('r2_key'):
-        print(f"⚠️ 找到紀錄，但 r2_key 是空的 (尚未拍照)。資料更新於: {record.get('data_updated_at')}")
-        return None
-
-    print(f"✅ 找到快照紀錄 (日期: {record['last_snapshot_at']}, 狀態: {record['status']})")
-    html_content = sn.get_object(path)
-
-    if html_content:
-        print(f"📄 內容預覽 (前 50 字): {html_content[:50]}...")
-    return html_content
-
-def test8():
-    # debug_show_all
-    sn = SnapshotManager()
-    # 抓出目前資料庫裡所有的路徑
-    rows = sn.raw_query("SELECT id, path, r2_key FROM rec_snapshot")
-
-    if not rows:
-        print("📭 資料庫是空的！怪不得 test7 找不到。請先跑 test5。")
-        return
-
-    print(f"📊 目前資料庫共有 {len(rows)} 筆紀錄：")
-    print("-" * 50)
-    for row in rows:
-        # 使用引號包起來，可以看出有沒有多餘的空格或斜線
-        print(f"ID: {row['id']} | Path: [{row['path']}] | R2_Key: {row['r2_key']}")
-    print("-" * 50)
+    pdno = 'e4eurcohcmyn'
+    cono = 'yeoshe'
+    for lang in ['en', 'zh-TW']:
+        path = f'/{lang}/app/v/{cono}/p/{pdno}'
+        target_path = sn._format_path(path)
+        # print('target_path:', target_path)
+        full_url = f'{SPECIC_DOMAIN}{target_path}'
+        # print('full_url:', full_url)
+        sn.upsert_path(target_path, full_url) # 標記後端 需要更新快照
+        print('成功標記後端 需要更新快照:', target_path)
 
 if __name__ == '__main__':
-    # test5()
-    # test7()
-    test8()
+    test1()
 
 
 
