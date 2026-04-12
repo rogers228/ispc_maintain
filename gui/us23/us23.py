@@ -7,6 +7,9 @@ if True:
     import markdown
     from markdown.treeprocessors import Treeprocessor
     from markdown.extensions import Extension
+    from markdown.blockprocessors import BlockProcessor
+    import xml.etree.ElementTree as ET
+    import re
 
     def find_project_root(start_path=None, project_name="ispc_maintain"):
         """從指定路徑往上找，直到找到名稱為 project_name 的資料夾"""
@@ -54,6 +57,35 @@ class LocalImageTreeprocessor(Treeprocessor):
 class LocalImageExtension(Extension):
     def extendMarkdown(self, md):
         md.treeprocessors.register(LocalImageTreeprocessor(md), "local_image", 15)
+
+# ----- 20260412 -----
+
+class CarouselBlockProcessor(BlockProcessor):
+    # 匹配整行以 !!carousel 開始並以 !! 結束的內容
+    RE_FENCE = re.compile(r'^!!carousel\((.*?)\)!!$', re.MULTILINE)
+
+    def test(self, parent, block):
+        # 測試這一塊文字是否符合我們的語法
+        return bool(self.RE_FENCE.search(block))
+
+    def run(self, parent, blocks):
+        block = blocks.pop(0)
+        match = self.RE_FENCE.search(block)
+
+        if match:
+            option_json = match.group(1).strip()
+            # 直接在 parent 下建立 div，不會被包裹在 p 裡面
+            div = ET.SubElement(parent, 'div')
+            div.set('data-growth', 'carousel')
+            div.set('data-option', option_json)
+            div.text = ' '
+
+class LiveComponentExtension(Extension):
+    def extendMarkdown(self, md):
+        # 改為註冊 blockprocessor
+        md.parser.blockprocessors.register(CarouselBlockProcessor(md.parser), 'live_carousel', 175)
+
+# ----- 20260412 -----
 
 
 class MainWindow(QMainWindow):
@@ -111,13 +143,14 @@ class MainWindow(QMainWindow):
 
     def init_markdown_engine(self):
         """初始化 Markdown 引擎與防抖計時器"""
-        self.md_engine_loacl = markdown.Markdown(extensions=['fenced_code', 'tables', LocalImageExtension()])
+        self.md_engine_loacl = markdown.Markdown(extensions=['fenced_code', 'tables', LocalImageExtension(), LiveComponentExtension() ])
 
         self.md_engine_clean = markdown.Markdown(extensions=[
             'extra',          # 支援表格、註腳等
             'codehilite',     # 程式碼高亮
             'tables',         # 表格支援
-            'fenced_code'     # 圍欄程式碼區塊
+            'fenced_code',     # 圍欄程式碼區塊
+            LiveComponentExtension(), # 20260412 添加
         ])
 
         self.render_timer = QTimer()
