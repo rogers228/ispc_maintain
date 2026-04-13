@@ -84,24 +84,41 @@ table tr:nth-child(2n) {
 
 /* --- Live Component 簡易佔位 --- */
 
-div[data-growth="carousel"] {
-    background: #eeeeee;         /* 淺灰色背景 */
-    border: 1px solid #cccccc;   /* 灰色邊框 */
-    padding: 20px;
-    margin: 10px 0;
+div[data-growth] {
+    background: #f0f4f8;          /* 稍微帶點藍的淺灰色，更有科技感 */
+    border: 2px dashed #cbd5e0;   /* 改為虛線框，暗示這是「動態區域」 */
+    padding: 30px 20px;
+    margin: 20px 0;
     text-align: center;
-    border-radius: 4px;
+    border-radius: 8px;
+    position: relative;
+    transition: all 0.3s ease;
 }
 
-div[data-growth="carousel"]::before {
-    content: "[ 輪播組件佔位 ]";   /* 簡單文字提示 */
+div[data-growth]:hover {
+    border-color: #4299e1;        /* 滑鼠移過時變藍色 */
+    background: #ebf8ff;
+}
+
+/* 動態顯示組件類型 */
+div[data-growth]::before {
+    /* 自動抓取 data-growth 的值並轉為大寫顯示 */
+    content: "Live Component: [" attr(data-growth) "]";
     display: block;
     font-weight: bold;
-    margin-bottom: 5px;
+    font-family: monospace;
+    color: #2b6cb0;
+    margin-bottom: 8px;
 }
 
-div[data-growth="carousel"]::after {
-    content: "配置參數: " attr(data-option); /* 顯示參數以利除錯 */
-    font-size: 12px;
-    color: #666666;
+/* 動態顯示配置參數 */
+div[data-growth]::after {
+    /* 抓取 data-option 的內容 */
+    content: "Options: " attr(data-option);
+    display: block;
+    font-size: 11px;
+    color: #718096;
+    word-break: break-all;      /* 防止 JSON 太長撐破版面 */
+    max-width: 80%;
+    margin: 0 auto;
 }

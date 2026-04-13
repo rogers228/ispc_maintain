@@ -60,12 +60,12 @@ class LocalImageExtension(Extension):
 
 # ----- 20260412 -----
 
-class CarouselBlockProcessor(BlockProcessor):
-    # 匹配整行以 !!carousel 開始並以 !! 結束的內容
-    RE_FENCE = re.compile(r'^!!carousel\((.*?)\)!!$', re.MULTILINE)
+class LiveComponentBlockProcessor(BlockProcessor):
+    # 匹配語法: !!組件名稱(JSON參數)!!
+    # 例如: !!carousel({"speed":300})!! 或 !!product-grid({"limit":5})!!
+    RE_FENCE = re.compile(r'^!!([a-z0-9_-]+)\((.*?)\)!!$', re.MULTILINE)
 
     def test(self, parent, block):
-        # 測試這一塊文字是否符合我們的語法
         return bool(self.RE_FENCE.search(block))
 
     def run(self, parent, blocks):
@@ -73,18 +73,30 @@ class CarouselBlockProcessor(BlockProcessor):
         match = self.RE_FENCE.search(block)
 
         if match:
-            option_json = match.group(1).strip()
-            # 直接在 parent 下建立 div，不會被包裹在 p 裡面
+            component_type = match.group(1).strip() # 組件名稱 (如 carousel)
+            option_json = match.group(2).strip()    # JSON 參數
+
+            # 建立 div 容器
             div = ET.SubElement(parent, 'div')
-            div.set('data-growth', 'carousel')
-            div.set('data-option', option_json)
+
+            # 根據前後端約定設置 data 屬性
+            div.set('data-growth', component_type)
+
+            # 如果有參數才設置 data-option
+            if option_json:
+                div.set('data-option', option_json)
+
+            # 給予一個空格避免被過濾掉，且方便前端偵測內容
             div.text = ' '
 
 class LiveComponentExtension(Extension):
     def extendMarkdown(self, md):
-        # 改為註冊 blockprocessor
-        md.parser.blockprocessors.register(CarouselBlockProcessor(md.parser), 'live_carousel', 175)
-
+        # 註冊為通用的 live_component 處理器
+        md.parser.blockprocessors.register(
+            LiveComponentBlockProcessor(md.parser),
+            'live_component',
+            175
+        )
 # ----- 20260412 -----
 
 
@@ -143,10 +155,16 @@ class MainWindow(QMainWindow):
 
     def init_markdown_engine(self):
         """初始化 Markdown 引擎與防抖計時器"""
-        self.md_engine_loacl = markdown.Markdown(extensions=['fenced_code', 'tables', LocalImageExtension(), LiveComponentExtension() ])
+        self.md_engine_loacl = markdown.Markdown(extensions=[
+            'attr_list',      # 確保明確啟用
+            'fenced_code',
+            'tables',
+            LocalImageExtension(),
+            LiveComponentExtension() ])
 
         self.md_engine_clean = markdown.Markdown(extensions=[
             'extra',          # 支援表格、註腳等
+            'attr_list',      # 確保明確啟用
             'codehilite',     # 程式碼高亮
             'tables',         # 表格支援
             'fenced_code',     # 圍欄程式碼區塊
