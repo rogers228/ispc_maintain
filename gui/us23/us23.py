@@ -31,6 +31,7 @@ if True:
     from share_qt5 import * # 所有 qt5
     from tool_time import get_local_time_tz, format_to_local_time
     from tool_pd_article import ProductArticle
+    from tool_db_snapshot import SnapshotManager
 
     sys.path.append(os.path.join(ROOT_DIR, 'gui', 'us23'))
     from form_us23 import Ui_MainWindow
@@ -113,6 +114,8 @@ class MainWindow(QMainWindow):
         self.last_html_body = ""
         self.cache_file = os.path.join(ISPC_MAINTAIN_CACHE_DIR, "last_article_query.json")
         self.is_loading_state = False # 防止載入快取時觸發過多事件
+
+        self.sn = SnapshotManager()
 
         # 初始化順序
         self.init_ui_components()
@@ -330,6 +333,14 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "錯誤", f"執行時發生異常: {str(e)}")
         finally:
             QApplication.restoreOverrideCursor()
+
+    def _need_snapshots(self, custom_index): # 標記需要更新快照
+        site = None
+        if custom_index.startswith("portal"):
+            site = 'home'
+        else:
+            site = 'app'
+
 
     def on_delete_clicked(self):
         """刪除按鈕邏輯"""
