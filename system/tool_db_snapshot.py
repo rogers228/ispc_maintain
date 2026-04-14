@@ -1,7 +1,6 @@
 # tool_db_snapshot.py
 # 資檔案為副本，來源是 ispc_core/toolchain/snapshots/tool_db_snapshot.py
-# 請同時修改
-
+# 請同時修改，須注意此專案的引用方式有所不同，致使 __init__ 方式不同
 
 # 快照管理員 專門建立快照，供 ssr 爬蟲讀取
 # 資料結構產參閱 ispc_blueprint cloudflare_database

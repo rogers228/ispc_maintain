@@ -28,6 +28,7 @@ if True:
     ROOT_DIR = find_project_root() # 專案 root
     sys.path.append(os.path.join(ROOT_DIR, "system"))
     from config import ISPC_MAINTAIN_CACHE_DIR
+    from config_web import SPECIC_DOMAIN
     from share_qt5 import * # 所有 qt5
     from tool_time import get_local_time_tz, format_to_local_time
     from tool_pd_article import ProductArticle
@@ -323,6 +324,7 @@ class MainWindow(QMainWindow):
                 self.ui.article_table.blockSignals(False)
 
                 self.save_ui_state() # 寫入 last_article_query.json
+                self._need_snapshots(current_id) # 標記需要更新快照
                 self._last_selected_id = current_id
                 self.statusBar().showMessage(f"{msg_prefix}成功：{current_id}", 3000)
                 QMessageBox.information(self, "完成", f"文章已成功{msg_prefix}")
@@ -335,12 +337,32 @@ class MainWindow(QMainWindow):
             QApplication.restoreOverrideCursor()
 
     def _need_snapshots(self, custom_index): # 標記需要更新快照
-        site = None
-        if custom_index.startswith("portal"):
-            site = 'home'
-        else:
-            site = 'app'
+        parts = custom_index.split('_')
 
+        if len(parts)==3 and parts[0] == 'portal':
+            # custom_index = portal_index_tw
+            # https://specic.store/zh-TW/home/article/portal_index
+            site = 'home'
+            article_id = '_'.join(parts[0:1]) # portal_index
+            lang = parts[2]
+            path = f'/{lang}/home/article/{article_id}'
+        elif len(parts)==4 and part[1] =='article':
+            # yeoshe_article_a01_en
+            # https://specic.store/zh-TW/app/v/yeoshe/article/a02
+            site = 'app'
+            vendor = parts[0]
+            article_id = parts[2] # a01
+            lang = parts[3]
+            path = f'/{lang}/app/v/{vendor}/article/{article_id}'
+        else:
+            print('_need_snapshots error: custom_index 非法格式，將不標記快照需要更新')
+            return
+
+        target_path = self.sn._format_path(path)
+        full_url = f'{SPECIC_DOMAIN}{target_path}'
+        # print('self.sn.upsert_path:', target_path, full_url)
+        self.sn.upsert_path(target_path, full_url) # 標記後端 需要更新快照
+        print('成功標記後端 需要更新快照:', target_path)
 
     def on_delete_clicked(self):
         """刪除按鈕邏輯"""
