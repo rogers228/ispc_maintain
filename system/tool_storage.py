@@ -75,6 +75,16 @@ class StorageBuckets:
             folder = "images" # SVG 通常歸類在圖片
             content_type = "image/svg+xml"
 
+        # --- 新增 PWA Manifest 支援 ---
+        elif extension in ['.json', '.webmanifest']:
+            # 如果檔名包含 manifest，使用專用 MIME Type
+            if 'manifest' in file_name.lower():
+                folder = "configs"
+                content_type = "application/manifest+json"
+            else:
+                folder = "data"
+                content_type = "application/json"
+
         elif extension in ['.woff', '.woff2', '.ttf', '.otf']:
             folder = "fonts"
             mime_map = {'.woff': 'font/woff', '.woff2': 'font/woff2',

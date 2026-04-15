@@ -266,7 +266,7 @@ class MainWindow(QMainWindow):
     def init_query_params(self):
         self.content_type = ["全部",
             "image/jpeg", "image/png", "image/webp", "image/x-icon", "image/svg+xml",
-            "application/pdf" ,"application/xml",
+            "application/pdf" ,"application/xml", "application/json", "application/manifest+json",
             "text/markdown", "text/css", "text/javascript", "text/plain",
             "font/woff2",
             ]
