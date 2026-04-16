@@ -346,7 +346,8 @@ class MainWindow(QMainWindow):
             article_id = '_'.join(parts[0:1]) # portal_index
             lang = parts[2]
             path = f'/{lang}/home/article/{article_id}'
-        elif len(parts)==4 and part[1] =='article':
+
+        elif len(parts)==4 and parts[1] =='article':
             # yeoshe_article_a01_en
             # https://specic.store/zh-TW/app/v/yeoshe/article/a02
             site = 'app'
@@ -354,6 +355,7 @@ class MainWindow(QMainWindow):
             article_id = parts[2] # a01
             lang = parts[3]
             path = f'/{lang}/app/v/{vendor}/article/{article_id}'
+
         else:
             print('_need_snapshots error: custom_index 非法格式，將不標記快照需要更新')
             return
@@ -363,6 +365,7 @@ class MainWindow(QMainWindow):
         # print('self.sn.upsert_path:', target_path, full_url)
         self.sn.upsert_path(target_path, full_url) # 標記後端 需要更新快照
         print('成功標記後端 需要更新快照:', target_path)
+
 
     def on_delete_clicked(self):
         """刪除按鈕邏輯"""
