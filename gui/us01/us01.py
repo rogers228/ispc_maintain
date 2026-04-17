@@ -660,8 +660,8 @@ class MainWindow(QMainWindow):
             full_url = f'{SPECIC_DOMAIN}{target_path}'
             # print('target_path:', target_path)
             # print('full_url:', full_url)
-            print('self.sn.upsert_path:', target_path, full_url)
-            # self.sn.upsert_path(target_path, full_url) # 標記後端 需要更新快照
+            # print('self.sn.upsert_path:', target_path, full_url)
+            self.sn.upsert_path(target_path, full_url) # 標記後端 需要更新快照
             print('成功標記後端 需要更新快照:', target_path)
 
     def test(self):
