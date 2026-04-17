@@ -28,8 +28,9 @@ if True:
     from config_web import SPECIC_DOMAIN
     from share_qt5 import *
     from tool_auth import AuthManager
-    # from tool_launch import startup
+
     from tool_options import Options
+    from tool_permissions import PermissionsAdministrator
     from tool_pd_storage import ProductStorage
     from tool_pd_jogging import ProductCheck
     from tool_pd_release import ProductRelease
@@ -68,6 +69,7 @@ class MainWindow(QMainWindow):
 
         self.auth = AuthManager()
         self.opt = Options()
+        self.pa = PermissionsAdministrator()
         self.ps = ProductStorage()
         self.comp = Company()
         self.pr = ProductRelease()
@@ -299,8 +301,11 @@ class MainWindow(QMainWindow):
                 menu = QMenu()
                 # 只有產品資料才顯示預覽/正式版功能
                 if parent_text == '產品資料':
-                    action_preview = menu.addAction("開啟預覽版")
-                    action_official = menu.addAction("開啟正式版")
+                    action_preview = menu.addAction("開啟產品預覽版網頁")
+                    action_official = menu.addAction("開啟產品正式版網頁")
+                    menu.addSeparator() # 分隔線
+                if parent_text == '公司資料':
+                    action_company = menu.addAction("開啟公司網頁")
                     menu.addSeparator() # 分隔線
 
                 action_copy_uid = menu.addAction("複製 UID")
@@ -309,9 +314,13 @@ class MainWindow(QMainWindow):
 
                 if parent_text == '產品資料':
                     if action == action_preview:
-                        self.open_preview_version(item_text, item_uid)
+                        self.open_preview_version_by_product(item_text, item_uid)
                     elif action == action_official:
-                        self.open_official_version(item_text, item_uid)
+                        self.open_official_version_product(item_text, item_uid)
+
+                if parent_text == '公司資料':
+                    if action == action_company:
+                        self.open_company(item_text, item_uid)
 
                 if action == action_test:
                     self.test()
@@ -323,23 +332,26 @@ class MainWindow(QMainWindow):
                         # 在狀態列顯示提示 (選配)
                         self.ui.statusbar.showMessage(f"已複製 UID: {item_uid}", 2000)
 
-    def open_preview_version(self, name, uid):
-        #  開啟預覽版
-        pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], uid)
-        # print('pdno:', pdno)
-        cono = self._find_cono_by_uid(self.options['permissions'][self.email], uid)
-        # print('cono:', cono)
-        url = f'{SPECIC_DOMAIN}/en/app/v/{cono}/preview/{pdno}'
+    def open_preview_version_by_product(self, name, uid):
+        #  開啟產品預覽版
+        pdno = self.pa.get_product_by_product_uid(uid).get('pdno')
+        vendor_path = self.pa.get_company_by_product_uid(uid).get('vendor_path')
+        url = f'{SPECIC_DOMAIN}/en/app/v/{vendor_path}/preview/{pdno}'
         # print('url:', url)
         QDesktopServices.openUrl(QUrl(url))
 
-    def open_official_version(self, name, uid):
-        # 開啟正式版
-        pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], uid)
-        # print('pdno:', pdno)
-        cono = self._find_cono_by_uid(self.options['permissions'][self.email], uid)
-        # print('cono:', cono)
-        url = f'{SPECIC_DOMAIN}/en/app/v/{cono}/p/{pdno}'
+    def open_official_version_product(self, name, uid):
+        # 開啟產品正式版
+        pdno = self.pa.get_product_by_product_uid(uid).get('pdno')
+        vendor_path = self.pa.get_company_by_product_uid(uid).get('vendor_path')
+        url = f'{SPECIC_DOMAIN}/en/app/v/{vendor_path}/p/{pdno}'
+        # print('url:', url)
+        QDesktopServices.openUrl(QUrl(url))
+
+    def open_company(self, name, uid):
+        # 開啟公司網頁
+        vendor_path = self.pa.get_company_by_company_uid(uid).get('vendor_path')
+        url = f'{SPECIC_DOMAIN}/en/app/v/{vendor_path}'
         # print('url:', url)
         QDesktopServices.openUrl(QUrl(url))
 
@@ -443,8 +455,8 @@ class MainWindow(QMainWindow):
             except Exception as e:
                 print(f"執行功能 '{item_text}' 時發生錯誤: {e}")
 
-    def _get_selected_product_uid(self):
-        # 獲取 產品資料 下的 uid
+    def _get_selected_uid(self):
+        # 獲取uid (有可能是 產品資料的uid 或 公司資料的uid)
         index = self.ui.treeView.selectionModel().currentIndex()
         if not index.isValid():
             return None # 1. 無效的選取
@@ -479,52 +491,6 @@ class MainWindow(QMainWindow):
             'parent_text': parent_text,
             'uid': item_uid
         }
-
-
-
-    def _find_pdno_by_uid(self, permissions_user, target_uid):
-        # 從產品資料查詢
-        # permissions_user 是 self.option[permissions][email]
-        for item in permissions_user:
-            # 每個 item 是一個只有一個 key 的 dict，例如 {"ys_v_dev": {...}}
-            for _, info in item.items():
-                # info 就是內層 dict
-                if info.get("uid") == target_uid:
-                    return info.get("pdno")
-        return None
-
-    def _find_cono_by_uid(self, garden_user, target_uid):
-        # 從產品資料查詢
-        # permissions_user 是 self.option[garden][email]
-        for item in garden_user:
-            # 每個 item 是一個只有一個 key 的 dict，例如 {"ys_v_dev": {...}}
-            for _, info in item.items():
-                # info 就是內層 dict
-                if info.get("uid") == target_uid:
-                    return info.get("cono")
-        return None
-
-    def _find_vendor_path_by_uid(self, garden_user, target_uid):
-        # 從公司資料查詢 vendor_path
-        # permissions_user 是 self.option[garden][email]
-        for item in garden_user:
-            # 每個 item 是一個只有一個 key 的 dict，例如 {"ys_v_dev": {...}}
-            for _, info in item.items():
-                # info 就是內層 dict
-                if info.get("uid") == target_uid:
-                    return info.get("vendor_path")
-        return None
-
-    # def _find_company_by_uid(self, garden_user, target_uid):
-    #     # 要修正  從公司資料查詢
-    #     # permissions_user 是 self.option[garden][email]
-    #     for item in garden_user:
-    #         # 每個 item 是一個只有一個 key 的 dict，例如 {"ys_v_dev": {...}}
-    #         for _, info in item.items():
-    #             # info 就是內層 dict
-    #             if info.get("uid") == target_uid:
-    #                 return info.get("cono")
-    #     return None
 
     def handle_file(self):
         auth_data = self.auth.load_local_data()
@@ -597,6 +563,10 @@ class MainWindow(QMainWindow):
         # 上傳前 先檢查
         sel = self._get_selected()
         if sel['parent_text'] == '產品資料':
+            product_uid = sel['uid']
+            pdno = self.pa.get_product_by_product_uid(product_uid).get('pdno')
+            # print('pdno:', pdno)
+
             reply = QMessageBox.question(self, "上傳", f"{self.product_sheet[sel['uid']]}\n\n您確定要從本地上傳資料嗎？，這動作將會覆蓋雲端資料\n", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 result = self.ps.upload(sel['uid']) # 執行上傳程序  會先檢查 驗證失敗將停止
@@ -605,14 +575,17 @@ class MainWindow(QMainWindow):
                         # 未設定 Policies
                         QMessageBox.warning(self, "上傳", f"{self.product_sheet[sel['uid']]}\n\n上傳失敗!\n\n未設定 Policies!")
                     else:
-                        pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], sel['uid'])
-                        # print('pdno:', pdno)
+
                         self.ps.purge_cloudflare_cache_datajson_preview(pdno) # 清除 cloudflare 代理快取 預覽版
                         QMessageBox.information(self, "上傳", f'{self.product_sheet[sel['uid']]}\n\n上傳成功。\n')
                 else:
                     QMessageBox.warning(self, "上傳", f"{self.product_sheet[sel['uid']]}\n\n驗證失敗!")
 
         elif sel['parent_text'] == '公司資料':
+            company_uid = sel['uid']
+            cono = self.pa.get_company_by_company_uid(company_uid).get('cono')
+            # print('cono:', cono)
+
             reply = QMessageBox.question(self, "上傳", f"{self.company_sheet[sel['uid']]}\n\n您確定要從本地上傳資料嗎？，這動作將會覆蓋雲端資料\n", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
             if reply == QMessageBox.Yes:
                 result = self.comp.upload(sel['uid']) # 執行上傳程序  會先檢查 驗證失敗將停止
@@ -621,8 +594,6 @@ class MainWindow(QMainWindow):
                         # 未設定 Policies
                         QMessageBox.warning(self, "上傳", f"{self.company_sheet[sel['uid']]}\n\n上傳失敗!\n\n未設定 Policies!")
                     else:
-                        cono = self._find_cono_by_uid(self.options['garden'][self.email], sel['uid'] )
-                        # print('cono:', cono)
                         self.comp.purge_cloudflare_cache_datajson_company(cono) # 清除 cloudflare 代理快取
                         self._need_snapshots(entry_type='vendor') # 標記需要更新快照
                         QMessageBox.information(self, "上傳", f'{self.company_sheet[sel['uid']]}\n\n上傳成功。\n')
@@ -642,20 +613,22 @@ class MainWindow(QMainWindow):
 
     def handle_pd_release(self):
         # print('handle_pd_release')
-        selected_uid = self._get_selected_product_uid()
-        pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], selected_uid)
-        # print('pdno:', pdno)
-        if selected_uid:
-            reply = QMessageBox.question(self, "發布", f"{self.product_sheet[selected_uid]}\n\n您確定要發布為正式版嗎？\n", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
-            if reply == QMessageBox.Yes:
-                result = self.pr.release(selected_uid)
-                self._need_snapshots(entry_type='product') # 標記需要更新快照
+        sel = self._get_selected()
+        if sel['parent_text'] == '產品資料':
+            product_uid = sel['uid']
+            pdno = self.pa.get_product_by_product_uid(product_uid).get('pdno')
+            # print('pdno:', pdno)
+            if product_uid:
+                reply = QMessageBox.question(self, "發布", f"{self.product_sheet[product_uid]}\n\n您確定要發布為正式版嗎？\n", QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if reply == QMessageBox.Yes:
+                    result = self.pr.release(product_uid)
+                    self._need_snapshots(entry_type='product') # 標記需要更新快照
 
-                if result['is_error']:
-                    QMessageBox.warning(self, "發布", result['message'])
-                else:
-                    self.pr.purge_cloudflare_cache_datajson_product(pdno) # 清除 cloudflare 代理快取 正式版
-                    QMessageBox.information(self, "發布", result['message'])
+                    if result['is_error']:
+                        QMessageBox.warning(self, "發布", result['message'])
+                    else:
+                        self.pr.purge_cloudflare_cache_datajson_product(pdno) # 清除 cloudflare 代理快取 正式版
+                        QMessageBox.information(self, "發布", result['message'])
 
     def _need_snapshots(self, entry_type): # 標記需要更新快照
         # entry_type: 'product', 'article', 'vendor'
@@ -663,45 +636,36 @@ class MainWindow(QMainWindow):
         if entry_type not in ['product', 'article', 'vendor']:
             raise KeyError("entry_type error!")
 
-        selected_uid = self._get_selected_product_uid()
-        # print('selected_uid:', selected_uid)
-        # print('self.email:', self.email)
-        # print(self.options['permissions'][self.email])
-        # print(self.options['garden'][self.email])
-
         for lang in ['en', 'zh-TW']:
             path = ''
             if entry_type == 'product':
-                pdno = self._find_pdno_by_uid(self.options['permissions'][self.email], selected_uid)
+                product_uid = self._get_selected_uid()
+                pdno = self.pa.get_product_by_product_uid(product_uid).get('pdno')
                 if not pdno:
                     raise KeyError('lost pdno!')
                     return
-                cono = self._find_cono_by_uid(self.options['permissions'][self.email], selected_uid )
-                if not cono:
-                    raise KeyError('lost cono!')
-                path = f'/{lang}/app/v/{cono}/p/{pdno}'
+                vendor_path = self.pa.get_company_by_product_uid(product_uid).get('vendor_path')
+                if not vendor_path:
+                    raise KeyError('lost vendor_path!')
+                path = f'/{lang}/app/v/{vendor_path}/p/{pdno}'
 
             elif entry_type == 'vendor':
-                vendor = self._find_vendor_path_by_uid(self.options['garden'][self.email], selected_uid)
-                if not vendor:
-                    raise KeyError('lost vendor!')
-                path = f'/{lang}/app/v/{vendor}'
+                company_uid = self._get_selected_uid()
+                vendor_path = self.pa.get_company_by_company_uid(company_uid).get('vendor_path')
+                if not vendor_path:
+                    raise KeyError('lost vendor_path!')
+                path = f'/{lang}/app/v/{vendor_path}'
 
             target_path = self.sn._format_path(path)
             full_url = f'{SPECIC_DOMAIN}{target_path}'
             # print('target_path:', target_path)
             # print('full_url:', full_url)
-            # print('self.sn.upsert_path:', target_path, full_url)
-            self.sn.upsert_path(target_path, full_url) # 標記後端 需要更新快照
+            print('self.sn.upsert_path:', target_path, full_url)
+            # self.sn.upsert_path(target_path, full_url) # 標記後端 需要更新快照
             print('成功標記後端 需要更新快照:', target_path)
 
     def test(self):
         print('test')
-        selected_uid = self._get_selected_product_uid()
-        print('selected_uid:', selected_uid)
-        print('self.email:', self.email)
-        vendor = self._find_vendor_path_by_uid(self.options['garden'][self.email], selected_uid)
-        print('vendor:', vendor)
 
     def _get_uid_users(self, uid):
         result = []
