@@ -337,30 +337,41 @@ class MainWindow(QMainWindow):
             QApplication.restoreOverrideCursor()
 
     def _need_snapshots(self, custom_index): # 標記需要更新快照
+        # print('custom_index:', custom_index)
+        lang_route = {'en': 'en', 'tw': 'zh-TW'} # route 語言對照
         parts = custom_index.split('_')
+        # print('parts:', parts)
 
         if len(parts)==3 and parts[0] == 'portal':
             # custom_index = portal_index_tw
             # https://specic.store/zh-TW/home/article/portal_index
             site = 'home'
-            article_id = '_'.join(parts[0:1]) # portal_index
+            # print('site:', site)
+            article_id = '_'.join(parts[0:2]) # portal_index
+            # print('article_id:', article_id)
             lang = parts[2]
-            path = f'/{lang}/home/article/{article_id}'
+            # print('lang:', lang)
+            path = f'/{lang_route.get(lang, 'zh-TW')}/home/article/{article_id}'
 
         elif len(parts)==4 and parts[1] =='article':
             # yeoshe_article_a01_en
             # https://specic.store/zh-TW/app/v/yeoshe/article/a02
             site = 'app'
+            # print('site:', site)
             vendor = parts[0]
             article_id = parts[2] # a01
+            # print('article_id:', article_id)
             lang = parts[3]
-            path = f'/{lang}/app/v/{vendor}/article/{article_id}'
+            # print('lang:', lang)
+            path = f'/{lang_route.get(lang, 'zh-TW')}/app/v/{vendor}/article/{article_id}'
 
         else:
             print('_need_snapshots error: custom_index 非法格式，將不標記快照需要更新')
             return
 
+        print('path:', path)
         target_path = self.sn._format_path(path)
+        print('target_path:', target_path)
         full_url = f'{SPECIC_DOMAIN}{target_path}'
         # print('self.sn.upsert_path:', target_path, full_url)
         self.sn.upsert_path(target_path, full_url) # 標記後端 需要更新快照
