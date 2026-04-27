@@ -90,8 +90,8 @@ class Cache_file:
     def is_file_verify(self, file_path):
         # 是否驗證通過
         # 是否在快取資料中 找的到檔案
+        # print(self.file_cache_map )
         return file_path in self.file_cache_map
-
 
 def test1():
     cha = Cache_article()
@@ -111,8 +111,8 @@ def test2():
     # files = chf.get_file_cache_map()
     # print(json.dumps(files, indent=4, ensure_ascii=False))
 
-    file_path = "images/to2ojedgbhbguewr.jpg"
-
+    # file_path = "images/to2ojedgbhbguewr.jpg"
+    file_path = "images/rxvvkcq0ctb37ouw.webp"
     if chf.is_file_verify(file_path):
         print(f'{file_path} 有檔案')
         print(chf.get_file(file_path))

@@ -140,12 +140,17 @@ class CompanyCheck:
             return
 
         self.option_comp = self._find_comp_by_uid_option(self.options['garden'][self.email], self.uid)
+        print('self.option_comp:', self.option_comp)
         self.is_verify = True
 
     def _add_specification_required(self): # 添加 specification 必需的
+
         dic_default = { # 預設值
             'uid': self.uid,
             'cono': self.option_comp.get('cono', ''),
+            'vendor_path': self.option_comp.get('vendor_path', ''),
+            'product_quantity': self.option_comp.get('product_quantity', 1),
+            'allowe_logo': self.option_comp.get('allowe_logo', False),
         }
         self.specification.update(dic_default)
 
@@ -172,6 +177,9 @@ class CompanyCheck:
         schema = {
             'uid': {'type': 'string', 'required': True}, # required 必填
             'cono': {'type': 'string', 'required': True}, # 自動
+            'vendor_path': {'type': 'string', 'required': True}, # 自動
+            'product_quantity': {'type': 'integer', 'required': True}, # 自動
+            'allowe_logo': {'type': 'boolean', 'required': True}, # 自動
             'company_name': {'type': 'string', 'required': True},
             'company_name_en': {'type': 'string', 'required': True},
             'company_name_tw': {'type': 'string', 'required': True},
@@ -224,13 +232,13 @@ class CompanyCheck:
             files.append(logo_url)
 
         for file_path in files:
-
+            # print('file_path:', file_path)
             if not self.chf.is_file_verify(file_path): # 檢查是否存在
                 self.is_verify = False
                 self.message = f"❌ 找不到 {file_path} 不存在，或請重新讀取檔案。"
                 return
 
-            if not self._is_img_verify(val):
+            if not self._is_img_verify(file_path):
                 self.is_verify = False
                 self.message = f"❌ {field} 格式錯誤或來源不合法"
                 return
