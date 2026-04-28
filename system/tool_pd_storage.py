@@ -278,7 +278,7 @@ def test1():
     ps = ProductStorage()
     data = {
         'pdno': generate_random_char_lower(),
-        'name': 'ys_PVS系列柱塞泵_開發預覽版',
+        'name': '預留產品3_開發預覽版',
         'data_original': '',
         'data_json': '',
     }
