@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 import random
 import string
+from itertools import permutations
 
 def get_str_hash(content):
     # 接收字串內容 (content)，使用 SHA-256 演算法生成雜湊值 (Hash Value)。
@@ -80,5 +81,23 @@ def test3():
     for _ in range(0, 4):
         print(generate_random_char_lower(length=16))
 
+def test4():
+    words = "IJIlJlL1"
+    # words = "abeocdqp"
+    result = [
+        ''.join(p)
+        for p in set(permutations(words))
+        if not p[0].isdigit()
+    ]
+    result
+    print('數量:', len(result))
+
+    print('隨機 print 10 個')
+    sample_size = min(10, len(result))
+    samples = random.sample(result, sample_size)
+
+    for s in samples:
+        print(s)
+
 if __name__ == '__main__':
-    test3()
+    test4()

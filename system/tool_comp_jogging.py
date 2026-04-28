@@ -28,6 +28,7 @@ if True:
     from tool_list import is_all_include, other_itmes
     from tool_msgbox import error
     from tool_cache import Cache_article, Cache_file
+    from tool_safety import Garbler
 
 class CompanyCheck:
     STORAGE_PATH = os.path.join(ROOT_DIR, 'tempstorage')
@@ -57,6 +58,7 @@ class CompanyCheck:
         # print(json.dumps(self.options, indent=4, ensure_ascii=False))
         self.option_comp = None # 後續取得
         self._load_content()                # 動態讀取 python content
+        self.ga = Garbler() # 混淆
 
         if self.is_verify is True:
             self._add_specification_required()  # 添加 specification 必需的
@@ -266,8 +268,6 @@ class CompanyCheck:
         self.is_verify = True
         self.message = ''
 
-
-
     def _merge_fruit(self):
         # 將 specification, friendly 合併為最終的結果 fruit
         fruit = copy.deepcopy(self.specification)
@@ -441,8 +441,13 @@ class CompanyCheck:
         spec['json_ld'] = dic_ld
 
     def get_detaile(self):
+        # 將 fruit 混淆
+        garble_fruit = copy.deepcopy(self.fruit)    # 複製
+        garble_fruit = self.ga.replace_key(garble_fruit) # 混淆
+
         # 將 fruit 轉換為 json
-        json_result = self._dict_to_json(self.fruit)
+        # json_result = self._dict_to_json(self.fruit)
+        json_result = self._dict_to_json(garble_fruit)
         data_json = json_result if json_result is not None else ""
 
         return {
@@ -462,10 +467,10 @@ def test1():
     if result['is_verify'] is True:
         print('驗證成功')
         # print(result['data_original'])
-        # print(result['data_json'])
+        print(result['data_json'])
         # print(result['fruit'])
 
-        print(json.dumps(result['fruit'], indent=4, ensure_ascii=False))
+        # print(json.dumps(result['fruit'], indent=4, ensure_ascii=False))
     else:
         print(result['message'])
 
