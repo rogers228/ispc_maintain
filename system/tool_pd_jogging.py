@@ -781,8 +781,8 @@ class ProductCheck:
 
         dic_langs = {
             'en': {'url_path': 'en', 'hreflang': 'en'},
-            'tw': {'url_path': 'zh-TW', 'hreflang': 'zh-Hant'},
-            'zh': {'url_path': 'zh-TW', 'hreflang': 'zh-Hans'} # // 若 zh 指向簡體，建議改為 zh-Hans
+            'tw': {'url_path': 'zh-TW', 'hreflang': 'zh-Hant'},  # 繁體中文
+            'zh': {'url_path': 'zh-TW', 'hreflang': 'zh-Hans'}   # 簡體中文
         }
 
         dic_s = {}
