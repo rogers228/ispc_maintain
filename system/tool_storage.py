@@ -163,6 +163,7 @@ class StorageBuckets:
         :param category: 篩選分類 (text)
         :param search_title: 標題關鍵字模糊搜尋
         :param search_summary: 簡介內容關鍵字模糊搜尋
+        :param content_type: 可傳入字串 (單一篩選) 或 串列 (群組篩選)
         :param limit: 回傳筆數上限
         """
         auth_data = self.auth.load_local_data()
@@ -172,13 +173,19 @@ class StorageBuckets:
             return []
 
         # 1. 構建基礎 URL (最新上傳優先)
-        # fields = "id,title,summary,file_path,content_type,created_at"
         fields = "id,title,file_path,content_type,file_size,summary,created_at"
         db_url = f"{spwr_api_url}/rest/v1/rec_storage?select={fields}&order=created_at.desc&limit={limit}"
 
         # 加入 content_type 精確篩選
         if content_type:
-            db_url += f"&content_type=eq.{content_type}"
+            if isinstance(content_type, list):
+                # 如果是列表，轉成 Supabase 的 in.(item1,item2) 格式
+                # 注意：如果 MIME 包含特殊字元，建議使用 urllib.parse.quote
+                mimes_str = ",".join([f'"{m}"' for m in content_type]) # 加上雙引號處理特殊字元
+                db_url += f"&content_type=in.({mimes_str})"
+            else:
+                # 原本的單一精確篩選
+                db_url += f"&content_type=eq.{content_type}"
 
         # 3. 加入標題模糊搜尋 (ilike)
         if search_title:

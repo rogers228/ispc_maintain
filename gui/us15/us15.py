@@ -174,6 +174,18 @@ class MainWindow(QMainWindow):
         if not os.path.exists(self.cache_dir):
             os.makedirs(self.cache_dir)
 
+        self.content_groups = {
+            "Images": ["image/jpeg", "image/png", "image/webp", "image/x-icon", "image/svg+xml"],
+            "Documents": ["application/pdf"],
+            "Assets": ["application/xml", "application/json", "text/markdown", "text/plain", "text/javascript", "text/css"],
+            "Fonts": ["font/woff2"]
+        }
+
+        # 自動生成下拉選單要顯示的清單：全部 + 群組名 + 原始單一類型
+        # 這裡用一個 flat list 方便後續調用
+        self.all_mimetypes = list(set(mime for mimes in self.content_groups.values() for mime in mimes))
+        self.ui_categories = ["全部"] + list(self.content_groups.keys()) + self.all_mimetypes
+
         self.init_table_config() # 設定 TableWidget 的外觀與標題
         self.init_query_params()
         self.init_filter_config()
@@ -234,9 +246,12 @@ class MainWindow(QMainWindow):
         width = new_size.width()
         height = new_size.height()
 
+
         tb = self.ui.treeView
         tb_t, tb_l = 85, 10
-        tb_w = 860
+
+        tb_w_min = 800
+        tb_w = max(tb_w_min, int(width*0.66))
         tb_h = height - 10 - 105
         tb.setGeometry(tb_l, tb_t, tb_w, tb_h)
 
@@ -264,23 +279,16 @@ class MainWindow(QMainWindow):
         event.accept()
 
     def init_query_params(self):
-        self.content_type = ["全部",
-            "image/jpeg", "image/png", "image/webp", "image/x-icon", "image/svg+xml",
-            "application/pdf" ,"application/xml", "application/json", "application/manifest+json",
-            "text/markdown", "text/css", "text/javascript", "text/plain",
-            "font/woff2",
-            ]
-
         self.ui.w_title.setText('')
         self.ui.w_summary.setText('')
         self.ui.w_content_type.clear()
-        self.ui.w_content_type.addItems(self.content_type)
+        self.ui.w_content_type.addItems(self.ui_categories)
         self.ui.w_counts.setText(str(self.query_max))
 
     def init_filter_config(self):
         # 設定篩選下拉選單的值
         self.ui.f_content_type.clear()
-        self.ui.f_content_type.addItems(self.content_type)
+        self.ui.f_content_type.addItems(self.ui_categories)
 
         # 連結篩選事件：當文字改變或選單切換時即時篩選
         self.ui.f_title.textChanged.connect(self.apply_local_filter)
@@ -289,6 +297,19 @@ class MainWindow(QMainWindow):
         self.ui.f_summary.textChanged.connect(self.save_current_state_to_cache)
         self.ui.f_content_type.currentTextChanged.connect(self.apply_local_filter)
         self.ui.f_content_type.currentTextChanged.connect(self.save_current_state_to_cache)
+
+    def get_target_mimetypes(self, selected_text):
+        """根據選中的文字回傳對應的 MIME 類型清單"""
+        if selected_text == "全部":
+            return None # 或是回傳 self.all_mimetypes
+
+        # 如果選中的是群組名稱 (例如 "Images")
+        if selected_text in self.content_groups:
+            return self.content_groups[selected_text]
+
+        # 如果選中的是單一類型 (例如 "image/jpeg")
+        return [selected_text]
+
     def handle_query(self):
         """處理查詢按鈕點擊事件"""
 
@@ -301,7 +322,10 @@ class MainWindow(QMainWindow):
         # 1. 獲取介面上的參數
         title_kw = self.ui.w_title.text().strip()
         summary_kw = self.ui.w_summary.text().strip()
-        content_type = self.ui.w_content_type.currentText()
+        # content_type = self.ui.w_content_type.currentText()
+        content_type_selection = self.ui.w_content_type.currentText()
+        target_mimes = self.get_target_mimetypes(content_type_selection)
+
         try:
             limit = min(int(self.ui.w_counts.text()), self.query_max)
             print('limit:', limit)
@@ -323,7 +347,7 @@ class MainWindow(QMainWindow):
             results = self.sb.query_storage(
                 search_title=title_kw if title_kw else None,
                 search_summary=summary_kw if summary_kw else None,
-                content_type=content_type if content_type else None,
+                content_type=target_mimes, # 傳入 list 或是 None,
                 limit=limit
             )
 
@@ -343,19 +367,31 @@ class MainWindow(QMainWindow):
         # 本地篩選
         f_title = self.ui.f_title.text().lower()
         f_summary = self.ui.f_summary.text().lower()
-        f_type = self.ui.f_content_type.currentText()
+        f_type_selection = self.ui.f_content_type.currentText()
+
+        # 預先取得目標類型清單，避免在迴圈內反覆運算
+        target_mimes = self.get_target_mimetypes(f_type_selection)
         visible_count = 0
 
         for row in range(self.ui.treeView.rowCount()):
             data = self.ui.treeView.item(row, 1).data(Qt.UserRole)
             if not data: continue
 
+            row_mime = data.get('content_type', '')
+
+            # 判斷類型是否符合
+            if f_type_selection == "全部":
+                type_match = True
+            else:
+                # 檢查該列的類型是否在我們選定的群組或單一類型中
+                type_match = row_mime in target_mimes
+
             match = (f_title in data.get('title', '').lower()) and \
                     (f_summary in data.get('summary', '').lower()) and \
-                    (f_type == "全部" or f_type == data.get('content_type', ''))
+                    type_match
 
             self.ui.treeView.setRowHidden(row, not match)
-            if match: visible_count += 1 # ✅ 順便計算
+            if match: visible_count += 1
 
         self.update_status_info()
 
@@ -531,6 +567,7 @@ class MainWindow(QMainWindow):
             icon_pdf = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'pdf.png'))
             icon_css = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'css.png'))
             icon_js = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'js.png'))
+            icon_json = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'json.png'))
             icon_xml = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'xml.png'))
             icon_txt = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'txt.png'))
             icon_markdown = QIcon(os.path.join(ROOT_DIR, 'system', 'icons', 'markdown.png'))
@@ -538,6 +575,8 @@ class MainWindow(QMainWindow):
             icon_map = {
                 'application/pdf': icon_pdf,
                 'application/xml': icon_xml,
+                'application/json': icon_json,
+                'application/manifest+json': icon_json,
                 'text/css':        icon_css,
                 'text/plain':      icon_txt,
                 'text/javascript': icon_js,
