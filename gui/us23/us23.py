@@ -324,7 +324,7 @@ class MainWindow(QMainWindow):
                 self.ui.article_table.blockSignals(False)
 
                 self.save_ui_state() # 寫入 last_article_query.json
-                self._need_snapshots(current_id) # 標記需要更新快照
+                self._need_snapshots(current_id) # 標記需要更新快照 // 首頁要特別處理
                 self._last_selected_id = current_id
                 self.statusBar().showMessage(f"{msg_prefix}成功：{current_id}", 3000)
                 QMessageBox.information(self, "完成", f"文章已成功{msg_prefix}")
@@ -351,7 +351,12 @@ class MainWindow(QMainWindow):
             # print('article_id:', article_id)
             lang = parts[2]
             # print('lang:', lang)
-            path = f'/{lang_route.get(lang, 'zh-TW')}/home/article/{article_id}'
+            if parts[1] == 'index':
+                # 首頁 custom_index 固定使用 portal_index_en, portal_index_tw
+                # 首頁 path 固定為 /en,  /zh-TW
+                path = f'/{lang_route.get(lang, 'zh-TW')}'
+            else:
+                path = f'/{lang_route.get(lang, 'zh-TW')}/home/article/{article_id}'
 
         elif len(parts)==4 and parts[1] =='article':
             # yeoshe_article_a01_en
