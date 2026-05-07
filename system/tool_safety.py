@@ -140,6 +140,17 @@ class Garbler():
         reversed_dic = {v: k for k, v in self.garble_key_map.items()}
         return reversed_dic
 
+    def secret_encode(self, text, key=6):
+        # 第一步：進行位移 (ord + key)
+        shifted_text = "".join(chr(ord(c) + key) for c in text)
+
+        # 第二步：轉成 bytes 並進行 Base64 編碼
+        bytes_data = shifted_text.encode('utf-8')
+        base64_bytes = base64.b64encode(bytes_data)
+
+        # 第三步：轉回字串方便傳輸
+        return base64_bytes.decode('utf-8')
+
 def test1():
 
     data = {
@@ -187,5 +198,13 @@ def test2():
     dic = { 'this.reverseKeyMap': ga.get_garble_key_reverse()}
     print(json.dumps(dic, indent=4, ensure_ascii=False))
 
+def test3():
+    ga = Garbler()
+    my_key = 5
+    raw_data = "Hello World!"
+    encoded_result = ga.secret_encode(raw_data)
+    print(f"原始資料: {raw_data}")
+    print(f"傳輸內容: {encoded_result}")
+
 if __name__ == '__main__':
-    test2()
+    test3()
