@@ -10,10 +10,82 @@ class Garbler():
         # key 混淆 mapping  需同步修改前端 decoder.js
         # 請用 tool_str.py 產生
         self.garble_key_map = {
-            'key_d': 'lJL1JlII',
-            'key_h': 'ILJ1lIlJ',
+            'data_json': 'ILllI1JJ',
+            'name': 'IlJJ1LlI', # 產品名稱 admin test user 123
+            'company': 'Jl1IJILl', # 所屬公司代號
+            'name_en': 'lJlJILI1',
+            'name_tw': 'Ill1LJIJ',
+            'name_zh': 'J1lIJLIl',
+            'supply_default_value': 'JllIILJ1',
+            'model_item_length': 'IIJJl1lL',
+            'model_items_order': 'I1llIJJL',
+            'model_items': 'JlIJILl1',
+            'select_way': 'IlJlL1IJ',
+            'models': 'LlIl1JJI',
+            'description_en': 'lJlJ1LII',
+            'description_tw': 'IlJILJ1l',
+            'description_zh': 'l1JJIlIL',
+            'introduction_id' : 'I1lIlLJJ',
+            'photo_album' : 'JIll1LJI',
+            'og_image': 'LI1JIlJl',
+            'keywords': 'JLIl1lJI',
+
+            'postfix_symbol': 'LIlJ1JIl',
+            'default_value': 'LIIJJll1',
+            'unit': 'LlJIJI1l',
+            'control_type': 'JL1IlIlJ',
+            'model_item_length': 'ILllJJI1',
+            'model_items_order': 'JIl1JLIl',
+            'model_items': 'llLIJI1J',
+
+            'item_name_en': 'IlILJJ1l',
+            'item_name_tw': 'IIJl1LlJ',
+            'item_name_zh': 'JIILll1J',
+            'supply': 'J1IIlLJl',
+            'models_pattern': 'lJJL1IlI',
+            'runtime_pattern': 'lJJI1lIL',
+            'disable': 'IlJLJ1Il',
+            'display': 'JLJlII1l',
+
+            'alias': 'IJllJI1L',
+            'model_help': 'lLlIIJJ1',
+            'option_item_count': 'I1JLJlIl',
+            'main_model': 'IlJIJlL1',
+
+            # company
+            'company_name': 'ILlIlJ1J',
+            'company_name_en': 'LIlJI1lJ',
+            'company_name_tw': 'JIJIlLl1',
+            'company_name_zh': 'L1lJlIJI',
+            'description_en': 'lIJILJl1',
+            'description_tw': 'JILI1llJ',
+            'description_zh': 'LllIJ1IJ',
+            'address_tw': 'JIlIl1JL',
+            'address_en': 'L1IIlJJl',
+            'email': 'ILlJ1IJl',
+            'tel': 'lIIJ1lLJ',
+            'fax': 'lJIlL1IJ',
+            'sales_tw': 'llLJJI1I',
+            'sales_en': 'LJlIJ1lI',
+            'Facebook': 'IlIJlL1J',
+            'YouTube': 'IlJLJ1lI',
+            'Line': 'IlJI1JLl',
+            'Instagram': 'lI1IJJlL',
+            'Twitter': 'J1IlLJlI',
+            'LinkedIn': 'IIJlJ1lL',
+            'Reddit': 'JJ1lILlI',
+            'TikTok': 'LI1IJJll',
+            'website': 'Ll1IJJIl',
+            'introduction_id' : 'IJLlJ1lI',
+            'logo_url': 'IILJlJl1',
+            'google_map_url': 'L1JlIJlI',
+            'og_image': 'IIJl1lLJ',
+            'products': 'lJLlJI1I',
+            'articles': 'IJlLI1Jl',
             'product_quantity': 'ILIJ1Jll',
             'allowe_logo': 'JIJL1llI',
+            'fast_model': 'LIl1JJIl',
+            'models_pattern': 'JIl1IJlL',
         }
 
         # 檢查values 不可重複
@@ -64,6 +136,9 @@ class Garbler():
         else:
             return source
 
+    def get_garble_key_reverse(self):
+        reversed_dic = {v: k for k, v in self.garble_key_map.items()}
+        return reversed_dic
 
 def test1():
 
@@ -105,5 +180,12 @@ def test1():
     print("\n處理後：")
     print(result)
 
+def test2():
+    # 得到反置的 map
+    # 用來貼上 api.js GarblerDecoder
+    ga = Garbler()
+    dic = { 'this.reverseKeyMap': ga.get_garble_key_reverse()}
+    print(json.dumps(dic, indent=4, ensure_ascii=False))
+
 if __name__ == '__main__':
-    test1()
+    test2()

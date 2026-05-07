@@ -28,6 +28,7 @@ if True:
     from tool_parser import LineParser, BuildingWorker
     from tool_list import is_all_include, other_itmes
     from tool_cache import Cache_article, Cache_file
+    from tool_safety import Garbler
 
 class ProductCheck:
     # 檢查文件，使用者輸入的文件  並產出結果
@@ -65,6 +66,7 @@ class ProductCheck:
         self.bw = BuildingWorker() # 建構者
         self.merger = Merger([(list, ["append"]), (dict, ["merge"])],["override"], ["override"]) # 合併者的策略
         self._load_content()                # 動態讀取 python content
+        self.ga = Garbler() # 混淆
 
         if self.is_verify is True:
             self._add_specification_required()  # 添加 specification 必需的
@@ -973,8 +975,13 @@ class ProductCheck:
         self.fruit = fruit
 
     def get_detaile(self):
+        # 將 fruit 混淆
+        garble_fruit = copy.deepcopy(self.fruit)    # 複製
+        garble_fruit = self.ga.replace_key(garble_fruit) # 混淆
+
         # 將 fruit 轉換為 json
-        json_result = self._dict_to_json(self.fruit)
+        # json_result = self._dict_to_json(self.fruit)
+        json_result = self._dict_to_json(garble_fruit)
         data_json = json_result if json_result is not None else ""
 
         return {
