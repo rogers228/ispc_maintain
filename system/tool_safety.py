@@ -3,7 +3,6 @@
 import base64
 import json
 
-
 class Garbler():
     def __init__(self):
 
@@ -17,7 +16,6 @@ class Garbler():
             'name_tw': 'Ill1LJIJ',
             'name_zh': 'J1lIJLIl',
             'supply_default_value': 'JllIILJ1',
-            'model_item_length': 'IIJJl1lL',
             'model_items_order': 'I1llIJJL',
             'model_items': 'JlIJILl1',
             'select_way': 'IlJlL1IJ',
@@ -94,36 +92,44 @@ class Garbler():
             raise ValueError("garble_key_map has duplicate values")
 
         # 哪些 key 的 value 要 encode（全域）
-        self.encode_value_keys = {'key_h'}
+        self.encode_value_keys = {'key_h', 'name_zh','models_pattern','runtime_pattern'}
 
-
-    # Base64 encode
-    def encode_value(self, val):
+    def secret_encode(self, val, key=6):
+        # 確保即便是字串也先透過 json.dumps 處理，這會把中文轉義成 \uXXXX 格式（全 ASCII）
+        # 或是確保使用 utf-8 編碼
         if not isinstance(val, str):
-            val = json.dumps(val, separators=(',', ':'))  # 更緊湊
-        return base64.b64encode(val.encode('utf-8')).decode('utf-8')
+            text = json.dumps(val, ensure_ascii=False)
+        else:
+            text = val
+
+        # 進行位移
+        # 為了保險，我們對「字串」直接做位移，但這在 JS 端容易出問題
+        # 更好的做法是轉成 bytes 後對 bytes 做加法
+        encoded_bytes = bytearray(text.encode('utf-8'))
+        for i in range(len(encoded_bytes)):
+            encoded_bytes[i] = (encoded_bytes[i] + key) % 256  # 限制在 0-255 之間
+
+        return base64.b64encode(encoded_bytes).decode('utf-8')
 
     def replace_key(self, source):
+        # 遞迴處理 dict/list 的 key 替換與 value 編碼
 
-        # dict
         if isinstance(source, dict):
             new_dict = {}
-
             for key, value in source.items():
-
-                # 🔹 key 混淆
+                # 1. 取得混淆後的 key
                 new_key = self.garble_key_map.get(key, key)
 
-                # 🔹 value 處理（重點：判斷原始 key）
+                # 2. 判斷是否需要對 value 進行編碼
                 if key in self.encode_value_keys:
-                    new_value = self.encode_value(value)
+                    new_value = self.secret_encode(value)
                 else:
+                    # 遞迴處理子項目
                     new_value = self.replace_key(value)
 
                 new_dict[new_key] = new_value
 
             return new_dict
-
         # list
         elif isinstance(source, list):
             return [self.replace_key(item) for item in source]
@@ -137,19 +143,16 @@ class Garbler():
             return source
 
     def get_garble_key_reverse(self):
-        reversed_dic = {v: k for k, v in self.garble_key_map.items()}
-        return reversed_dic
+        return {v: k for k, v in self.garble_key_map.items()}
 
-    def secret_encode(self, text, key=6):
-        # 第一步：進行位移 (ord + key)
-        shifted_text = "".join(chr(ord(c) + key) for c in text)
-
-        # 第二步：轉成 bytes 並進行 Base64 編碼
-        bytes_data = shifted_text.encode('utf-8')
-        base64_bytes = base64.b64encode(bytes_data)
-
-        # 第三步：轉回字串方便傳輸
-        return base64_bytes.decode('utf-8')
+    def get_decode_jscode(self):
+        """
+        將 Python 的 self.encode_value_keys 轉換成 JavaScript 的 Set 初始化語句
+        輸出格式範例: this.decodeValueKeys = new Set(['key_h', 'name_zh'])
+        """
+        keys_list = sorted(list(self.encode_value_keys))
+        formatted_keys = ", ".join([json.dumps(k) for k in keys_list])
+        return f"this.decodeValueKeys = new Set([{formatted_keys}])"
 
 def test1():
 
@@ -195,8 +198,11 @@ def test2():
     # 得到反置的 map
     # 用來貼上 api.js GarblerDecoder
     ga = Garbler()
-    dic = { 'this.reverseKeyMap': ga.get_garble_key_reverse()}
-    print(json.dumps(dic, indent=4, ensure_ascii=False))
+    # dic = { 'this.reverseKeyMap': ga.get_garble_key_reverse()}
+    # print(json.dumps(dic, indent=4, ensure_ascii=False))
+
+    # 得到 this.decodeValueKeys = new Set(["key_h", "name_zh"])
+    print(ga.get_decode_jscode())
 
 def test3():
     ga = Garbler()
@@ -206,5 +212,6 @@ def test3():
     print(f"原始資料: {raw_data}")
     print(f"傳輸內容: {encoded_result}")
 
+
 if __name__ == '__main__':
-    test3()
+    test2()

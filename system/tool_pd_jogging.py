@@ -978,7 +978,7 @@ class ProductCheck:
         # 將 fruit 混淆
         garble_fruit = copy.deepcopy(self.fruit)    # 複製
         garble_fruit = self.ga.replace_key(garble_fruit) # 混淆
-
+        # print(garble_fruit)
         # 將 fruit 轉換為 json
         # json_result = self._dict_to_json(self.fruit)
         json_result = self._dict_to_json(garble_fruit)
@@ -1005,9 +1005,9 @@ def test1():
         print('驗證成功')
         # print(result['data_original'])
         # print(json.dumps(result['specification'], indent=4, ensure_ascii=False))
-        print(json.dumps(result['fruit'], indent=4, ensure_ascii=False))
+        # print(json.dumps(result['fruit'], indent=4, ensure_ascii=False))
         # print(result['fruit'])
-        # print(result['data_json'])
+        print(result['data_json'])
 
         # print(result['fruit']['head_part'])
         # for lang, html in result['fruit']['head_part'].items():
