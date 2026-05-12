@@ -322,7 +322,7 @@ class MainWindow(QMainWindow):
         # 1. 獲取介面上的參數
         title_kw = self.ui.w_title.text().strip()
         summary_kw = self.ui.w_summary.text().strip()
-        # content_type = self.ui.w_content_type.currentText()
+        content_type = self.ui.w_content_type.currentText()
         content_type_selection = self.ui.w_content_type.currentText()
         target_mimes = self.get_target_mimetypes(content_type_selection)
 

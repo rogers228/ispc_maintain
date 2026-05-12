@@ -117,6 +117,7 @@ class MainWindow(QMainWindow):
         self.is_loading_state = False # 防止載入快取時觸發過多事件
 
         self.sn = SnapshotManager()
+        self._last_selected_id = None
 
         # 初始化順序
         self.init_ui_components()
@@ -323,11 +324,20 @@ class MainWindow(QMainWindow):
                 self.render_table(self.all_data)
                 self.ui.article_table.blockSignals(False)
 
+                # 更新追蹤 ID (如果是新增，result 內應有新的 custom_index)
+                if not is_update_mode and isinstance(result, dict):
+                    self._last_selected_id = result.get('custom_index')
+                else:
+                    self._last_selected_id = current_id
+
+                self.select_row_by_id(self._last_selected_id)
+
                 self.save_ui_state() # 寫入 last_article_query.json
-                self._need_snapshots(current_id) # 標記需要更新快照 // 首頁要特別處理
-                self._last_selected_id = current_id
+                self._need_snapshots(self._last_selected_id) # 標記需要更新快照 // 首頁要特別處理
+                # self._last_selected_id = current_id
                 self.statusBar().showMessage(f"{msg_prefix}成功：{current_id}", 3000)
                 QMessageBox.information(self, "完成", f"文章已成功{msg_prefix}")
+
             else:
                 QMessageBox.critical(self, "失敗", f"雲端{msg_prefix}失敗，請檢查網路或 ID 是否重複")
 
@@ -645,6 +655,27 @@ class MainWindow(QMainWindow):
             "title": self.ui.editor_title.text().strip(),
             "content": self.ui.editor_input.toPlainText()
         }
+
+    def select_row_by_id(self, target_id):
+        """根據 custom_index 找到對應的列並選取它"""
+        if target_id is None:
+            return
+
+        # 暫時停止訊號，避免觸發 load_selected_article 造成重複讀取
+        self.ui.article_table.blockSignals(True)
+
+        found = False
+        for row in range(self.ui.article_table.rowCount()):
+            item = self.ui.article_table.item(row, 0)
+            if item and item.text() == str(target_id):
+                self.ui.article_table.selectRow(row)
+                # 確保選中的列在可見範圍內
+                self.ui.article_table.scrollToItem(item)
+                found = True
+                break
+
+        self.ui.article_table.blockSignals(False)
+        return found
 
     def is_dirty(self):
         # 1. 取得目前 UI 上的內容
